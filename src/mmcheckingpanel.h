@@ -121,7 +121,7 @@ private:
     wxButton* m_btnNew;
     wxButton* m_btnEdit;
     wxButton* m_btnDuplicate;
-    wxButton* m_btnDelete;
+    // wxButton* m_btnDelete;
     wxButton* m_btnAttachment;
     wxStaticText* m_header_text;
     wxStaticText* m_header_balance;

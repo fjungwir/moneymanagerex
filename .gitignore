@@ -17,6 +17,10 @@
 
 # default build dir
 /build/
+# default build dir for windows
+/winbuild/
+# Binarias for Windows
+/bin/
 
 # JetBrains CLion IDE
 .idea
