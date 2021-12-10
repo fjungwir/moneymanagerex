@@ -40,3 +40,8 @@ src/build.h
 
 # binary translations
 *.mo
+
+# temporary or Cache CMakefile Files
+CMakeCache.txt
+CMakeGraphVizOptions.cmake
+CMakeFiles/
