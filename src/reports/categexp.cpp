@@ -1,7 +1,7 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
  Copyright (C) 2017 James Higley
- Copyright (C) 2021 Mark Whalley
+ Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ void  mmReportCategoryExpenses::RefreshData()
         if (type_ == COME && amt < 0.0) amt = 0;
         if (type_ == GOES && amt > 0.0) amt = 0;
         if (amt != 0.0)
-            data_.push_back({sCategName, amt, groupID });
+            data_.push_back({category.CATEGID, -1, sCategName, amt, groupID });
 
         auto subcategories = Model_Category::sub_category(category);
         std::stable_sort(subcategories.begin(), subcategories.end(), SorterBySUBCATEGNAME());
@@ -71,7 +71,7 @@ void  mmReportCategoryExpenses::RefreshData()
             if (type_ == COME && amt < 0.0) amt = 0;
             if (type_ == GOES && amt > 0.0) amt = 0;
             if (amt != 0.0)
-                data_.push_back({ sFullCategName, amt, groupID });
+                data_.push_back({ category.CATEGID, sub_category.SUBCATEGID, sFullCategName, amt, groupID });
         }
         groupID++;
     }
@@ -136,29 +136,29 @@ wxString mmReportCategoryExpenses::getHTMLText()
     hb.addReportHeader(getReportTitle(), m_date_range->startDay());
     hb.DisplayDateHeading(m_date_range->start_date(), m_date_range->end_date(), m_date_range->is_with_date());
     hb.DisplayFooter(getAccountNames());
+    // Prime the filter
+    m_filter.clear();
+    m_filter.setDateRange(m_date_range->start_date(), m_date_range->end_date());
+    m_filter.setAccountList(accountArray_);
 
     // Chart
     if (getChartSelection() == 0)
     {
         if (!gdExpenses.series.empty())
         {
-            hb.addDivContainer("shadow"); 
-            {
-                gdExpenses.title = _("Expenses");
-                gdExpenses.type = GraphData::PIE;
-                hb.addChart(gdExpenses);
-            }
-            hb.endDiv();
+
+            gdExpenses.title = _("Expenses");
+            gdExpenses.type = GraphData::PIE;
+            hb.addChart(gdExpenses);
+
         }
         if (!gdIncome.series.empty())
         {
-            hb.addDivContainer("shadow");  
-            {
-                gdIncome.title = _("Income"); 
-                gdIncome.type = GraphData::PIE;
-                hb.addChart(gdIncome);
-            }
-            hb.endDiv();
+
+            gdIncome.title = _("Income"); 
+            gdIncome.type = GraphData::PIE;
+            hb.addChart(gdIncome);
+
         }
     }
 
@@ -186,7 +186,8 @@ wxString mmReportCategoryExpenses::getHTMLText()
                     group++;
                     hb.startTableRow();
                     {
-                        hb.addTableCell(entry.name);
+                        hb.addTableCellLink(wxString::Format("viewtrans:%d:%d", entry.catID, entry.subCatID)
+                            , entry.name);
                         hb.addMoneyCell(entry.amount);
                         if (group_counter[entry.categs] > 1)
                             hb.addEmptyTableCell();
@@ -285,10 +286,8 @@ wxString mmReportCategoryOverTimePerformance::getHTMLText()
     temp_date.findEndOfMonth(); // Sets up start day
     temp_date.start_date(sd);
     temp_date.set_end_date(ed);
-    temp_date.setValidDate(mmDateRange::START);
-    temp_date.setValidDate(mmDateRange::END); 
     sd = temp_date.start_date();
-    ed = temp_date.end_date();   
+    ed = temp_date.end_date();
     mmDateRange* date_range = new mmSpecifiedRange(sd, ed);
 
     //Get statistic
@@ -303,11 +302,13 @@ wxString mmReportCategoryOverTimePerformance::getHTMLText()
     std::map<int, std::map<int, double> > totals;
 
     // structure for sorting of data
-    struct html_data_holder { wxString name; double period[MONTHS_IN_PERIOD]; double overall; } line;
+    struct html_data_holder { int catID; int subCatID; wxString name; double period[MONTHS_IN_PERIOD]; double overall; } line;
     std::vector<html_data_holder> data;
     for (const auto& category : Model_Category::instance().all(Model_Category::COL_CATEGNAME))
     {
         int categID = category.CATEGID;
+        line.catID = categID;
+        line.subCatID = -1;
         line.name = category.CATEGNAME;
         line.overall = 0;
         unsigned month = 0;
@@ -325,6 +326,8 @@ wxString mmReportCategoryOverTimePerformance::getHTMLText()
         for (const auto& sub_category : Model_Category::sub_category(category))
         {
             int subcategID = sub_category.SUBCATEGID;
+            line.catID = category.CATEGID;
+            line.subCatID = subcategID;
             line.name = Model_Category::full_name(category.CATEGID, sub_category.SUBCATEGID);
             line.overall = 0;
             month = 0;
@@ -347,6 +350,10 @@ wxString mmReportCategoryOverTimePerformance::getHTMLText()
     hb.addReportHeader(getReportTitle(), m_date_range->startDay());
     hb.DisplayDateHeading(sd, ed, true);
     hb.DisplayFooter(getAccountNames());
+    // Prime the filter
+    m_filter.clear();
+    m_filter.setDateRange(sd, ed);
+    m_filter.setAccountList(accountArray_);
 
     const wxDateTime start_date = date_range->start_date();
     delete date_range;
@@ -393,16 +400,12 @@ wxString mmReportCategoryOverTimePerformance::getHTMLText()
         gd.series.push_back(data_negative);
 
         if (!gd.series.empty())
-        {
-            hb.addDivContainer("shadow"); 
-            {                 
-                gd.type = GraphData::BARLINE; 
-                gd.colors = { mmThemeMetaColour(meta::COLOR_REPORT_DELTA)
-                                , mmThemeMetaColour(meta::COLOR_REPORT_CREDIT)
-                                , mmThemeMetaColour(meta::COLOR_REPORT_DEBIT) }; 
-                hb.addChart(gd);
-            }
-            hb.endDiv();
+        {    
+            gd.type = GraphData::BARLINE; 
+            gd.colors = { mmThemeMetaColour(meta::COLOR_REPORT_DELTA)
+                            , mmThemeMetaColour(meta::COLOR_REPORT_CREDIT)
+                            , mmThemeMetaColour(meta::COLOR_REPORT_DEBIT) }; 
+            hb.addChart(gd);
         }
     }
 
@@ -439,7 +442,8 @@ wxString mmReportCategoryOverTimePerformance::getHTMLText()
                     {
                         hb.startTableRow();
                         {
-                            hb.addTableCell(entry.name);
+                            hb.addTableCellLink(wxString::Format("viewtrans:%d:%d", entry.catID, entry.subCatID)
+                                , entry.name);
                             for (int i = 0; i < MONTHS_IN_PERIOD; i++)
                                 hb.addMoneyCell(entry.period[i]);
                             hb.addMoneyCell(entry.overall);

@@ -19,6 +19,7 @@
 
 #include "assetdialog.h"
 #include "attachmentdialog.h"
+#include "filtertrans.h"
 #include "mmreportspanel.h"
 #include "mmex.h"
 #include "mmframe.h"
@@ -486,6 +487,65 @@ void mmReportsPanel::OnNewWindow(wxWebViewEvent& evt)
     if (pattern.Matches(uri))
     {
         wxLaunchDefaultBrowser(uri);
+    } else if (uri.StartsWith("back:", &sData))
+    {
+        browser_->GoBack();
+    } else if (uri.StartsWith("viewtrans:", &sData))
+    {
+        wxStringTokenizer tokenizer(sData, ":");
+        int i =0;
+        int catID = -1;
+        int subCatID = -1;
+        int payeeID = -1;
+        // categoryID, subcategoryID, payeeID
+        //      subcategoryID = -2 means inlude all sub categories for the given category
+        while ( tokenizer.HasMoreTokens() )
+        {
+            switch (i++) {
+                case 0:
+                    catID = wxAtoi(tokenizer.GetNextToken());
+                    break;
+                case 1:
+                    subCatID = wxAtoi(tokenizer.GetNextToken());
+                    break;
+                case 2:
+                    payeeID = wxAtoi(tokenizer.GetNextToken());
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (catID > 0)
+        {
+            std::vector<std::pair<int, int>> cats;
+            std::pair<int, int> cat;
+            cat.first = catID;
+            if (-2 == subCatID) // include all sub categories
+            {
+                Model_Category::Data *category = Model_Category::instance().get(catID);
+                for (const auto &subCategory : Model_Category::sub_category(category))
+                {
+                    cat.second = subCategory.SUBCATEGID;
+                    cats.push_back(cat);
+                }
+                subCatID = -1;          
+            }
+            cat.second = subCatID;
+            cats.push_back(cat);
+            rb_->m_filter.setCategoryList(cats);
+        }
+
+        if (payeeID > 0)
+        {
+            wxArrayInt payees;
+            payees.Add(payeeID);
+            rb_->m_filter.setPayeeList(payees);
+        }
+
+        const wxString report = rb_->m_filter.getHTML();
+        const auto name = getVFname4print("repdetail", report);
+        browser_->LoadURL(name);
     }
     else if (uri.StartsWith("trxid:", &sData))
     {

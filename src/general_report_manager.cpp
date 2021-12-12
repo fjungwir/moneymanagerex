@@ -137,6 +137,7 @@ R"(<!DOCTYPE html>
    <script>
         window.Promise || document.write('<script src="memory:polyfill.min.js"><\/script>');
         window.Promise || document.write('<script src="memory:classlist.min.js"><\/script>');
+        window.Promise || document.write('<script src="memory:resize-observer.js"><\/script>');
         window.Promise || document.write('<script src="memory:findindex.min.js"><\/script>');
         window.Promise || document.write('<script src="memory:umd.min.js"><\/script>');
     </script>
@@ -595,7 +596,7 @@ void mmGeneralReportManager::OnImportReportEvt(wxCommandEvent& WXUNUSED(event))
 void mmGeneralReportManager::importReport()
 {
     const wxString reportFileName = wxFileSelector(_("Load report file:")
-        , mmex::getPathUser(mmex::DIRECTORY), wxEmptyString, wxEmptyString
+        , mmex::getPathResource(mmex::REPORTS), wxEmptyString, wxEmptyString
         , _("General Report Manager files (*.grm)")+"|*.grm|"+_("ZIP files (*.zip)")+"|*.zip"
         , wxFD_FILE_MUST_EXIST);
 

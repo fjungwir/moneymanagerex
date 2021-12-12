@@ -103,7 +103,7 @@ table {
     start.ParseISODate(m_transDialog->getBeginDate());
     end.ParseISODate(m_transDialog->getEndDate());
     hb.DisplayDateHeading(start, end
-        , m_transDialog->getDateRangeCheckBox() || m_transDialog->getStartDateCheckBox()
+        , m_transDialog->getRangeCheckBox() || m_transDialog->getDateRangeCheckBox() || m_transDialog->getStartDateCheckBox()
         , m_transDialog->getStartDateCheckBox());
     hb.DisplayFooter(_("Accounts: ") + accounts);
 
@@ -111,7 +111,6 @@ table {
     const wxString& AttRefType = Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION);
     const int groupBy = m_transDialog->getGroupBy();
     wxString lastSortLabel = "";
-    wxString sortLabel;
 
     std::map<int, double> total; //Store transaction amount with original currency
     std::map<int, double> total_in_base_curr; //Store transactions amount daily converted to base currency

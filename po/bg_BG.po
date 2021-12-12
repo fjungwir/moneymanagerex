@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: moneymanagerex\n"
 "Report-Msgid-Bugs-To: developer@moneymanagerex.org\n"
-"POT-Creation-Date: 2021-10-26 14:24+0300\n"
-"PO-Revision-Date: 2021-10-26 11:31\n"
+"POT-Creation-Date: 2021-12-05 13:13+0300\n"
+"PO-Revision-Date: 2021-12-05 10:27\n"
 "Last-Translator: \n"
 "Language-Team: Bulgarian\n"
 "MIME-Version: 1.0\n"
@@ -56,18 +56,18 @@ msgid "Enable to help us sending anonymous data about MMEX usage."
 msgstr "Разреши, за да ни помогнеш с изпращането на анонимни данни за работата на и с MMEX."
 
 #: aboutdialog.cpp:253 accountdialog.cpp:306 appstartdialog.cpp:137
-#: assetdialog.cpp:305 attachmentdialog.cpp:120 billsdepositsdialog.cpp:491
+#: assetdialog.cpp:305 attachmentdialog.cpp:120 billsdepositsdialog.cpp:493
 #: budgetentrydialog.cpp:157 budgetyeardialog.cpp:116
 #: budgetyearentrydialog.cpp:127 currencydialog.cpp:242
-#: customfieldeditdialog.cpp:191 filtertransdialog.cpp:486
-#: filtertransdialog.cpp:721 filtertransdialog.cpp:1606
+#: customfieldeditdialog.cpp:191 filtertransdialog.cpp:514
+#: filtertransdialog.cpp:774 filtertransdialog.cpp:1682
 #: import_export/qif_export.cpp:230 import_export/qif_export.cpp:253
 #: import_export/qif_import_gui.cpp:323 optiondialog.cpp:165
 #: payeedialog.cpp:130 relocatecategorydialog.cpp:123
-#: relocatepayeedialog.cpp:131 reports/reportbase.cpp:335
+#: relocatepayeedialog.cpp:140 reports/reportbase.cpp:335
 #: sharetransactiondialog.cpp:325 splitdetailsdialog.cpp:161
 #: splittransactionsdialog.cpp:172 transactionsupdatedialog.cpp:240
-#: transdialog.cpp:606 wizard_update.cpp:192
+#: transdialog.cpp:609 wizard_update.cpp:216
 msgid "&OK "
 msgstr "&Добре"
 
@@ -129,13 +129,13 @@ msgid "Select whether this is an account that is used often. This is used to fil
 msgstr "Изберете дали този акаунт се ползва често. Това се използва при определянето на изгледа на акаунтите."
 
 #: accountdialog.cpp:192 assetdialog.cpp:253 assetspanel.cpp:65
-#: billsdepositsdialog.cpp:626 billsdepositspanel.cpp:141
-#: filtertransdialog.cpp:357 filtertransdialog.cpp:1233
+#: billsdepositsdialog.cpp:628 billsdepositspanel.cpp:141 filtertrans.cpp:199
+#: filtertransdialog.cpp:385 filtertransdialog.cpp:1297
 #: import_export/qif_export.cpp:597 import_export/qif_import_gui.cpp:105
 #: import_export/univcsvdialog.cpp:111 mmchecking_list.cpp:237
-#: reports/transactions.cpp:165 sharetransactiondialog.cpp:270
+#: reports/transactions.cpp:164 sharetransactiondialog.cpp:270
 #: stockdialog.cpp:264 stocks_list.cpp:100 transactionsupdatedialog.cpp:211
-#: transdialog.cpp:580 usertransactionpanel.cpp:206 webappdialog.cpp:154
+#: transdialog.cpp:583 usertransactionpanel.cpp:206 webappdialog.cpp:154
 msgid "Notes"
 msgstr "Бележки"
 
@@ -322,7 +322,7 @@ msgstr "Посети Уебсайта за повече информация"
 msgid "Open the %s website for latest news, updates etc"
 msgstr "Отвори %s уебсайт за последните новини, обновявания и т.н."
 
-#: appstartdialog.cpp:124 wizard_update.cpp:185
+#: appstartdialog.cpp:124 wizard_update.cpp:209
 #, c-format
 msgid "Show this window next time %s starts"
 msgstr "Покажи прозореца следващия път, когато %s стартира"
@@ -367,15 +367,16 @@ msgstr "Име"
 msgid "Enter the name of the asset"
 msgstr "Въведи името на актива"
 
-#: assetdialog.cpp:201 assetspanel.cpp:61 filtertransdialog.cpp:603
-#: import_export/qif_export.cpp:588 import_export/qif_import_gui.cpp:99
-#: import_export/univcsvdialog.cpp:105 maincurrencydialog.cpp:239
-#: maincurrencydialog.cpp:261 mmchecking_list.cpp:207 mmreportspanel.cpp:254
-#: mmreportspanel.cpp:272 model/Model_CustomField.cpp:29
-#: reports/cashflow.cpp:249 reports/incexpenses.cpp:252 reports/summary.cpp:319
-#: reports/transactions.cpp:157 stockdialog.cpp:297 stockdialog.cpp:676
-#: transactionsupdatedialog.cpp:118 transdialog.cpp:458
-#: usertransactionpanel.cpp:108 webappdialog.cpp:147 wizard_update.cpp:145
+#: assetdialog.cpp:201 assetspanel.cpp:61 filtertrans.cpp:191
+#: filtertransdialog.cpp:646 import_export/qif_export.cpp:588
+#: import_export/qif_import_gui.cpp:99 import_export/univcsvdialog.cpp:105
+#: maincurrencydialog.cpp:240 maincurrencydialog.cpp:262
+#: mmchecking_list.cpp:207 mmreportspanel.cpp:255 mmreportspanel.cpp:273
+#: model/Model_CustomField.cpp:29 reports/cashflow.cpp:249
+#: reports/incexpenses.cpp:252 reports/summary.cpp:319
+#: reports/transactions.cpp:156 stockdialog.cpp:297 stockdialog.cpp:676
+#: transactionsupdatedialog.cpp:118 transdialog.cpp:461
+#: usertransactionpanel.cpp:108 webappdialog.cpp:147 wizard_update.cpp:141
 msgid "Date"
 msgstr "Дата"
 
@@ -392,7 +393,7 @@ msgid "Select type of asset"
 msgstr "Избери вид на актива"
 
 #: assetdialog.cpp:219 import_export/qif_import_gui.cpp:104
-#: maincurrencydialog.cpp:270
+#: maincurrencydialog.cpp:271
 msgid "Value"
 msgstr "Стойност"
 
@@ -445,20 +446,20 @@ msgid "Asset Account not found.\n\n"
 "Would you want to create one?"
 msgstr ""
 
-#: assetspanel.cpp:59 billsdepositspanel.cpp:127
+#: assetspanel.cpp:59 billsdepositspanel.cpp:127 filtertrans.cpp:189
 #: import_export/qif_export.cpp:587 mmchecking_list.cpp:205
-#: reports/transactions.cpp:155 stocks_list.cpp:88
+#: reports/transactions.cpp:154 stocks_list.cpp:88
 msgid "ID"
 msgstr "Номер за идентификация"
 
-#: assetspanel.cpp:62 billsdepositsdialog.cpp:554 billsdepositspanel.cpp:134
-#: customfieldlistdialog.cpp:54 filtertransdialog.cpp:303
-#: filtertransdialog.cpp:1199 import_export/qif_export.cpp:125
+#: assetspanel.cpp:62 billsdepositsdialog.cpp:556 billsdepositspanel.cpp:134
+#: customfieldlistdialog.cpp:54 filtertrans.cpp:197 filtertransdialog.cpp:331
+#: filtertransdialog.cpp:1263 import_export/qif_export.cpp:125
 #: import_export/qif_export.cpp:590 import_export/qif_import_gui.cpp:102
 #: import_export/qif_import_gui.cpp:232 import_export/univcsvdialog.cpp:116
-#: maincurrencydialog.cpp:251 mmhomepage.cpp:428 reports/incexpenses.cpp:112
-#: reports/transactions.cpp:163 splitdetailsdialog.cpp:120
-#: transactionsupdatedialog.cpp:145 transdialog.cpp:501
+#: maincurrencydialog.cpp:252 mmhomepage.cpp:436 reports/incexpenses.cpp:112
+#: reports/transactions.cpp:162 splitdetailsdialog.cpp:120
+#: transactionsupdatedialog.cpp:145 transdialog.cpp:504
 #: usertransactionpanel.cpp:138 webappdialog.cpp:150
 msgid "Type"
 msgstr "Вид"
@@ -518,7 +519,7 @@ msgstr "MMEX ви позволява да следите установени а
 
 #: assetspanel.cpp:415 assetspanel.h:108 general_report_manager.cpp:723
 #: general_report_manager.cpp:1000 mmframe.cpp:478 mmframe.cpp:745
-#: mmframe.cpp:1543 mmframe.cpp:3013 mmhomepage.cpp:560 mmhomepagepanel.cpp:224
+#: mmframe.cpp:1543 mmframe.cpp:3013 mmhomepage.cpp:568 mmhomepagepanel.cpp:224
 msgid "Assets"
 msgstr "Активи"
 
@@ -547,14 +548,14 @@ msgid "View Asset Transactions"
 msgstr "Преглед на транзакции с Актив"
 
 #: assetspanel.cpp:480 attachmentdialog.cpp:317 billsdepositspanel.cpp:288
-#: categdialog.cpp:233 customfieldlistdialog.cpp:261 maincurrencydialog.cpp:527
+#: categdialog.cpp:233 customfieldlistdialog.cpp:261 maincurrencydialog.cpp:528
 #: mmcheckingpanel.cpp:336 payeedialog.cpp:397 splittransactionsdialog.cpp:166
 #: stockspanel.cpp:143
 msgid "&Edit "
 msgstr "&Промени"
 
 #: assetspanel.cpp:485 billsdepositspanel.cpp:293 budgetyeardialog.cpp:103
-#: categdialog.cpp:237 maincurrencydialog.cpp:292 mmchecking_list.cpp:406
+#: categdialog.cpp:237 maincurrencydialog.cpp:293 mmchecking_list.cpp:406
 #: mmcheckingpanel.cpp:341 stockdialog.cpp:339 stockspanel.cpp:148
 msgid "&Delete "
 msgstr "&Изтрий"
@@ -576,19 +577,19 @@ msgstr "Търсене"
 msgid "Enter any string to find related assets"
 msgstr "Въведи низ, за да открием свързани активи"
 
-#: assetspanel.cpp:505 filtertransdialog.cpp:366 mmcheckingpanel.cpp:366
+#: assetspanel.cpp:505 filtertransdialog.cpp:394 mmcheckingpanel.cpp:366
 msgid "Tips: You can use wildcard characters - question mark (?), asterisk (*) - in your search criteria."
 msgstr ""
 
-#: assetspanel.cpp:506 filtertransdialog.cpp:367 mmcheckingpanel.cpp:367
+#: assetspanel.cpp:506 filtertransdialog.cpp:395 mmcheckingpanel.cpp:367
 msgid "Use the question mark (?) to find any single character - for example, s?t finds 'sat' and 'set'."
 msgstr ""
 
-#: assetspanel.cpp:507 filtertransdialog.cpp:368 mmcheckingpanel.cpp:368
+#: assetspanel.cpp:507 filtertransdialog.cpp:396 mmcheckingpanel.cpp:368
 msgid "Use the asterisk (*) to find any number of characters - for example, s*d finds 'sad' and 'started'."
 msgstr ""
 
-#: assetspanel.cpp:508 filtertransdialog.cpp:369 mmcheckingpanel.cpp:369
+#: assetspanel.cpp:508 filtertransdialog.cpp:397 mmcheckingpanel.cpp:369
 msgid "Use the asterisk (*) in the begin to find any string in the middle of the sentence."
 msgstr ""
 
@@ -691,7 +692,7 @@ msgid "Confirm Attachment Deletion"
 msgstr "Потвърдете изтриването на прикачването"
 
 #: attachmentdialog.cpp:314 categdialog.cpp:229 customfieldlistdialog.cpp:259
-#: import_export/univcsvdialog.cpp:236 maincurrencydialog.cpp:526
+#: import_export/univcsvdialog.cpp:236 maincurrencydialog.cpp:527
 #: payeedialog.cpp:396 splittransactionsdialog.cpp:165 stockdialog.cpp:341
 msgid "&Add "
 msgstr "&Добави"
@@ -701,7 +702,7 @@ msgid "&Open "
 msgstr "&Отвори"
 
 #: attachmentdialog.cpp:319 customfieldlistdialog.cpp:262
-#: import_export/univcsvdialog.cpp:240 maincurrencydialog.cpp:528
+#: import_export/univcsvdialog.cpp:240 maincurrencydialog.cpp:529
 #: payeedialog.cpp:399 splittransactionsdialog.cpp:167
 msgid "&Remove "
 msgstr "&Премахни"
@@ -847,309 +848,309 @@ msgstr "Редактиране на периодична транзакция"
 msgid "Enter Recurring Transaction"
 msgstr "Добаване на периодична транзакция"
 
-#: billsdepositsdialog.cpp:410
+#: billsdepositsdialog.cpp:412
 msgid "Recurring Transaction Details"
 msgstr "Детайли на повтаряща се транзакция"
 
-#: billsdepositsdialog.cpp:422
+#: billsdepositsdialog.cpp:424
 msgid "Specify the date when this bill or deposit is due"
 msgstr "Задайте датата, към която когато тази сметка или депозит е дължима"
 
-#: billsdepositsdialog.cpp:433
+#: billsdepositsdialog.cpp:435
 msgid "Retard or advance the date of the 'next occurrence'"
 msgstr "Изтегли назад или напред датата на 'следващо повторение'"
 
-#: billsdepositsdialog.cpp:438 billsdepositspanel.cpp:129
+#: billsdepositsdialog.cpp:440 billsdepositspanel.cpp:129
 msgid "Date Due"
 msgstr "Дължима на"
 
-#: billsdepositsdialog.cpp:442 billsdepositsdialog.cpp:1275
+#: billsdepositsdialog.cpp:444 billsdepositsdialog.cpp:1277
 msgid "Repeats"
 msgstr "Повторения"
 
-#: billsdepositsdialog.cpp:449
+#: billsdepositsdialog.cpp:451
 msgid "Back to the last occurring date with the specified values"
 msgstr ""
 
-#: billsdepositsdialog.cpp:451
+#: billsdepositsdialog.cpp:453
 msgid "Advance the next occurring date with the specified values"
 msgstr "Давай към следващата дата на повторение с посочените стойности"
 
-#: billsdepositsdialog.cpp:459 billsdepositsdialog.cpp:1317
+#: billsdepositsdialog.cpp:461 billsdepositsdialog.cpp:1319
 msgid "Payments Left"
 msgstr "Оставащи плащания"
 
-#: billsdepositsdialog.cpp:473
+#: billsdepositsdialog.cpp:475
 msgid "Request user to enter payment"
 msgstr "Задължи потребителя да входира плащане"
 
-#: billsdepositsdialog.cpp:474
+#: billsdepositsdialog.cpp:476
 msgid "User requested to enter this transaction on the 'Date Paid'"
 msgstr "Потребителя задалължително трябва да въведе тази транзакция на 'Дата за плащане'"
 
-#: billsdepositsdialog.cpp:477
+#: billsdepositsdialog.cpp:479
 msgid "Grant automatic execute"
 msgstr "Разреши автоматично изпълнение"
 
-#: billsdepositsdialog.cpp:478
+#: billsdepositsdialog.cpp:480
 msgid "The requested payment will occur without user interaction"
 msgstr "Посоченито плащане ще се осъществява без потребителска намеса"
 
-#: billsdepositsdialog.cpp:502 transdialog.cpp:437
+#: billsdepositsdialog.cpp:504 filtertrans.cpp:179 transdialog.cpp:440
 msgid "Transaction Details"
 msgstr "Детайли за транзакция"
 
-#: billsdepositsdialog.cpp:512
+#: billsdepositsdialog.cpp:514
 msgid "Specify the date the user is requested to enter this transaction"
 msgstr "Посочи датата, на която потребителя трябва да въведе тази транзакция"
 
-#: billsdepositsdialog.cpp:521
+#: billsdepositsdialog.cpp:523
 msgid "Advance or retard the user request date of this transaction"
 msgstr ""
 
-#: billsdepositsdialog.cpp:526 billsdepositspanel.cpp:128
+#: billsdepositsdialog.cpp:528 billsdepositspanel.cpp:128
 msgid "Date Paid"
 msgstr "Дата на плащане"
 
-#: billsdepositsdialog.cpp:537 filtertransdialog.cpp:300 transdialog.cpp:1305
+#: billsdepositsdialog.cpp:539 filtertransdialog.cpp:328 transdialog.cpp:1339
 msgid "Specify the status for the transaction"
 msgstr "Посочи състояние на транзакцията"
 
-#: billsdepositsdialog.cpp:539 billsdepositspanel.cpp:132
-#: filtertransdialog.cpp:290 filtertransdialog.cpp:639
-#: filtertransdialog.cpp:1185 import_export/qif_export.cpp:589
+#: billsdepositsdialog.cpp:541 billsdepositspanel.cpp:132 filtertrans.cpp:195
+#: filtertransdialog.cpp:318 filtertransdialog.cpp:692
+#: filtertransdialog.cpp:1249 import_export/qif_export.cpp:589
 #: import_export/qif_import_gui.cpp:234 import_export/qif_import_gui.cpp:245
 #: import_export/qif_import_gui.cpp:255 mmchecking_list.cpp:218
-#: reports/transactions.cpp:161 transactionsupdatedialog.cpp:131
-#: transdialog.cpp:481 usertransactionpanel.cpp:178 webappdialog.cpp:149
-#: wizard_update.cpp:145
+#: reports/transactions.cpp:160 transactionsupdatedialog.cpp:131
+#: transdialog.cpp:484 usertransactionpanel.cpp:178 webappdialog.cpp:149
+#: wizard_update.cpp:141
 msgid "Status"
 msgstr "Състояние"
 
-#: billsdepositsdialog.cpp:544 splitdetailsdialog.cpp:131 transdialog.cpp:1306
+#: billsdepositsdialog.cpp:546 splitdetailsdialog.cpp:131 transdialog.cpp:1340
 msgid "Specify the type of transactions to be created."
 msgstr "Посочи вида на транзакцията, която да бъде създадена."
 
-#: billsdepositsdialog.cpp:545 transdialog.cpp:496
+#: billsdepositsdialog.cpp:547 transdialog.cpp:499
 msgid "&Advanced"
 msgstr "&Напреднали"
 
-#: billsdepositsdialog.cpp:548 transdialog.cpp:1310
+#: billsdepositsdialog.cpp:550 transdialog.cpp:1344
 msgid "Allows the setting of different amounts in the FROM and TO accounts."
 msgstr "Позволява настройването на различни стойности в полето ОТ и ДО акаунт."
 
-#: billsdepositsdialog.cpp:558 billsdepositspanel.cpp:135
-#: budgetingpanel.cpp:301 filtertransdialog.cpp:576 filtertransdialog.cpp:587
-#: import_export/qif_export.cpp:594 import_export/univcsvdialog.cpp:107
-#: maincurrencydialog.cpp:612 mmhomepage.cpp:362 mmhomepage.cpp:430
-#: reports/budgetcategorysummary.cpp:190 reports/categexp.cpp:174
-#: reports/incexpenses.cpp:113 reports/transactions.cpp:164
-#: splitdetailsdialog.cpp:136 splittransactionsdialog.cpp:138
-#: transactionsupdatedialog.cpp:161 transdialog.cpp:515
-#: usertransactionpanel.cpp:142 webappdialog.cpp:153
+#: billsdepositsdialog.cpp:560 billsdepositspanel.cpp:135
+#: budgetingpanel.cpp:301 filtertrans.cpp:198 filtertransdialog.cpp:619
+#: filtertransdialog.cpp:630 import_export/qif_export.cpp:594
+#: import_export/univcsvdialog.cpp:107 maincurrencydialog.cpp:613
+#: mmhomepage.cpp:363 mmhomepage.cpp:438 reports/budgetcategorysummary.cpp:193
+#: reports/categexp.cpp:178 reports/incexpenses.cpp:113
+#: reports/transactions.cpp:163 splitdetailsdialog.cpp:136
+#: splittransactionsdialog.cpp:138 transactionsupdatedialog.cpp:161
+#: transdialog.cpp:518 usertransactionpanel.cpp:142 webappdialog.cpp:153
 msgid "Amount"
 msgstr "Сума"
 
-#: billsdepositsdialog.cpp:571 transdialog.cpp:1291
+#: billsdepositsdialog.cpp:573 transdialog.cpp:1325
 msgid "Specify the transfer amount in the To Account"
 msgstr "Посочи суматаза трансфер в ДО Акаунт"
 
-#: billsdepositsdialog.cpp:583 billsdepositsdialog.cpp:844
-#: billsdepositsdialog.cpp:858 billsdepositspanel.cpp:130
+#: billsdepositsdialog.cpp:585 billsdepositsdialog.cpp:846
+#: billsdepositsdialog.cpp:860 billsdepositspanel.cpp:130 filtertrans.cpp:193
 #: filtertransdialog.cpp:55 filtertransdialog.cpp:211
-#: filtertransdialog.cpp:1130 import_export/qif_export.cpp:591
+#: filtertransdialog.cpp:1184 import_export/qif_export.cpp:591
 #: import_export/qif_import_gui.cpp:98 import_export/qif_import_gui.cpp:154
 #: import_export/qif_import_gui.cpp:226 import_export/qif_import_gui.cpp:813
-#: mmchecking_list.cpp:213 reports/transactions.cpp:159 transdialog.cpp:312
-#: transdialog.cpp:523 usertransactionpanel.cpp:112 webappdialog.cpp:148
+#: mmchecking_list.cpp:213 reports/transactions.cpp:158 transdialog.cpp:315
+#: transdialog.cpp:526 usertransactionpanel.cpp:112 webappdialog.cpp:148
 msgid "Account"
 msgstr "Акаунт"
 
-#: billsdepositsdialog.cpp:586 billsdepositsdialog.cpp:680
-#: billsdepositsdialog.cpp:712 billsdepositsdialog.cpp:762
-#: billsdepositsdialog.cpp:822 usertransactionpanel.cpp:113
+#: billsdepositsdialog.cpp:588 billsdepositsdialog.cpp:682
+#: billsdepositsdialog.cpp:714 billsdepositsdialog.cpp:764
+#: billsdepositsdialog.cpp:824 usertransactionpanel.cpp:113
 msgid "Select Account"
 msgstr "Избери акаунт"
 
-#: billsdepositsdialog.cpp:587
+#: billsdepositsdialog.cpp:589
 msgid "Specify the Account that will own the recurring transaction"
 msgstr ""
 
-#: billsdepositsdialog.cpp:590 billsdepositsdialog.cpp:845
-#: billsdepositspanel.cpp:131 filtertransdialog.cpp:56
-#: filtertransdialog.cpp:257 filtertransdialog.cpp:561
-#: filtertransdialog.cpp:1160 import_export/qif_export.cpp:592
+#: billsdepositsdialog.cpp:592 billsdepositsdialog.cpp:847
+#: billsdepositspanel.cpp:131 filtertrans.cpp:194 filtertransdialog.cpp:56
+#: filtertransdialog.cpp:285 filtertransdialog.cpp:604
+#: filtertransdialog.cpp:1224 import_export/qif_export.cpp:592
 #: import_export/qif_import_gui.cpp:101 import_export/qif_import_gui.cpp:239
 #: import_export/univcsvdialog.cpp:106 mmchecking_list.cpp:216
-#: model/Model_Attachment.cpp:29 reports/payee.cpp:135
-#: reports/transactions.cpp:160 transactionsupdatedialog.cpp:172
-#: transdialog.cpp:296 transdialog.cpp:529 usertransactionpanel.cpp:182
+#: model/Model_Attachment.cpp:29 reports/payee.cpp:139
+#: reports/transactions.cpp:159 transactionsupdatedialog.cpp:172
+#: transdialog.cpp:299 transdialog.cpp:532 usertransactionpanel.cpp:182
 #: webappdialog.cpp:151
 msgid "Payee"
 msgstr "От/За кого"
 
-#: billsdepositsdialog.cpp:593 billsdepositsdialog.cpp:882
+#: billsdepositsdialog.cpp:595 billsdepositsdialog.cpp:884
 #: usertransactionpanel.cpp:183
 msgid "Select Payee"
 msgstr "Избери от/за кого"
 
-#: billsdepositsdialog.cpp:600 transdialog.cpp:542
+#: billsdepositsdialog.cpp:602 transdialog.cpp:545
 msgid "Split"
 msgstr "Раздели"
 
-#: billsdepositsdialog.cpp:603 transdialog.cpp:1307
+#: billsdepositsdialog.cpp:605 transdialog.cpp:1341
 msgid "Use split Categories"
 msgstr "Използвай разделени категории"
 
-#: billsdepositsdialog.cpp:609 billsdepositspanel.cpp:133
-#: budgetingpanel.cpp:298 filtertransdialog.cpp:57 filtertransdialog.cpp:268
-#: filtertransdialog.cpp:1168 import_export/qif_export.cpp:593
-#: import_export/qif_import_gui.cpp:103 import_export/qif_import_gui.cpp:250
-#: import_export/univcsvdialog.cpp:108 mmchecking_list.cpp:220
-#: mmhomepage.cpp:190 reports/budgetcategorysummary.cpp:189
-#: reports/budgetingperf.cpp:211 reports/categexp.cpp:173
-#: reports/categexp.cpp:419 reports/transactions.cpp:162
-#: splitdetailsdialog.cpp:145 splittransactionsdialog.cpp:137
-#: transactionsupdatedialog.cpp:200 transdialog.cpp:551
-#: usertransactionpanel.cpp:189 webappdialog.cpp:152
+#: billsdepositsdialog.cpp:611 billsdepositspanel.cpp:133
+#: budgetingpanel.cpp:298 filtertrans.cpp:196 filtertransdialog.cpp:57
+#: filtertransdialog.cpp:296 filtertransdialog.cpp:1232
+#: import_export/qif_export.cpp:593 import_export/qif_import_gui.cpp:103
+#: import_export/qif_import_gui.cpp:250 import_export/univcsvdialog.cpp:108
+#: mmchecking_list.cpp:220 mmhomepage.cpp:190
+#: reports/budgetcategorysummary.cpp:192 reports/budgetingperf.cpp:220
+#: reports/categexp.cpp:177 reports/categexp.cpp:430
+#: reports/transactions.cpp:161 splitdetailsdialog.cpp:145
+#: splittransactionsdialog.cpp:137 transactionsupdatedialog.cpp:200
+#: transdialog.cpp:554 usertransactionpanel.cpp:189 webappdialog.cpp:152
 msgid "Category"
 msgstr "Категория"
 
-#: billsdepositsdialog.cpp:611 billsdepositsdialog.cpp:1440
-#: transactionsupdatedialog.cpp:203 transdialog.cpp:405 transdialog.cpp:1044
+#: billsdepositsdialog.cpp:613 billsdepositsdialog.cpp:1442
+#: transactionsupdatedialog.cpp:203 transdialog.cpp:408 transdialog.cpp:1078
 #: usertransactionpanel.cpp:190
 msgid "Select Category"
 msgstr "Избери категория"
 
-#: billsdepositsdialog.cpp:620 transdialog.cpp:1308
+#: billsdepositsdialog.cpp:622 transdialog.cpp:1342
 msgid "Specify any associated check number or transaction number"
 msgstr "Посочи някакъв асоцииран номер на чека или транзакцията"
 
-#: billsdepositsdialog.cpp:622 billsdepositspanel.cpp:140
-#: filtertransdialog.cpp:349 filtertransdialog.cpp:1226
+#: billsdepositsdialog.cpp:624 billsdepositspanel.cpp:140 filtertrans.cpp:192
+#: filtertransdialog.cpp:377 filtertransdialog.cpp:1290
 #: import_export/qif_export.cpp:596 import_export/qif_import_gui.cpp:100
 #: import_export/univcsvdialog.cpp:110 mmchecking_list.cpp:209
-#: reports/transactions.cpp:158 transdialog.cpp:563
+#: reports/transactions.cpp:157 transdialog.cpp:566
 #: usertransactionpanel.cpp:202
 msgid "Number"
 msgstr "Номер"
 
-#: billsdepositsdialog.cpp:631
+#: billsdepositsdialog.cpp:633
 msgid "Organize attachments of this recurring transaction"
 msgstr ""
 
-#: billsdepositsdialog.cpp:634 transdialog.cpp:576
+#: billsdepositsdialog.cpp:636 transdialog.cpp:579
 msgid "User Colors"
 msgstr "Цветове на потребителя"
 
-#: billsdepositsdialog.cpp:638 transdialog.cpp:582 usertransactionpanel.cpp:217
+#: billsdepositsdialog.cpp:640 transdialog.cpp:585 usertransactionpanel.cpp:217
 msgid "Select one of the frequently used notes"
 msgstr "Изберете една от често използваните бележки"
 
-#: billsdepositsdialog.cpp:650 transdialog.cpp:1309
+#: billsdepositsdialog.cpp:652 transdialog.cpp:1343
 #: usertransactionpanel.cpp:226
 msgid "Specify any text notes you want to add to this transaction."
 msgstr "Посочи някакви текстови бележки, които искаш да добавиш към транзакцията."
 
-#: billsdepositsdialog.cpp:679
+#: billsdepositsdialog.cpp:681
 msgid "Choose Bank Account or Term Account"
 msgstr "Избери Банков акаунт или акаунт на Срочен Депозит"
 
-#: billsdepositsdialog.cpp:712 billsdepositsdialog.cpp:762
+#: billsdepositsdialog.cpp:714 billsdepositsdialog.cpp:764
 msgid "Account name"
 msgstr "Име на акаунт"
 
-#: billsdepositsdialog.cpp:819 billsdepositsdialog.cpp:859
-#: filtertransdialog.cpp:1153 transdialog.cpp:299 transdialog.cpp:380
+#: billsdepositsdialog.cpp:821 billsdepositsdialog.cpp:861
+#: filtertransdialog.cpp:1217 transdialog.cpp:302 transdialog.cpp:383
 msgid "From"
 msgstr "От"
 
-#: billsdepositsdialog.cpp:831 transdialog.cpp:293
+#: billsdepositsdialog.cpp:833 transdialog.cpp:296
 msgid "To"
 msgstr "До"
 
-#: billsdepositsdialog.cpp:832
+#: billsdepositsdialog.cpp:834
 msgid "Select To Account"
 msgstr "Избери ДО акаунт"
 
-#: billsdepositsdialog.cpp:934
+#: billsdepositsdialog.cpp:936
 msgid "The payment date is after the due date, is this what you intended?"
 msgstr ""
 
-#: billsdepositsdialog.cpp:935
+#: billsdepositsdialog.cpp:937
 msgid "Looks like a late payment"
 msgstr ""
 
-#: billsdepositsdialog.cpp:1234
+#: billsdepositsdialog.cpp:1236
 msgid "Specify the transfer amount in the From Account"
 msgstr "Посочи размера на трансфера в ОТ акаунт"
 
-#: billsdepositsdialog.cpp:1276
+#: billsdepositsdialog.cpp:1278
 msgid "Activates"
 msgstr "Активизира"
 
-#: billsdepositsdialog.cpp:1278
+#: billsdepositsdialog.cpp:1280
 msgid "Period: Days"
 msgstr "Период: Дни"
 
-#: billsdepositsdialog.cpp:1279
+#: billsdepositsdialog.cpp:1281
 msgid "Period: Months"
 msgstr "Период: Месеци"
 
-#: billsdepositsdialog.cpp:1286
+#: billsdepositsdialog.cpp:1288
 msgid "Specify period in Days to activate.\n"
 "Becomes blank when not active."
 msgstr ""
 
-#: billsdepositsdialog.cpp:1294
+#: billsdepositsdialog.cpp:1296
 msgid "Specify period in Months to activate.\n"
 "Becomes blank when not active."
 msgstr ""
 
-#: billsdepositsdialog.cpp:1302
+#: billsdepositsdialog.cpp:1304
 msgid "Specify period in Days to activate.\n"
 "Leave blank when not active."
 msgstr ""
 
-#: billsdepositsdialog.cpp:1310
+#: billsdepositsdialog.cpp:1312
 msgid "Specify period in Months to activate.\n"
 "Leave blank when not active."
 msgstr ""
 
-#: billsdepositsdialog.cpp:1318
+#: billsdepositsdialog.cpp:1320
 msgid "Specify the number of payments to be made.\n"
 "Leave blank if the payments continue forever."
 msgstr ""
 
-#: billsdepositsdialog.cpp:1343 filtertransdialog.cpp:561
-#: filtertransdialog.cpp:576 filtertransdialog.cpp:587
-#: filtertransdialog.cpp:603 filtertransdialog.cpp:639
-#: filtertransdialog.cpp:647 optionsettingsgeneral.cpp:287 util.cpp:691
+#: billsdepositsdialog.cpp:1345 filtertransdialog.cpp:604
+#: filtertransdialog.cpp:619 filtertransdialog.cpp:630
+#: filtertransdialog.cpp:646 filtertransdialog.cpp:692
+#: filtertransdialog.cpp:700 optionsettingsgeneral.cpp:287 util.cpp:691
 msgid "Invalid value"
 msgstr "Невалидна стойност"
 
-#: billsdepositsdialog.cpp:1343 import_export/univcsvdialog.cpp:1135
-#: maincurrencydialog.cpp:469 mmframe.cpp:3340 optionsettingsgeneral.cpp:287
+#: billsdepositsdialog.cpp:1345 import_export/univcsvdialog.cpp:1135
+#: maincurrencydialog.cpp:470 mmframe.cpp:3340 optionsettingsgeneral.cpp:287
 #: splittransactionsdialog.cpp:209 stockspanel.cpp:395 stockspanel.cpp:396
 #: themes.cpp:310 themes.cpp:329 webappdialog.cpp:194 webappdialog.cpp:199
 msgid "Error"
 msgstr "Грешка"
 
-#: billsdepositsdialog.cpp:1408 transdialog.cpp:1268
+#: billsdepositsdialog.cpp:1410 transdialog.cpp:1302
 #: usertransactionpanel.cpp:192
 msgid "Specify the category for this transaction"
 msgstr "Посочи категорията за тази транзакция"
 
-#: billsdepositsdialog.cpp:1430 categdialog.cpp:119
-#: import_export/qif_export.cpp:137 mmframereport.cpp:134 transdialog.cpp:393
+#: billsdepositsdialog.cpp:1432 categdialog.cpp:119
+#: import_export/qif_export.cpp:137 mmframereport.cpp:134 transdialog.cpp:396
 msgid "Categories"
 msgstr "Категории"
 
-#: billsdepositsdialog.cpp:1465 transdialog.cpp:1342
+#: billsdepositsdialog.cpp:1467 transdialog.cpp:1376
 msgid "Clear color"
 msgstr ""
 
-#: billsdepositsdialog.cpp:1470 filtertransdialog.cpp:1665 transdialog.cpp:1347
+#: billsdepositsdialog.cpp:1472 filtertransdialog.cpp:1741 transdialog.cpp:1381
 #, c-format
 msgid "Color #%i"
 msgstr ""
@@ -1162,7 +1163,7 @@ msgstr "Нови периодична транзакция"
 msgid "Specify where the transaction is going to"
 msgstr "Посочи до къде е транзакцията"
 
-#: billsdepositsdialog.h:125 transdialog.cpp:1300
+#: billsdepositsdialog.h:125 transdialog.cpp:1334
 msgid "Specify where the transaction is coming from"
 msgstr "Посочи от къде идва транзакцията"
 
@@ -1170,7 +1171,7 @@ msgstr "Посочи от къде идва транзакцията"
 msgid "Specify which account the transfer is going to"
 msgstr "Посочи в кой акаунт отива трансфера"
 
-#: billsdepositsdialog.h:127 transdialog.cpp:1295 usertransactionpanel.cpp:146
+#: billsdepositsdialog.h:127 transdialog.cpp:1329 usertransactionpanel.cpp:146
 msgid "Specify the amount for this transaction"
 msgstr "Посочи размера на тази транзакция"
 
@@ -1199,7 +1200,7 @@ msgid "Every %s Months"
 msgstr "Всеки %s месеца"
 
 #: billsdepositspanel.cpp:136 budgetingpanel.cpp:300
-#: reports/budgetcategorysummary.cpp:191 reports/myusage.cpp:164
+#: reports/budgetcategorysummary.cpp:194 reports/myusage.cpp:164
 msgid "Frequency"
 msgstr "Честота"
 
@@ -1211,7 +1212,7 @@ msgstr "Повторения"
 msgid "Autorepeat"
 msgstr "Автоматично повторение"
 
-#: billsdepositspanel.cpp:139 mmhomepage.cpp:362
+#: billsdepositspanel.cpp:139 mmhomepage.cpp:363
 msgid "Payment"
 msgstr "Плащане"
 
@@ -1223,12 +1224,12 @@ msgstr "MMEX позволява редовни плащания да бъдат 
 msgid "Tip: These transactions can be set up to activate - allowing the user to adjust any values on the due date."
 msgstr "Съвет: Тези транзакции могат да бъдат настроени да се активират - позволява на потребителя да коригира всякакви стойности на датата на падежа."
 
-#: billsdepositspanel.cpp:241 billsdepositspanel.cpp:940 mmframe.cpp:749
+#: billsdepositspanel.cpp:241 billsdepositspanel.cpp:946 mmframe.cpp:749
 #: mmframe.cpp:2804 mmhomepagepanel.cpp:230
 msgid "Recurring Transactions"
 msgstr "Повтарящи се транзакции"
 
-#: billsdepositspanel.cpp:250 filtertransdialog.h:119
+#: billsdepositspanel.cpp:250 filtertransdialog.h:120
 msgid "Transaction Filter"
 msgstr "Филтър за транзакции"
 
@@ -1347,8 +1348,8 @@ msgstr "Вид:"
 msgid "Expense"
 msgstr "Разход"
 
-#: budgetentrydialog.cpp:129 db/DB_Table_Category_V1.h:123 mmhomepage.cpp:432
-#: reports/categexp.cpp:128 reports/categexp.cpp:157 reports/categexp.cpp:385
+#: budgetentrydialog.cpp:129 db/DB_Table_Category_V1.h:123 mmhomepage.cpp:440
+#: reports/categexp.cpp:128 reports/categexp.cpp:161 reports/categexp.cpp:396
 #: reports/incexpenses.cpp:85 reports/incexpenses.cpp:217
 #: reports/incexpenses.cpp:253
 msgid "Income"
@@ -1451,13 +1452,13 @@ msgstr "Икона"
 msgid "Sub Category"
 msgstr "Под категория"
 
-#: budgetingpanel.cpp:302 reports/budgetcategorysummary.cpp:140
-#: reports/budgetcategorysummary.cpp:192
+#: budgetingpanel.cpp:302 reports/budgetcategorysummary.cpp:143
+#: reports/budgetcategorysummary.cpp:195
 msgid "Estimated"
 msgstr "Предвидени"
 
-#: budgetingpanel.cpp:303 reports/budgetcategorysummary.cpp:141
-#: reports/budgetcategorysummary.cpp:193
+#: budgetingpanel.cpp:303 reports/budgetcategorysummary.cpp:144
+#: reports/budgetcategorysummary.cpp:196
 msgid "Actual"
 msgstr "Актуално"
 
@@ -1537,7 +1538,7 @@ msgstr "Прехвърлете всички категории към друга
 msgid "Expand"
 msgstr "Разшири"
 
-#: categdialog.cpp:197 maincurrencydialog.cpp:175
+#: categdialog.cpp:197 maincurrencydialog.cpp:176
 msgid "Show All"
 msgstr "Покажи всичко"
 
@@ -1557,7 +1558,7 @@ msgstr "Промени името на съществуваща категори
 msgid "Delete an existing category. The category cannot be used by existing transactions."
 msgstr ""
 
-#: categdialog.cpp:244 maincurrencydialog.cpp:211
+#: categdialog.cpp:244 maincurrencydialog.cpp:212
 msgid "&Select"
 msgstr "&Избери"
 
@@ -1824,7 +1825,7 @@ msgid "Any changes will be lost without update"
 msgstr "Всякакви промени ще бъдат загубени без обновяване"
 
 #: currencydialog.cpp:268 currencydialog.cpp:272 currencydialog.cpp:279
-#: currencydialog.cpp:297 currencydialog.cpp:301 maincurrencydialog.cpp:612
+#: currencydialog.cpp:297 currencydialog.cpp:301 maincurrencydialog.cpp:613
 #: mmSimpleDialogs.cpp:238
 msgid "Invalid Entry"
 msgstr "Невалидно попълване"
@@ -2057,7 +2058,7 @@ msgid "Other Expenses"
 msgstr "Други разходи"
 
 #: db/DB_Table_Category_V1.h:126 model/Model_Billsdeposits.cpp:34
-#: model/Model_Checking.cpp:31 transdialog.cpp:363
+#: model/Model_Checking.cpp:31 transdialog.cpp:366
 msgid "Transfer"
 msgstr "Трансфер"
 
@@ -2311,7 +2312,16 @@ msgstr ""
 msgid "Developers may ask you to provide information presented here in order to help diagnose issues you may report with the program."
 msgstr ""
 
-#: filtertransdialog.cpp:45 mmhomepage.cpp:640 model/Model_Billsdeposits.cpp:40
+#: filtertrans.cpp:183
+msgid "Back"
+msgstr ""
+
+#: filtertrans.cpp:190 filtertransdialog.cpp:401 filtertransdialog.cpp:1303
+#: reports/transactions.cpp:155
+msgid "Color"
+msgstr ""
+
+#: filtertransdialog.cpp:45 mmhomepage.cpp:648 model/Model_Billsdeposits.cpp:40
 #: model/Model_Checking.cpp:37
 msgid "Reconciled"
 msgstr "Одобрен"
@@ -2331,11 +2341,11 @@ msgstr "Последвай"
 msgid "Duplicate"
 msgstr "Дублирай"
 
-#: filtertransdialog.cpp:49 filtertransdialog.cpp:1177
+#: filtertransdialog.cpp:49 filtertransdialog.cpp:1241
 msgid "Un-Reconciled"
 msgstr "Неодобрени"
 
-#: filtertransdialog.cpp:50 filtertransdialog.cpp:1178
+#: filtertransdialog.cpp:50 filtertransdialog.cpp:1242
 msgid "All Except Reconciled"
 msgstr "Всички освен отказани"
 
@@ -2368,154 +2378,157 @@ msgstr ""
 msgid "From Date"
 msgstr "От дата"
 
-#: filtertransdialog.cpp:239 reports/mmDateRange.cpp:33
+#: filtertransdialog.cpp:239
+msgid "Period Range"
+msgstr ""
+
+#: filtertransdialog.cpp:267 reports/mmDateRange.cpp:34
 msgid "Date Range"
 msgstr "Обхват на периода"
 
-#: filtertransdialog.cpp:281 filtertransdialog.cpp:1166
+#: filtertransdialog.cpp:309 filtertransdialog.cpp:1230
 msgid "Include Similar"
 msgstr "Включи подобни"
 
-#: filtertransdialog.cpp:283
+#: filtertransdialog.cpp:311
 msgid "Include all subcategories for the selected category."
 msgstr "Включи всички под-категории за избраната категория."
 
-#: filtertransdialog.cpp:309 import_export/univcsvdialog.cpp:113
+#: filtertransdialog.cpp:337 import_export/univcsvdialog.cpp:113
 #: mmchecking_list.cpp:222 model/Model_Billsdeposits.cpp:32
 #: model/Model_Checking.cpp:29 reports/forecast.cpp:86
 #: splitdetailsdialog.cpp:125
 msgid "Withdrawal"
 msgstr "Изтегляне"
 
-#: filtertransdialog.cpp:311 import_export/univcsvdialog.cpp:114
+#: filtertransdialog.cpp:339 import_export/univcsvdialog.cpp:114
 #: mmchecking_list.cpp:224 model/Model_Billsdeposits.cpp:33
 #: model/Model_Checking.cpp:30 reports/forecast.cpp:84
 #: splitdetailsdialog.cpp:126
 msgid "Deposit"
 msgstr "Депозит"
 
-#: filtertransdialog.cpp:313 transactionsupdatedialog.cpp:187
+#: filtertransdialog.cpp:341 transactionsupdatedialog.cpp:187
 msgid "Transfer To"
 msgstr "Трансфер до"
 
-#: filtertransdialog.cpp:315
+#: filtertransdialog.cpp:343
 msgid "Transfer From"
 msgstr "Трансфер от"
 
-#: filtertransdialog.cpp:327
+#: filtertransdialog.cpp:355
 msgid "Amount Range"
 msgstr "Размер на сумата"
 
-#: filtertransdialog.cpp:365
+#: filtertransdialog.cpp:393
 msgid "Enter any string to find it in transaction notes"
 msgstr ""
 
-#: filtertransdialog.cpp:373 filtertransdialog.cpp:1239
-#: reports/transactions.cpp:156
-msgid "Color"
-msgstr ""
-
-#: filtertransdialog.cpp:377
+#: filtertransdialog.cpp:405
 msgid "Select the Color"
 msgstr ""
 
-#: filtertransdialog.cpp:384
+#: filtertransdialog.cpp:412
 msgid "Presentation Options"
 msgstr ""
 
-#: filtertransdialog.cpp:399
+#: filtertransdialog.cpp:427
 msgid "Hide Columns"
 msgstr ""
 
-#: filtertransdialog.cpp:410 filtertransdialog.cpp:647
+#: filtertransdialog.cpp:438 filtertransdialog.cpp:700
 msgid "Group By"
 msgstr ""
 
-#: filtertransdialog.cpp:418
+#: filtertransdialog.cpp:446
 msgid "Specify how the report should be grouped"
 msgstr ""
 
-#: filtertransdialog.cpp:437
+#: filtertransdialog.cpp:465
 msgid "Settings"
 msgstr ""
 
-#: filtertransdialog.cpp:458 filtertransdialog.cpp:857
-#: filtertransdialog.cpp:897 filtertransdialog.cpp:1121
-#: filtertransdialog.cpp:1266 filtertransdialog.cpp:1585
+#: filtertransdialog.cpp:486 filtertransdialog.cpp:911
+#: filtertransdialog.cpp:951 filtertransdialog.cpp:1175
+#: filtertransdialog.cpp:1330 filtertransdialog.cpp:1661
 #, c-format
 msgid "%i: Empty"
 msgstr ""
 
-#: filtertransdialog.cpp:467
+#: filtertransdialog.cpp:495
 msgid "Save active values into current Preset selection"
 msgstr ""
 
-#: filtertransdialog.cpp:472
+#: filtertransdialog.cpp:500
 msgid "Clear all fields for current Preset selection"
 msgstr ""
 
-#: filtertransdialog.cpp:664
+#: filtertransdialog.cpp:717
 msgid "Do you want to save them before continuing?"
 msgstr ""
 
-#: filtertransdialog.cpp:665
+#: filtertransdialog.cpp:718
 msgid "Filter settings have changed"
 msgstr ""
 
-#: filtertransdialog.cpp:717
+#: filtertransdialog.cpp:770
 msgid "Hide Report Columns"
 msgstr ""
 
-#: filtertransdialog.cpp:859 filtertransdialog.cpp:1587
+#: filtertransdialog.cpp:913 filtertransdialog.cpp:1663
 msgid "Please Enter"
 msgstr ""
 
-#: filtertransdialog.cpp:859 filtertransdialog.cpp:1587
+#: filtertransdialog.cpp:913 filtertransdialog.cpp:1663
 msgid "Setting Name"
 msgstr ""
 
-#: filtertransdialog.cpp:863 filtertransdialog.cpp:1583
-#: filtertransdialog.cpp:1591
+#: filtertransdialog.cpp:917 filtertransdialog.cpp:1659
+#: filtertransdialog.cpp:1667
 msgid "Could not save settings"
 msgstr ""
 
-#: filtertransdialog.cpp:863 filtertransdialog.cpp:1086
-#: filtertransdialog.cpp:1102 filtertransdialog.cpp:1583
-#: filtertransdialog.cpp:1591 reports/myusage.cpp:105 webappdialog.cpp:194
+#: filtertransdialog.cpp:917 filtertransdialog.cpp:1140
+#: filtertransdialog.cpp:1156 filtertransdialog.cpp:1659
+#: filtertransdialog.cpp:1667 reports/myusage.cpp:105 webappdialog.cpp:194
 #: webappdialog.cpp:199
 msgid "Empty value"
 msgstr "Празна стойност"
 
-#: filtertransdialog.cpp:1098
+#: filtertransdialog.cpp:1152
 msgid "Filtering Details: "
 msgstr "Детайли за филтриране:"
 
-#: filtertransdialog.cpp:1124
+#: filtertransdialog.cpp:1178
 msgid "Label"
 msgstr ""
 
-#: filtertransdialog.cpp:1142
+#: filtertransdialog.cpp:1196
 msgid "Since"
 msgstr "От"
 
-#: filtertransdialog.cpp:1144
+#: filtertransdialog.cpp:1198
 msgid "Before"
 msgstr "Преди"
 
-#: filtertransdialog.cpp:1210
+#: filtertransdialog.cpp:1207
+msgid "Period"
+msgstr ""
+
+#: filtertransdialog.cpp:1274
 msgid "Amount Min."
 msgstr "Минимална сума"
 
-#: filtertransdialog.cpp:1218
+#: filtertransdialog.cpp:1282
 msgid "Amount Max."
 msgstr "Максимална сума"
 
-#: filtertransdialog.cpp:1602 reports/reportbase.cpp:219
+#: filtertransdialog.cpp:1678 reports/reportbase.cpp:219
 #: reports/reportbase.cpp:333
 msgid "Choose Accounts"
 msgstr "Избери акаунти"
 
-#: filtertransdialog.cpp:1660
+#: filtertransdialog.cpp:1736
 msgid "Not colored"
 msgstr ""
 
@@ -2942,8 +2955,8 @@ msgstr "Включвай поле \"Получател\" в бележки"
 #: import_export/qif_import_gui.cpp:549 import_export/qif_import_gui.cpp:1122
 #: import_export/univcsvdialog.cpp:742 import_export/univcsvdialog.cpp:877
 #: import_export/univcsvdialog.cpp:880 import_export/univcsvdialog.cpp:901
-#: import_export/univcsvdialog.cpp:908 themes.cpp:229 transdialog.cpp:341
-#: transdialog.cpp:1004 transdialog.cpp:1008 transdialog.cpp:1013
+#: import_export/univcsvdialog.cpp:908 themes.cpp:229 transdialog.cpp:344
+#: transdialog.cpp:1038 transdialog.cpp:1042 transdialog.cpp:1047
 #: webapp.cpp:399 webapp.cpp:408
 msgid "Unknown"
 msgstr "Непознато"
@@ -3090,7 +3103,7 @@ msgid "Don't Care"
 msgstr "Няма значение"
 
 #: import_export/univcsvdialog.cpp:115 mmchecking_list.cpp:228
-#: mmhomepage.cpp:641 reports/summary.cpp:329
+#: mmhomepage.cpp:649 reports/summary.cpp:329
 msgid "Balance"
 msgstr "Баланс"
 
@@ -3392,138 +3405,138 @@ msgstr "Последен курс"
 msgid "Fixed Rate"
 msgstr ""
 
-#: maincurrencydialog.cpp:127
+#: maincurrencydialog.cpp:128
 msgid "N/A"
 msgstr ""
 
-#: maincurrencydialog.cpp:169 maincurrencydialog.cpp:461
+#: maincurrencydialog.cpp:170 maincurrencydialog.cpp:462
 msgid "Online update currency rate"
 msgstr "Обнови валутния курс онлайн"
 
-#: maincurrencydialog.cpp:172
+#: maincurrencydialog.cpp:173
 msgid "Online Update"
 msgstr "Онлайн обновяване"
 
-#: maincurrencydialog.cpp:176
+#: maincurrencydialog.cpp:177
 msgid "Show all even the unused currencies"
 msgstr ""
 
-#: maincurrencydialog.cpp:206 payeedialog.cpp:126
+#: maincurrencydialog.cpp:207 payeedialog.cpp:126
 msgid "Search:"
 msgstr ""
 
-#: maincurrencydialog.cpp:227
+#: maincurrencydialog.cpp:228
 msgid "Currency History Options"
 msgstr "Настройки за валутна история"
 
-#: maincurrencydialog.cpp:245 stockdialog.cpp:304 stockdialog.cpp:323
+#: maincurrencydialog.cpp:246 stockdialog.cpp:304 stockdialog.cpp:323
 #: stockdialog.cpp:676
 msgid "Price"
 msgstr ""
 
-#: maincurrencydialog.cpp:267
+#: maincurrencydialog.cpp:268
 msgid "Specify the date of currency value"
 msgstr "Посочете дата на валутна стойност"
 
-#: maincurrencydialog.cpp:275
+#: maincurrencydialog.cpp:276
 msgid "Enter the currency value"
 msgstr "Въведете стойността на валутата"
 
-#: maincurrencydialog.cpp:285
+#: maincurrencydialog.cpp:286
 msgid "Download Currency Values history"
 msgstr "Изтегляне история на валутни стойности "
 
-#: maincurrencydialog.cpp:288
+#: maincurrencydialog.cpp:289
 msgid "&Add / Update "
 msgstr "&Добавяне / актуализация "
 
-#: maincurrencydialog.cpp:289
+#: maincurrencydialog.cpp:290
 msgid "Add Currency Values to history"
 msgstr "Добави валутна стойност към история"
 
-#: maincurrencydialog.cpp:293
+#: maincurrencydialog.cpp:294
 msgid "Delete selected Currency Values"
 msgstr ""
 
-#: maincurrencydialog.cpp:297
+#: maincurrencydialog.cpp:298
 msgid "Delete Currency Values history for unused currencies and days"
 msgstr ""
 
-#: maincurrencydialog.cpp:353
+#: maincurrencydialog.cpp:354
 msgid "Do you really want to delete the selected Currency?"
 msgstr "Наистина ли искате да изтриете избраната валута?"
 
-#: maincurrencydialog.cpp:354 maincurrencydialog.cpp:424
-#: maincurrencydialog.cpp:650 maincurrencydialog.cpp:775
-#: maincurrencydialog.cpp:799 maincurrencydialog.h:76
+#: maincurrencydialog.cpp:355 maincurrencydialog.cpp:425
+#: maincurrencydialog.cpp:651 maincurrencydialog.cpp:776
+#: maincurrencydialog.cpp:800 maincurrencydialog.h:76
 msgid "Currency Dialog"
 msgstr "Прозорец за валута"
 
-#: maincurrencydialog.cpp:382
+#: maincurrencydialog.cpp:383
 msgid "Base Currency Selection"
 msgstr ""
 
-#: maincurrencydialog.cpp:422
+#: maincurrencydialog.cpp:423
 #, c-format
 msgid "Historic rates for %s found, but \"Use currency history\" in options is disabled:\n"
 "click no and enable it or click yes to remove all historic rates for %s"
 msgstr ""
 
-#: maincurrencydialog.cpp:434
+#: maincurrencydialog.cpp:435
 #, c-format
 msgid "Currency History Options: %s "
 msgstr ""
 
-#: maincurrencydialog.cpp:490
+#: maincurrencydialog.cpp:491
 msgid "Unable to update history currency rates. Please update them manually!"
 msgstr ""
 
-#: maincurrencydialog.cpp:491 maincurrencydialog.cpp:643
-#: maincurrencydialog.cpp:678 maincurrencydialog.cpp:714
-#: maincurrencydialog.cpp:820
+#: maincurrencydialog.cpp:492 maincurrencydialog.cpp:644
+#: maincurrencydialog.cpp:679 maincurrencydialog.cpp:715
+#: maincurrencydialog.cpp:821
 msgid "Currency history error"
 msgstr ""
 
-#: maincurrencydialog.cpp:523
+#: maincurrencydialog.cpp:524
 msgid "Set as Base Currency"
 msgstr "Сложи основна валута"
 
-#: maincurrencydialog.cpp:524
+#: maincurrencydialog.cpp:525
 msgid "Online Update Currency Rate"
 msgstr "Обнови валутния курс онлайн"
 
-#: maincurrencydialog.cpp:643
+#: maincurrencydialog.cpp:644
 msgid "No currency selected!"
 msgstr ""
 
-#: maincurrencydialog.cpp:649
+#: maincurrencydialog.cpp:650
 msgid "Do you want to add also dates without any transaction?"
 msgstr ""
 
-#: maincurrencydialog.cpp:676
+#: maincurrencydialog.cpp:677
 #, c-format
 msgid "Unable to download %s currency rates"
 msgstr ""
 
-#: maincurrencydialog.cpp:712
+#: maincurrencydialog.cpp:713
 #, c-format
 msgid "Unable to download history for symbol %s. History rates not available!"
 msgstr ""
 
-#: maincurrencydialog.cpp:774
+#: maincurrencydialog.cpp:775
 msgid "Changing base currency will delete all history rates, proceed?"
 msgstr ""
 
-#: maincurrencydialog.cpp:798
+#: maincurrencydialog.cpp:799
 msgid "Do you want to update today currency rates?"
 msgstr ""
 
-#: maincurrencydialog.cpp:819
+#: maincurrencydialog.cpp:820
 #, c-format
 msgid "Unable to download history for base symbol %s. History rates not available!"
 msgstr ""
 
-#: maincurrencydialog.cpp:862 stockspanel.cpp:406 util.cpp:619
+#: maincurrencydialog.cpp:863 stockspanel.cpp:406 util.cpp:619
 msgid "Could not find base currency symbol!"
 msgstr "Не може да открие символа на валутата!"
 
@@ -3819,88 +3832,88 @@ msgstr "като Дубликат"
 msgid "Mark all being selected"
 msgstr ""
 
-#: mmchecking_list.cpp:793
+#: mmchecking_list.cpp:795
 msgid "Do you really want to delete all the transactions shown?"
 msgstr ""
 
-#: mmchecking_list.cpp:794 mmchecking_list.cpp:805 mmchecking_list.cpp:816
-#: mmchecking_list.cpp:863
+#: mmchecking_list.cpp:796 mmchecking_list.cpp:807 mmchecking_list.cpp:818
+#: mmchecking_list.cpp:865
 msgid "Confirm Transaction Deletion"
 msgstr "Потвърди изтриването на транзакцията"
 
-#: mmchecking_list.cpp:804 mmchecking_list.cpp:815
+#: mmchecking_list.cpp:806 mmchecking_list.cpp:817
 #, c-format
 msgid "Do you really want to delete all the \"%s\" transactions shown?"
 msgstr ""
 
-#: mmchecking_list.cpp:804
+#: mmchecking_list.cpp:806
 msgid "Follow Up"
 msgstr ""
 
-#: mmchecking_list.cpp:815
+#: mmchecking_list.cpp:817
 msgid "Unreconciled"
 msgstr ""
 
-#: mmchecking_list.cpp:858
+#: mmchecking_list.cpp:860
 #, c-format
 msgid "Do you really want to delete the selected transaction?"
 msgid_plural "Do you really want to delete %i selected transactions?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: mmchecking_list.cpp:913
+#: mmchecking_list.cpp:915
 #, c-format
 msgid "Locked transaction to date: %s\n\n"
 "Reconciled transactions."
 msgstr ""
 
-#: mmchecking_list.cpp:916 transdialog.cpp:729 transdialog.cpp:762
+#: mmchecking_list.cpp:918 transdialog.cpp:732 transdialog.cpp:765
 msgid "MMEX Transaction Check"
 msgstr ""
 
-#: mmchecking_list.cpp:949
+#: mmchecking_list.cpp:951
 #, c-format
 msgid "You are about to edit a transaction involving an account that is closed."
 msgid_plural "The edit will affect %i transactions involving an account that is closed."
 msgstr[0] ""
 msgstr[1] ""
 
-#: mmchecking_list.cpp:951
+#: mmchecking_list.cpp:953
 msgid "\n\n"
 "Do you still want to perform the edit?"
 msgstr ""
 
-#: mmchecking_list.cpp:952
+#: mmchecking_list.cpp:954
 msgid "Closed Account Check"
 msgstr ""
 
-#: mmchecking_list.cpp:1138
+#: mmchecking_list.cpp:1140
 #, c-format
 msgid "Do you really want to move the selected transaction?"
 msgid_plural "Do you really want to move %i selected transactions?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: mmchecking_list.cpp:1143
+#: mmchecking_list.cpp:1145
 msgid "Confirm Transaction Move"
 msgstr ""
 
-#: mmchecking_list.cpp:1149
+#: mmchecking_list.cpp:1151
 #, c-format
 msgid "Moving transaction to..."
 msgid_plural "Moving %i transactions to..."
 msgstr[0] ""
 msgstr[1] ""
 
-#: mmchecking_list.cpp:1153 stocks_list.cpp:292
+#: mmchecking_list.cpp:1155 stocks_list.cpp:292
 msgid "Select the destination Account "
 msgstr "Посочи желания Акаунт"
 
-#: mmchecking_list.cpp:1221
+#: mmchecking_list.cpp:1223
 msgid "Recurring Transaction saved."
 msgstr ""
 
-#: mmcheckingpanel.cpp:333 mmframe.cpp:1725 transdialog.cpp:180
+#: mmcheckingpanel.cpp:333 mmframe.cpp:1725 transdialog.cpp:183
 msgid "New Transaction"
 msgstr "Нова транзакция"
 
@@ -3968,25 +3981,25 @@ msgstr ""
 msgid "Days between selected transactions: %d"
 msgstr ""
 
-#: mmcustomdata.cpp:61
+#: mmcustomdata.cpp:62
 msgid "Custom fields"
 msgstr ""
 
-#: mmcustomdata.cpp:309
+#: mmcustomdata.cpp:311
 msgid "Please select"
 msgstr ""
 
-#: mmcustomdata.cpp:309
+#: mmcustomdata.cpp:311
 msgid "Multi Choice"
 msgstr ""
 
-#: mmcustomdata.cpp:637
+#: mmcustomdata.cpp:639
 #, c-format
 msgid "Unable to save custom field \"%s\":\n"
 "value \"%s\" does not match RegEx validation \"%s\""
 msgstr ""
 
-#: mmcustomdata.cpp:640
+#: mmcustomdata.cpp:642
 msgid "CustomField validation error"
 msgstr ""
 
@@ -4022,17 +4035,17 @@ msgstr "Лента с инструменти"
 msgid "Favourites"
 msgstr ""
 
-#: mmframe.cpp:472 mmframe.cpp:717 mmhomepage.cpp:625 reports/summary.cpp:285
+#: mmframe.cpp:472 mmframe.cpp:717 mmhomepage.cpp:633 reports/summary.cpp:285
 #: reports/summary.cpp:321
 msgid "Bank Accounts"
 msgstr "Банкови акаунти"
 
-#: mmframe.cpp:473 mmframe.cpp:721 mmhomepage.cpp:626 reports/summary.cpp:286
+#: mmframe.cpp:473 mmframe.cpp:721 mmhomepage.cpp:634 reports/summary.cpp:286
 #: reports/summary.cpp:322
 msgid "Credit Card Accounts"
 msgstr ""
 
-#: mmframe.cpp:474 mmframe.cpp:733 mmhomepage.cpp:628 reports/summary.cpp:288
+#: mmframe.cpp:474 mmframe.cpp:733 mmhomepage.cpp:636 reports/summary.cpp:288
 #: reports/summary.cpp:324
 msgid "Term Accounts"
 msgstr "Срочен депозит акаунти"
@@ -4041,11 +4054,11 @@ msgstr "Срочен депозит акаунти"
 msgid "Stock Portfolios"
 msgstr ""
 
-#: mmframe.cpp:476 mmframe.cpp:725 mmhomepage.cpp:624
+#: mmframe.cpp:476 mmframe.cpp:725 mmhomepage.cpp:632
 msgid "Cash Accounts"
 msgstr ""
 
-#: mmframe.cpp:477 mmframe.cpp:729 mmhomepage.cpp:627 reports/summary.cpp:287
+#: mmframe.cpp:477 mmframe.cpp:729 mmhomepage.cpp:635 reports/summary.cpp:287
 #: reports/summary.cpp:323
 msgid "Loan Accounts"
 msgstr ""
@@ -4062,7 +4075,7 @@ msgstr "Начална страница"
 msgid "All Transactions"
 msgstr ""
 
-#: mmframe.cpp:741 mmhomepage.cpp:631 reports/summary.cpp:290
+#: mmframe.cpp:741 mmhomepage.cpp:639 reports/summary.cpp:290
 #: reports/summary.cpp:326
 msgid "Share Accounts"
 msgstr "Дялови сметки"
@@ -4971,7 +4984,7 @@ msgstr "Езикът на приложението бе променен. Про
 msgid "General Group Report"
 msgstr "Отчети - обща група"
 
-#: mmframereport.cpp:105 mmhomepage.cpp:792 model/Model_Report.cpp:403
+#: mmframereport.cpp:105 mmhomepage.cpp:800 model/Model_Report.cpp:403
 #: reports/bugreport.h:110
 msgid "Caught exception"
 msgstr "Caught exception"
@@ -4988,11 +5001,11 @@ msgstr "Паричен поток"
 msgid "Summary"
 msgstr "Резюме"
 
-#: mmframereport.cpp:143 reports/categexp.cpp:242
+#: mmframereport.cpp:143 reports/categexp.cpp:247
 msgid "Where the Money Goes"
 msgstr "Къде отиват парите"
 
-#: mmframereport.cpp:146 reports/categexp.cpp:248
+#: mmframereport.cpp:146 reports/categexp.cpp:253
 msgid "Where the Money Comes From"
 msgstr "От къде идват парите"
 
@@ -5008,7 +5021,7 @@ msgstr "Приходи срещу Разходи"
 msgid "My Usage"
 msgstr ""
 
-#: mmframereport.cpp:169 reports/payee.cpp:114
+#: mmframereport.cpp:169 reports/payee.cpp:118
 msgid "Payees"
 msgstr "Получател"
 
@@ -5045,13 +5058,13 @@ msgstr "Акции"
 msgid "Gain/Loss"
 msgstr "Печалба/Загуба"
 
-#: mmhomepage.cpp:82 reports/budgetingperf.cpp:220 reports/cashflow.cpp:250
-#: reports/categexp.cpp:175 reports/categexp.cpp:459 reports/summary.cpp:327
+#: mmhomepage.cpp:82 reports/budgetingperf.cpp:229 reports/cashflow.cpp:250
+#: reports/categexp.cpp:179 reports/categexp.cpp:471 reports/summary.cpp:327
 msgid "Total"
 msgstr "Общо"
 
-#: mmhomepage.cpp:108 mmhomepage.cpp:680 reports/incexpenses.cpp:298
-#: reports/payee.cpp:165 reports/summarystocks.cpp:155
+#: mmhomepage.cpp:108 mmhomepage.cpp:688 reports/incexpenses.cpp:298
+#: reports/payee.cpp:170 reports/summarystocks.cpp:155
 #: splittransactionsdialog.cpp:143
 msgid "Total:"
 msgstr "Общо:"
@@ -5061,56 +5074,56 @@ msgstr "Общо:"
 msgid "Top Withdrawals: %s"
 msgstr "Топ тегления: %s"
 
-#: mmhomepage.cpp:362
+#: mmhomepage.cpp:363
 msgid "Account / Payee"
 msgstr ""
 
-#: mmhomepage.cpp:426
+#: mmhomepage.cpp:434
 #, c-format
 msgid "Income vs Expenses: %s"
 msgstr "Приходи срещу Разходи: %s"
 
-#: mmhomepage.cpp:436 reports/categexp.cpp:123 reports/categexp.cpp:147
-#: reports/categexp.cpp:384 reports/categexp.cpp:458 reports/incexpenses.cpp:88
+#: mmhomepage.cpp:444 reports/categexp.cpp:123 reports/categexp.cpp:151
+#: reports/categexp.cpp:395 reports/categexp.cpp:470 reports/incexpenses.cpp:88
 #: reports/incexpenses.cpp:218 reports/incexpenses.cpp:254
-#: reports/payee.cpp:137
+#: reports/payee.cpp:141
 msgid "Expenses"
 msgstr "Разходи"
 
-#: mmhomepage.cpp:440 reports/incexpenses.cpp:121
+#: mmhomepage.cpp:448 reports/incexpenses.cpp:121
 msgid "Difference:"
 msgstr "Разлика:"
 
-#: mmhomepage.cpp:444
+#: mmhomepage.cpp:452
 msgid "Income/Expenses"
 msgstr "Приходи/разходи"
 
-#: mmhomepage.cpp:468
+#: mmhomepage.cpp:476
 msgid "Transaction Statistics"
 msgstr "Статистики за транзакция"
 
-#: mmhomepage.cpp:510
+#: mmhomepage.cpp:518
 msgid "Follow Up On Transactions: "
 msgstr "Следвай при транзакция:"
 
-#: mmhomepage.cpp:514
+#: mmhomepage.cpp:522
 msgid "Total Transactions: "
 msgstr "Общо транзакции:"
 
-#: mmhomepage.cpp:536 reports/categexp.cpp:225 reports/summarystocks.cpp:170
+#: mmhomepage.cpp:544 reports/categexp.cpp:230 reports/summarystocks.cpp:170
 #: reports/transactions.cpp:63
 msgid "Grand Total:"
 msgstr "Краен сбор:"
 
-#: mmhomepage.cpp:629
+#: mmhomepage.cpp:637
 msgid "Investment Accounts"
 msgstr ""
 
-#: mmhomepage.cpp:630 reports/summary.cpp:289 reports/summary.cpp:325
+#: mmhomepage.cpp:638 reports/summary.cpp:289 reports/summary.cpp:325
 msgid "Asset Accounts"
 msgstr ""
 
-#: mmhomepage.cpp:778
+#: mmhomepage.cpp:786
 msgid "Currency Exchange Rates"
 msgstr ""
 
@@ -5134,44 +5147,44 @@ msgstr "Подреди по тази колона"
 msgid "Reset columns"
 msgstr "Възстанови колоните"
 
-#: mmreportspanel.cpp:141
+#: mmreportspanel.cpp:142
 msgid "Report"
 msgstr ""
 
-#: mmreportspanel.cpp:198
+#: mmreportspanel.cpp:199
 msgid "Period:"
 msgstr "Период:"
 
-#: mmreportspanel.cpp:289
+#: mmreportspanel.cpp:290
 msgid "Year:"
 msgstr ""
 
-#: mmreportspanel.cpp:313
+#: mmreportspanel.cpp:314
 msgid "Budget:"
 msgstr ""
 
-#: mmreportspanel.cpp:339
+#: mmreportspanel.cpp:340
 msgid "Accounts:"
 msgstr ""
 
-#: mmreportspanel.cpp:344 reports/reportbase.cpp:185
+#: mmreportspanel.cpp:345 reports/reportbase.cpp:185
 #: reports/transactions.cpp:71
 msgid "All Accounts"
 msgstr "Всички акаунти"
 
-#: mmreportspanel.cpp:345
+#: mmreportspanel.cpp:346
 msgid "Specific Accounts"
 msgstr ""
 
-#: mmreportspanel.cpp:361
+#: mmreportspanel.cpp:362
 msgid "Chart:"
 msgstr ""
 
-#: mmreportspanel.cpp:366
+#: mmreportspanel.cpp:367
 msgid "Show"
 msgstr ""
 
-#: mmreportspanel.cpp:367
+#: mmreportspanel.cpp:368
 msgid "Hide"
 msgstr ""
 
@@ -5281,7 +5294,7 @@ msgstr ""
 msgid "Boolean"
 msgstr ""
 
-#: model/Model_CustomField.cpp:30 wizard_update.cpp:145
+#: model/Model_CustomField.cpp:30 wizard_update.cpp:141
 msgid "Time"
 msgstr ""
 
@@ -5954,15 +5967,15 @@ msgstr ""
 msgid "Select Destination Category"
 msgstr ""
 
-#: relocatecategorydialog.cpp:109 relocatepayeedialog.cpp:112
+#: relocatecategorydialog.cpp:109 relocatepayeedialog.cpp:121
 msgid "Relocate:"
 msgstr "Премести:"
 
-#: relocatecategorydialog.cpp:110 relocatepayeedialog.cpp:113
+#: relocatecategorydialog.cpp:110 relocatepayeedialog.cpp:122
 msgid "to:"
 msgstr "към:"
 
-#: relocatecategorydialog.cpp:171 relocatepayeedialog.cpp:156
+#: relocatecategorydialog.cpp:171 relocatepayeedialog.cpp:165
 msgid "Please Confirm:"
 msgstr "Моля потвърдете:"
 
@@ -5970,7 +5983,7 @@ msgstr "Моля потвърдете:"
 msgid "Category Relocation Confirmation"
 msgstr "Потвърждение за преместване на категория"
 
-#: relocatecategorydialog.cpp:269 relocatepayeedialog.cpp:232
+#: relocatecategorydialog.cpp:269 relocatepayeedialog.cpp:241
 #, c-format
 msgid "Records found in transactions: %i"
 msgstr "Записи открити в транзакциите: %i"
@@ -5980,7 +5993,7 @@ msgstr "Записи открити в транзакциите: %i"
 msgid "Records found in split transactions: %i"
 msgstr "Записи открити в разделените транзакции: %i"
 
-#: relocatecategorydialog.cpp:271 relocatepayeedialog.cpp:233
+#: relocatecategorydialog.cpp:271 relocatepayeedialog.cpp:242
 #, c-format
 msgid "Records found in recurring transactions: %i"
 msgstr ""
@@ -6000,11 +6013,11 @@ msgstr "Записи открити като категория по подра�
 msgid "Records found in budget: %i"
 msgstr "Записи открити в бюджет: %i"
 
-#: relocatepayeedialog.cpp:52
+#: relocatepayeedialog.cpp:53
 msgid "Relocate Payee Dialog"
 msgstr "Прозорец за преместване на получател"
 
-#: relocatepayeedialog.cpp:82
+#: relocatepayeedialog.cpp:83
 msgid "Relocate all source payee to the destination payee"
 msgstr ""
 
@@ -6012,12 +6025,12 @@ msgstr ""
 msgid "Delete source payee after relocation"
 msgstr ""
 
-#: relocatepayeedialog.cpp:152
+#: relocatepayeedialog.cpp:161
 #, c-format
 msgid "From %s to %s"
 msgstr ""
 
-#: relocatepayeedialog.cpp:157
+#: relocatepayeedialog.cpp:166
 msgid "Payee Relocation Confirmation"
 msgstr "Потвърждениде за преместване на получател"
 
@@ -6045,48 +6058,48 @@ msgstr ""
 msgid "( Estimated Vs Actual )"
 msgstr "(Предполагаеми срещу Действителни)"
 
-#: reports/budgetcategorysummary.cpp:275
+#: reports/budgetcategorysummary.cpp:283
 msgid "Estimated Income:"
 msgstr "Предвидени приходи:"
 
-#: reports/budgetcategorysummary.cpp:277
+#: reports/budgetcategorysummary.cpp:285
 msgid "Actual Income:"
 msgstr "Действителни приходи:"
 
-#: reports/budgetcategorysummary.cpp:279
+#: reports/budgetcategorysummary.cpp:287
 msgid "Difference Income:"
 msgstr "Разлика в приходите:"
 
-#: reports/budgetcategorysummary.cpp:286
+#: reports/budgetcategorysummary.cpp:294
 msgid "Estimated Expenses:"
 msgstr "Предвидени разходи:"
 
-#: reports/budgetcategorysummary.cpp:288
+#: reports/budgetcategorysummary.cpp:296
 msgid "Actual Expenses:"
 msgstr "Действителни разходи:"
 
-#: reports/budgetcategorysummary.cpp:290
+#: reports/budgetcategorysummary.cpp:298
 msgid "Difference Expenses:"
 msgstr "Разлика в разходите:"
 
-#: reports/budgetingperf.cpp:193
+#: reports/budgetingperf.cpp:198
 #, c-format
 msgid "Budget Performance for %s"
 msgstr ""
 
-#: reports/budgetingperf.cpp:228 reports/budgetingperf.cpp:230
+#: reports/budgetingperf.cpp:237 reports/budgetingperf.cpp:239
 msgid "Est."
 msgstr ""
 
-#: reports/budgetingperf.cpp:228 reports/budgetingperf.cpp:230
+#: reports/budgetingperf.cpp:237 reports/budgetingperf.cpp:239
 msgid "Act."
 msgstr ""
 
-#: reports/budgetingperf.cpp:231
+#: reports/budgetingperf.cpp:240
 msgid "%"
 msgstr "%"
 
-#: reports/budgetingperf.cpp:284
+#: reports/budgetingperf.cpp:295
 msgid "Monthly Total"
 msgstr ""
 
@@ -6155,37 +6168,37 @@ msgid_plural "Cash Flow Forecast for %i Years Ahead"
 msgstr[0] ""
 msgstr[1] ""
 
-#: reports/cashflow.cpp:251 reports/categexp.cpp:383
+#: reports/cashflow.cpp:251 reports/categexp.cpp:394
 #: reports/incexpenses.cpp:216 reports/incexpenses.cpp:255
-#: reports/payee.cpp:138
+#: reports/payee.cpp:142
 msgid "Difference"
 msgstr "Разлика"
 
-#: reports/categexp.cpp:203
+#: reports/categexp.cpp:208
 msgid "Category Total: "
 msgstr "Общо за категория:"
 
-#: reports/categexp.cpp:222
+#: reports/categexp.cpp:227
 msgid "Total Expenses:"
 msgstr ""
 
-#: reports/categexp.cpp:223
+#: reports/categexp.cpp:228
 msgid "Total Income:"
 msgstr ""
 
-#: reports/categexp.cpp:254
+#: reports/categexp.cpp:259
 msgid "Categories Summary"
 msgstr ""
 
-#: reports/categexp.cpp:263
+#: reports/categexp.cpp:268
 msgid "Category Income/Expenses"
 msgstr ""
 
-#: reports/categexp.cpp:427
+#: reports/categexp.cpp:438
 msgid "Overall"
 msgstr "Цялостно"
 
-#: reports/categexp.cpp:457 reports/payee.cpp:136
+#: reports/categexp.cpp:469 reports/payee.cpp:140
 msgid "Incomes"
 msgstr "Приходи"
 
@@ -6207,7 +6220,7 @@ msgstr "От %s до %s"
 msgid "Future"
 msgstr ""
 
-#: reports/htmlbuilder.cpp:178 reports/mmDateRange.cpp:242
+#: reports/htmlbuilder.cpp:178 reports/mmDateRange.cpp:218
 msgid "Over Time"
 msgstr "През времето"
 
@@ -6235,67 +6248,67 @@ msgstr ""
 msgid "Cumulative"
 msgstr ""
 
-#: reports/mmDateRange.cpp:85
+#: reports/mmDateRange.cpp:70
 msgid "Current Month"
 msgstr "Текущ месец"
 
-#: reports/mmDateRange.cpp:91
+#: reports/mmDateRange.cpp:76
 msgid "Today"
 msgstr "Днес"
 
-#: reports/mmDateRange.cpp:101
+#: reports/mmDateRange.cpp:84
 msgid "Current Month to Date"
 msgstr "Текущ месец до дата"
 
-#: reports/mmDateRange.cpp:113
+#: reports/mmDateRange.cpp:94
 msgid "Last Month"
 msgstr "Последен месец"
 
-#: reports/mmDateRange.cpp:123
+#: reports/mmDateRange.cpp:104
 msgid "Last 30 Days"
 msgstr "Последните 30 дни"
 
-#: reports/mmDateRange.cpp:133
+#: reports/mmDateRange.cpp:114
 msgid "Last 90 Days"
 msgstr "Последните 90 дни"
 
-#: reports/mmDateRange.cpp:143
+#: reports/mmDateRange.cpp:123
 msgid "Last 3 Months"
 msgstr "Последните 3 месеца"
 
-#: reports/mmDateRange.cpp:153
+#: reports/mmDateRange.cpp:132
 msgid "Last 12 Months"
 msgstr "Последните 12 месеца"
 
-#: reports/mmDateRange.cpp:165
+#: reports/mmDateRange.cpp:143
 msgid "Current Year"
 msgstr "Текуща година"
 
-#: reports/mmDateRange.cpp:175 stockdialog.cpp:721
+#: reports/mmDateRange.cpp:152 stockdialog.cpp:721
 msgid "Current Year to Date"
 msgstr "Текуща година към дата"
 
-#: reports/mmDateRange.cpp:188
+#: reports/mmDateRange.cpp:164
 msgid "Last Year"
 msgstr "Последна година"
 
-#: reports/mmDateRange.cpp:213
+#: reports/mmDateRange.cpp:189
 msgid "Current Financial Year"
 msgstr "Текуща финансова година"
 
-#: reports/mmDateRange.cpp:223
+#: reports/mmDateRange.cpp:199
 msgid "Current Financial Year to Date"
 msgstr "Текуща финансова година към дата"
 
-#: reports/mmDateRange.cpp:234
+#: reports/mmDateRange.cpp:210
 msgid "Last Financial Year"
 msgstr "Текуща финансова година"
 
-#: reports/mmDateRange.cpp:253
+#: reports/mmDateRange.cpp:229
 msgid "Custom"
 msgstr "По избор"
 
-#: reports/mmDateRange.cpp:262
+#: reports/mmDateRange.cpp:238
 msgid "Last 365 Days"
 msgstr ""
 
@@ -6349,11 +6362,11 @@ msgstr "Комисионна"
 msgid "Stocks Performance Charts"
 msgstr ""
 
-#: reports/transactions.cpp:273
+#: reports/transactions.cpp:272
 msgid "All Transactions: Withdrawals, Deposits, and Transfers"
 msgstr ""
 
-#: reports/transactions.cpp:291
+#: reports/transactions.cpp:290
 msgid "All Transactions excluding Transfers"
 msgstr ""
 
@@ -6751,7 +6764,7 @@ msgstr "Цените на акциите са успешно обновени"
 msgid "Last updated %s"
 msgstr "Последно обновяване %s"
 
-#: stockspanel.cpp:412 util.cpp:643 util.cpp:791
+#: stockspanel.cpp:412 util.cpp:643 util.cpp:799
 msgid "Nothing to update"
 msgstr "Няма какво да се обновява"
 
@@ -6808,66 +6821,66 @@ msgstr ""
 msgid "Append"
 msgstr ""
 
-#: transactionsupdatedialog.cpp:325 transdialog.cpp:666
+#: transactionsupdatedialog.cpp:325 transdialog.cpp:669
 #, c-format
 msgid "You have not used this payee name before. Is the name correct?\n"
 "%s"
 msgstr ""
 
-#: transactionsupdatedialog.cpp:326 transdialog.cpp:667
+#: transactionsupdatedialog.cpp:326 transdialog.cpp:670
 msgid "Confirm payee name"
 msgstr ""
 
-#: transdialog.cpp:180
+#: transdialog.cpp:183
 msgid "Duplicate Transaction"
 msgstr ""
 
-#: transdialog.cpp:180
+#: transdialog.cpp:183
 msgid "Edit Transaction"
 msgstr "Промени транзакция"
 
-#: transdialog.cpp:469 usertransactionpanel.cpp:104
+#: transdialog.cpp:472 usertransactionpanel.cpp:104
 msgid "Retard or advance the date of the transaction"
 msgstr "Забави или ускори датата на транзакцията"
 
-#: transdialog.cpp:561
+#: transdialog.cpp:564
 msgid "Populate Transaction #"
 msgstr "Пренесат транзакция #"
 
-#: transdialog.cpp:571 usertransactionpanel.cpp:210
+#: transdialog.cpp:574 usertransactionpanel.cpp:210
 msgid "Organize attachments of this transaction"
 msgstr "Подреди прикачванията за тази транзакция"
 
-#: transdialog.cpp:610
+#: transdialog.cpp:613
 msgid "Show/Hide custom fields window"
 msgstr ""
 
-#: transdialog.cpp:760
+#: transdialog.cpp:763
 msgid "This transaction will exceed your account limit.\n\n"
 "Do you wish to continue?"
 msgstr ""
 
-#: transdialog.cpp:1286
+#: transdialog.cpp:1320
 msgid "Specify account the money is taken from"
 msgstr "Посочи от кой акаунт идват парите"
 
-#: transdialog.cpp:1287
+#: transdialog.cpp:1321
 msgid "Specify account the money is moved to"
 msgstr "Посочи към кой акаунт отиват парите"
 
-#: transdialog.cpp:1288
+#: transdialog.cpp:1322
 msgid "Specify the transfer amount in the From Account."
 msgstr "Посочи размера на трансфера в ОТ акаунт."
 
-#: transdialog.cpp:1296
+#: transdialog.cpp:1330
 msgid "Specify account for the transaction"
 msgstr "Посочи акаунт за транзакцията"
 
-#: transdialog.cpp:1298
+#: transdialog.cpp:1332
 msgid "Specify to whom the transaction is going to"
 msgstr "Посочи към кого отива транзакцията"
 
-#: transdialog.cpp:1304 usertransactionpanel.cpp:96
+#: transdialog.cpp:1338 usertransactionpanel.cpp:96
 msgid "Specify the date of the transaction"
 msgstr "Посочи дата за транзакцията"
 
@@ -6927,7 +6940,7 @@ msgstr ""
 msgid "Apr"
 msgstr ""
 
-#: util.cpp:294 util.h:156
+#: util.cpp:294 util.h:157
 msgid "May"
 msgstr ""
 
@@ -7019,108 +7032,108 @@ msgstr ""
 msgid "Currency rates have been updated"
 msgstr ""
 
-#: util.cpp:767 util.cpp:873 util.cpp:932
+#: util.cpp:775 util.cpp:891 util.cpp:950
 msgid "JSON Parse Error"
 msgstr ""
 
-#: util.cpp:881 util.cpp:940
+#: util.cpp:899 util.cpp:958
 msgid "Expected response to contain a data or error string"
 msgstr ""
 
-#: util.cpp:912
+#: util.cpp:930
 msgid "Could not find asset for symbol"
 msgstr ""
 
-#: util.cpp:947
+#: util.cpp:965
 msgid "Could not get base currency!"
 msgstr ""
 
-#: util.cpp:953
+#: util.cpp:971
 msgid "USD"
 msgstr ""
 
-#: util.cpp:956
+#: util.cpp:974
 msgid "Could not find currency 'USD', needed for converting history prices"
 msgstr ""
 
-#: util.cpp:977
+#: util.cpp:995
 msgid "Could not parse price in asset history"
 msgstr ""
 
-#: util.cpp:1207
+#: util.cpp:1225
 #, c-format
 msgid "Version: %s"
 msgstr ""
 
-#: util.cpp:1208
+#: util.cpp:1226
 msgid "Build on"
 msgstr "Създаден на"
 
-#: util.cpp:1209
+#: util.cpp:1227
 msgid "Database version: "
 msgstr "Версия база данни: "
 
-#: util.cpp:1216
+#: util.cpp:1234
 msgid "Git commit: "
 msgstr "Git commit: "
 
-#: util.cpp:1220
+#: util.cpp:1238
 msgid "Git branch: "
 msgstr "Git branch: "
 
-#: util.cpp:1224
+#: util.cpp:1242
 msgid "MMEX is using the following support products:"
 msgstr "MMEX използва следните продукти за поддръжка:"
 
-#: util.cpp:1242
+#: util.cpp:1260
 msgid "Build using:"
 msgstr ""
 
-#: util.cpp:1263
+#: util.cpp:1281
 msgid "Running on:"
 msgstr "Работи на:"
 
-#: util.h:155
+#: util.h:156
 msgid "January"
 msgstr "Януари"
 
-#: util.h:155
+#: util.h:156
 msgid "February"
 msgstr "Февруари"
 
-#: util.h:155
+#: util.h:156
 msgid "March"
 msgstr "Март"
 
-#: util.h:156
+#: util.h:157
 msgid "April"
 msgstr "Април"
 
-#: util.h:156
+#: util.h:157
 msgid "June"
 msgstr "Юни"
 
-#: util.h:157
+#: util.h:158
 msgid "July"
 msgstr "Юли"
 
-#: util.h:157
+#: util.h:158
 msgid "August"
 msgstr "Август"
 
-#: util.h:157
+#: util.h:158
 msgid "September"
 msgstr "Септември"
 
-#: util.h:158
+#: util.h:159
 msgid "October"
 msgstr "Октомври"
 
-#: util.h:158
+#: util.h:159
 msgid "November"
 msgstr "Ноември"
 
-#: util.h:158
+#: util.h:159
 msgid "December"
 msgstr "Декември"
 
@@ -7376,32 +7389,32 @@ msgstr ""
 msgid "Historical releases:"
 msgstr ""
 
-#: wizard_update.cpp:145
+#: wizard_update.cpp:141
 msgid "Version"
 msgstr ""
 
-#: wizard_update.cpp:153
+#: wizard_update.cpp:149
 msgid "You already have the latest version"
 msgstr ""
 
-#: wizard_update.cpp:153
+#: wizard_update.cpp:149
 msgid "A new version of MMEX is available!"
 msgstr ""
 
-#: wizard_update.cpp:157
+#: wizard_update.cpp:181
 #, c-format
 msgid "Your version is %s"
 msgstr ""
 
-#: wizard_update.cpp:302 wizard_update.cpp:317
+#: wizard_update.cpp:326 wizard_update.cpp:341
 msgid "Unable to check for updates!"
 msgstr ""
 
-#: wizard_update.cpp:303 wizard_update.cpp:318
+#: wizard_update.cpp:327 wizard_update.cpp:342
 msgid "Error: "
 msgstr ""
 
-#: wizard_update.cpp:304 wizard_update.cpp:320
+#: wizard_update.cpp:328 wizard_update.cpp:344
 msgid "MMEX Update Check"
 msgstr ""
 
