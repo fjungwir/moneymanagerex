@@ -5239,11 +5239,11 @@ msgstr "Darlehen"
 
 #: model/Model_Account.cpp:36
 msgid "Term"
-msgstr "Term"
+msgstr "Festgeld"
 
 #: model/Model_Account.cpp:37
 msgid "Investment"
-msgstr "Geldanlage"
+msgstr "Anlagekonto"
 
 #: model/Model_Account.cpp:38 model/Model_Attachment.cpp:26
 msgid "Asset"

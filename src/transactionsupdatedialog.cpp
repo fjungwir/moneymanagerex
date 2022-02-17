@@ -263,7 +263,8 @@ void transactionsUpdateDialog::OnOk(wxCommandEvent& WXUNUSED(event))
     }
 
     wxString type = "";
-    bool transfer;
+    // Initialize transfer Variable
+    bool transfer = false;
     if (m_type_checkbox->IsChecked())
     {
         wxStringClientData* type_obj = static_cast<wxStringClientData*>(m_type_choice->GetClientObject(m_type_choice->GetSelection()));

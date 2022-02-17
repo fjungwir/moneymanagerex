@@ -82,7 +82,7 @@ wxEND_EVENT_TABLE();
 TransactionListCtrl::EColumn TransactionListCtrl::toEColumn(long col)
 {
     EColumn res = COL_DEF_SORT;
-    if (col >= 0 && col < m_real_columns.size()) res = static_cast<EColumn>(col);
+    if (col >= 0 && (size_t)(col) < m_real_columns.size()) res = static_cast<EColumn>(col);
         return res;
 }
 

@@ -45,3 +45,4 @@ src/build.h
 CMakeCache.txt
 CMakeGraphVizOptions.cmake
 CMakeFiles/
+/mmex

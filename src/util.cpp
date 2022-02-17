@@ -1587,7 +1587,7 @@ int pow10(int y)
 wxString HTMLEncode(wxString input)
 {
     wxString output;
-    for(int pos = 0; pos < input.Len(); ++pos) {
+    for(int pos = 0; (size_t)(pos) < input.Len(); ++pos) {
         switch(static_cast<char>(input.GetChar(pos))) {
             case '&':  output.Append("&amp;");      break;
             case '\"': output.Append("&quot;");     break;

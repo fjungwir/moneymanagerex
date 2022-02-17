@@ -439,7 +439,7 @@ void mmCheckingPanel::updateExtraTransactionData(bool single, bool foreign)
         enableTransactionButtons(true, !foreign, true);
 
         long x = 0, y = -1;
-        for (const auto& i : m_listCtrlAccount->m_trans)
+        for (const auto & i : m_listCtrlAccount->m_trans)
             if (m_listCtrlAccount->GetItemState(x++, wxLIST_STATE_SELECTED) == wxLIST_STATE_SELECTED) {
                 y = x - 1;
                 break;
