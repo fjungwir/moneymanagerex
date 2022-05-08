@@ -195,7 +195,7 @@ wxString mmReportChartStocks::getHTMLText()
     // Build the report
     mmHTMLBuilder hb;
     hb.init();
-    hb.addReportHeader(getReportTitle(), m_date_range->startDay());
+    hb.addReportHeader(getReportTitle(), m_date_range->startDay(), m_date_range->isFutureIgnored());
     wxTimeSpan dtDiff = m_date_range->end_date() - m_date_range->start_date();
     if (m_date_range->is_with_date() && dtDiff.GetDays() <= 366)
         hb.DisplayDateHeading(m_date_range->start_date(), m_date_range->end_date(), true);
@@ -230,8 +230,7 @@ wxString mmReportChartStocks::getHTMLText()
             if (dataCount % freq == 0)
             {
                 const wxDate d = Model_StockHistory::DATE(hist);
-                wxString date = mmGetDateForDisplay(d.FormatISODate());
-                gd.labels.push_back(date);
+                gd.labels.push_back(d.FormatISODate());
                 data.values.push_back(hist.VALUE);
             }
             dataCount++;

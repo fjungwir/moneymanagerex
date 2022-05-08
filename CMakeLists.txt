@@ -17,7 +17,7 @@
 # ./resources/mmex.rc
 # ---------------------------------------------------------------------------
 
-set(MMEX_VERSION 1.5.12)
+set(MMEX_VERSION 1.5.15)
 SET(MMEX_VERSION_ALPHA -1)
 SET(MMEX_VERSION_BETA 1)
 SET(MMEX_VERSION_RC -1)
@@ -605,6 +605,7 @@ install(FILES
     resources/ie-polyfill/findindex.min.js
     resources/ie-polyfill/umd.min.js
     resources/sorttable.js
+    resources/jquery.min.js
     resources/home_page.htt
     resources/kaching.wav
     resources/mmex.png

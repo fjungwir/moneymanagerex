@@ -1,6 +1,7 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
  Copyright (C) 2010-2021 Nikolay Akimov
+ Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -225,75 +226,6 @@ void mmStocksPanel::ViewStockTransactions(int selectedIndex)
     wxMessageBox(msg, "View Stock Transactions");
 }
 
-
-void StocksListCtrl::sortTable()
-{
-    std::sort(m_stocks.begin(), m_stocks.end());
-    switch (m_selected_col)
-    {
-    case StocksListCtrl::COL_ID:
-        std::stable_sort(m_stocks.begin(), m_stocks.end(), SorterBySTOCKID());
-        break;
-    case StocksListCtrl::COL_DATE:
-        std::stable_sort(m_stocks.begin(), m_stocks.end(), SorterByPURCHASEDATE());
-        break;
-    case StocksListCtrl::COL_NAME:
-        std::stable_sort(m_stocks.begin(), m_stocks.end(), SorterBySTOCKNAME());
-        break;
-    case StocksListCtrl::COL_SYMBOL:
-        std::stable_sort(m_stocks.begin(), m_stocks.end(), SorterBySYMBOL());
-        break;
-    case StocksListCtrl::COL_NUMBER:
-        std::stable_sort(m_stocks.begin(), m_stocks.end(), SorterByNUMSHARES());
-        break;
-    case StocksListCtrl::COL_PRICE:
-        std::stable_sort(m_stocks.begin(), m_stocks.end(), SorterByPURCHASEPRICE());
-        break;
-    case StocksListCtrl::COL_VALUE:
-        std::stable_sort(m_stocks.begin(), m_stocks.end()
-            , [](const Model_Stock::Data& x, const Model_Stock::Data& y)
-        {
-            double valueX = x.VALUE;
-            double valueY = y.VALUE;
-            return valueX < valueY;
-        });
-        break;
-    case StocksListCtrl::COL_GAIN_LOSS:
-        std::stable_sort(m_stocks.begin(), m_stocks.end()
-            , [](const Model_Stock::Data& x, const Model_Stock::Data& y)
-        {
-            double valueX = GetGainLoss(x);
-            double valueY = GetGainLoss(y);
-            return valueX < valueY;
-        });
-        break;
-    case StocksListCtrl::COL_CURRENT:
-        std::stable_sort(m_stocks.begin(), m_stocks.end(), SorterByCURRENTPRICE());
-        break;
-    case StocksListCtrl::COL_CURRVALUE:
-        std::stable_sort(m_stocks.begin(), m_stocks.end()
-            , [](const Model_Stock::Data& x, const Model_Stock::Data& y)
-        {
-            double valueX = Model_Stock::CurrentValue(x);
-            double valueY = Model_Stock::CurrentValue(y);
-            return valueX < valueY;
-        });
-        break;
-    case StocksListCtrl::COL_PRICEDATE:
-        //TODO
-        break;
-    case StocksListCtrl::COL_COMMISSION:
-        std::stable_sort(m_stocks.begin(), m_stocks.end(), SorterByCOMMISSION());
-        break;
-    case StocksListCtrl::COL_NOTES:
-        std::stable_sort(m_stocks.begin(), m_stocks.end(), SorterByNOTES());
-        break;
-    default:
-        break;
-    }
-    if (!m_asc) std::reverse(m_stocks.begin(), m_stocks.end());
-}
-
 wxString mmStocksPanel::GetPanelTitle(const Model_Account::Data& account) const
 {
     return wxString::Format(_("Stock Portfolio: %s"), account.ACCOUNTNAME);
@@ -461,10 +393,7 @@ bool mmStocksPanel::onlineQuoteRefresh(wxString& msg)
     }
 
     // Now refresh the display
-    int selected_id = -1;
-    if (listCtrlAccount_->get_selectedIndex() > -1)
-        selected_id = listCtrlAccount_->m_stocks[listCtrlAccount_->get_selectedIndex()].STOCKID;
-    listCtrlAccount_->doRefreshItems(selected_id);
+    RefreshList();
 
     // We are done!
     LastRefreshDT_ = wxDateTime::Now();
@@ -515,7 +444,10 @@ wxString StocksListCtrl::getStockInfo(int selectedIndex) const
 
     double stocktotalDifference = stockCurrentPrice - stockavgPurchasePrice;
     //Commision don't calculates here
-    double stockPercentage = (stockCurrentPrice / stockPurchasePrice - 1.0)*100.0;
+    const wxString& stockPercentage = (stockPurchasePrice != 0.0)
+        ? wxString::Format("(%s %%)", Model_Currency::toStringNoFormatting(
+            ((stockCurrentPrice / stockPurchasePrice - 1.0) * 100.0), nullptr, 2))
+        : "";
     double stocktotalPercentage = (stockCurrentPrice / stockavgPurchasePrice - 1.0)*100.0;
     double stocktotalgainloss = stocktotalDifference * stocktotalnumShares;
 
@@ -532,11 +464,11 @@ wxString StocksListCtrl::getStockInfo(int selectedIndex) const
     m_stock_panel->stock_details_short_->SetLabelText(miniInfo);
 
     //Selected share info
-    wxString additionInfo = wxString::Format("|%s - %s| = %s, %s * %s = %s ( %s %% )\n"
+    wxString additionInfo = wxString::Format("|%s - %s| = %s, %s * %s = %s %s\n"
         , sCurrentPrice, sPurchasePrice, sDifference
         , sDifference, sNumShares
-        , Model_Currency::toCurrency(GetGainLoss(selectedIndex))
-        , Model_Currency::toStringNoFormatting(stockPercentage, nullptr, 2));
+        , Model_Currency::toCurrency(GetGainLoss(selectedIndex), m_stock_panel->m_currency)
+        , stockPercentage);
 
     //Summary for account for selected symbol
     if (purchasedTime > 1)
@@ -593,5 +525,13 @@ void mmStocksPanel::DisplayAccountDetails(int accountID)
     enableEditDeleteButtons(false);
     listCtrlAccount_->initVirtualListControl();
 
+}
+
+void mmStocksPanel::RefreshList()
+{
+    int selected_id = -1;
+    if (listCtrlAccount_->get_selectedIndex() > -1)
+        selected_id = listCtrlAccount_->m_stocks[listCtrlAccount_->get_selectedIndex()].STOCKID;
+    listCtrlAccount_->doRefreshItems(selected_id);
 }
 
