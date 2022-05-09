@@ -1,5 +1,6 @@
 /*******************************************************
  Copyright (C) 2013,2014 Guan Lisheng (guanlisheng@gmail.com)
+Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -33,10 +34,10 @@ const std::vector<std::pair<Model_Checking::TYPE, wxString> > Model_Checking::TY
 
 const std::vector<std::pair<Model_Checking::STATUS_ENUM, wxString> > Model_Checking::STATUS_ENUM_CHOICES =
 {
-    {Model_Checking::NONE, wxTRANSLATE("None")}
+    {Model_Checking::NONE, wxTRANSLATE("Unreconciled")}
     , {Model_Checking::RECONCILED, wxString(wxTRANSLATE("Reconciled"))}
     , {Model_Checking::VOID_, wxString(wxTRANSLATE("Void"))}
-    , {Model_Checking::FOLLOWUP, wxString(wxTRANSLATE("Follow up"))}
+    , {Model_Checking::FOLLOWUP, wxString(wxTRANSLATE("Follow Up"))}
     , {Model_Checking::DUPLICATE_, wxString(wxTRANSLATE("Duplicate"))}
 };
 
@@ -309,7 +310,7 @@ bool Model_Checking::is_deposit(const Data* r)
 wxString Model_Checking::toShortStatus(const wxString& fullStatus)
 {
     wxString s = fullStatus.Left(1);
-    s.Replace("N", "");
+    s.Replace("U", "");
     return s;
 }
 
@@ -392,6 +393,38 @@ wxString Model_Checking::Full_Data::real_payee_name(int account_id) const
     }
 
     return this->PAYEENAME;
+}
+
+const wxString Model_Checking::Full_Data::get_currency_code(int account_id) const
+{
+    if (TYPE::TRANSFER == type(this->TRANSCODE))
+    {
+        if (this->ACCOUNTID == account_id || account_id == -1) 
+            account_id = this->ACCOUNTID;
+        else
+            account_id = this->TOACCOUNTID;
+    }
+    Model_Account::Data* acc = Model_Account::instance().get(account_id);
+    int currency_id = acc ? acc->CURRENCYID: -1;
+    Model_Currency::Data* curr = Model_Currency::instance().get(currency_id);
+
+    return curr ? curr->CURRENCY_SYMBOL : "";
+}
+
+const wxString Model_Checking::Full_Data::get_account_name(int account_id) const
+{
+    if (TYPE::TRANSFER == type(this->TRANSCODE))
+    {
+        if (this->ACCOUNTID == account_id || account_id == -1) {
+            return this->ACCOUNTNAME;
+        }
+        else {
+            Model_Account::Data* acc = Model_Account::instance().get(TOACCOUNTID);
+            return acc ? acc->ACCOUNTNAME : "";
+        }
+    }
+
+    return this->ACCOUNTNAME;
 }
 
 bool Model_Checking::Full_Data::is_foreign() const

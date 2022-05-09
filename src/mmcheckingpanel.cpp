@@ -411,7 +411,7 @@ void mmCheckingPanel::setAccountSummary()
             , Model_Account::toCurrency(m_reconciled_balance, account)
             , _("Diff: ")
             , Model_Account::toCurrency(m_account_balance - m_reconciled_balance, account)
-            , show_displayed_balance_ ? _("Displayed Bal: ") : ""
+            , show_displayed_balance_ ? _("Filtered View Bal: ") : ""
             , show_displayed_balance_ ? Model_Account::toCurrency(m_filteredBalance, account) : "");
         m_header_balance->SetLabelText(summaryLine);
     }
@@ -438,14 +438,14 @@ void mmCheckingPanel::updateExtraTransactionData(bool single, bool foreign)
     {
         enableTransactionButtons(true, !foreign, true);
 
-        long x = 0, y = -1;
-        for (const auto & i : m_listCtrlAccount->m_trans)
-            if (m_listCtrlAccount->GetItemState(x++, wxLIST_STATE_SELECTED) == wxLIST_STATE_SELECTED) {
-                y = x - 1;
+        long x = -1;
+        for (x = 0; x < m_listCtrlAccount->GetItemCount(); x++) {
+            if (m_listCtrlAccount->GetItemState(x, wxLIST_STATE_SELECTED) == wxLIST_STATE_SELECTED) {
                 break;
             }
+        }
 
-        Model_Checking::Full_Data full_tran(m_listCtrlAccount->m_trans[y]);
+        Model_Checking::Full_Data full_tran(m_listCtrlAccount->m_trans[x]);
         wxString miniStr = full_tran.info();
         //Show only first line but full string set as tooltip
         if (miniStr.Find("\n") > 1 && !miniStr.IsEmpty())

@@ -1,7 +1,7 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
  Copyright (C) 2017 James Higley
- Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
+ Copyright (C) 2021, 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -133,7 +133,7 @@ wxString mmReportCategoryExpenses::getHTMLText()
     mmHTMLBuilder hb;
     hb.init();
 
-    hb.addReportHeader(getReportTitle(), m_date_range->startDay());
+    hb.addReportHeader(getReportTitle(), m_date_range->startDay(), m_date_range->isFutureIgnored());
     hb.DisplayDateHeading(m_date_range->start_date(), m_date_range->end_date(), m_date_range->is_with_date());
     hb.DisplayFooter(getAccountNames());
     // Prime the filter
@@ -164,6 +164,11 @@ wxString mmReportCategoryExpenses::getHTMLText()
 
     hb.addDivContainer("shadow"); // Table Container
     {
+        hb.addDivContainer();
+        hb.addText(wxString::Format("<button onclick=\"collapseAllToggles()\">%s</button>", _("Collapse All")));
+        hb.addText(wxString::Format("<button onclick=\"expandAllToggles()\">%s</button>", _("Expand All")));
+        hb.endDiv();
+
         hb.startTable();
         {
             hb.startThead();
@@ -181,35 +186,36 @@ wxString mmReportCategoryExpenses::getHTMLText()
             hb.startTbody();
             {
                 int group = 0;
+                bool header = true;
                 for (const auto& entry : sortedData)
                 {
                     group++;
-                    hb.startTableRow();
+                    if (header)
                     {
-                        hb.addTableCellLink(wxString::Format("viewtrans:%d:%d", entry.catID, entry.subCatID)
-                            , entry.name);
-                        hb.addMoneyCell(entry.amount);
-                        if (group_counter[entry.categs] > 1)
+                        hb.startTableRow("toggle"); 
+                            hb.addTableCell(wxString::Format("<a>+&nbsp;%s</a>", Model_Category::full_name(entry.catID, -1)));
                             hb.addEmptyTableCell();
-                        else
-                            hb.addMoneyCell(entry.amount);
+                            hb.addMoneyCell(group_total[entry.categs]);
+                        hb.endTableRow();             
+                        header = false;
+                    }
+
+                    hb.startTableRow("xtoggle");
+                    {
+                        Model_Subcategory::Data *sc = Model_Subcategory::instance().get(entry.subCatID);
+                        wxString displayName = (sc) ? sc->SUBCATEGNAME : entry.name;
+                        hb.addTableCellLink(wxString::Format("viewtrans:%d:%d", entry.catID, entry.subCatID)
+                            , wxString::Format("&nbsp;&nbsp;&nbsp;&nbsp%s", displayName));
+                        hb.addMoneyCell(entry.amount);
+                        hb.addEmptyTableCell();
                     }
                     hb.endTableRow();
 
-                    if (group_counter[entry.categs] == group && group_counter[entry.categs] > 1)
+                    // This is the last subcategory for the category
+                    if (group_counter[entry.categs] == group)
                     {
                         group = 0;
-                        hb.startAltTableRow();
-                        {
-                            hb.addTableCell(_("Category Total: "));
-                            hb.addEmptyTableCell();
-                            hb.addMoneyCell(group_total[entry.categs]);
-                        }
-                        hb.endTableRow();
-                    }
-                    if (group_counter[entry.categs] == 1 || group == 0) 
-                    {
-                        group = 0;
+                        header = true;
                     }
                 }
             }
@@ -280,12 +286,12 @@ wxString mmReportCategoryOverTimePerformance::getHTMLText()
     wxDate sd = m_date_range->start_date();
     wxDate ed = m_date_range->end_date();
     sd.Add(wxDateSpan::Months(m_date_selection));
-    ed.Add(wxDateSpan::Months(m_date_selection+1));
+    ed.Add(wxDateSpan::Months(m_date_selection));
     // Use mmDateRange logic to get the right start/end days
     mmDateRange temp_date;
-    temp_date.findEndOfMonth(); // Sets up start day
     temp_date.start_date(sd);
     temp_date.set_end_date(ed);
+    temp_date.findEndOfMonth();
     sd = temp_date.start_date();
     ed = temp_date.end_date();
     mmDateRange* date_range = new mmSpecifiedRange(sd, ed);
@@ -347,7 +353,7 @@ wxString mmReportCategoryOverTimePerformance::getHTMLText()
     // Build the report
     mmHTMLBuilder hb;
     hb.init();
-    hb.addReportHeader(getReportTitle(), m_date_range->startDay());
+    hb.addReportHeader(getReportTitle(), m_date_range->startDay(), m_date_range->isFutureIgnored());
     hb.DisplayDateHeading(sd, ed, true);
     hb.DisplayFooter(getAccountNames());
     // Prime the filter

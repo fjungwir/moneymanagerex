@@ -1,5 +1,6 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
+ Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -39,6 +40,7 @@ public:
 
     void OnNewBDSeries(wxCommandEvent& event);
     void OnEditBDSeries(wxCommandEvent& event);
+    void OnDuplicateBDSeries(wxCommandEvent& event);
     void OnDeleteBDSeries(wxCommandEvent& event);
     void OnEnterBDTransaction(wxCommandEvent& event);
     void OnSkipBDTransaction(wxCommandEvent& event);
@@ -102,14 +104,16 @@ public:
     /* Getter for Virtual List Control */
     wxString getItem(long item, long column);
     void RefreshList();
-    int getColumnsNumber() { return COL_MAX; }
-    int col_sort() { return COL_PAYMENT_DATE; }
+    int getColumnsNumber();
+    int col_sort();
 
     const wxString GetFrequency(const Model_Billsdeposits::Data* item) const;
     const wxString GetRemainingDays(const Model_Billsdeposits::Data* item) const;
 
     wxString BuildPage() const;
     wxDate getToday() const;
+
+    void do_delete_custom_values(int id);
 
 private:
     void CreateControls();
@@ -122,6 +126,7 @@ private:
     /* Event handlers for Buttons */
     void OnNewBDSeries(wxCommandEvent& event);
     void OnEditBDSeries(wxCommandEvent& event);
+    void OnDuplicateBDSeries(wxCommandEvent& event);
     void OnDeleteBDSeries(wxCommandEvent& event);
 
     void OnEnterBDTransaction(wxCommandEvent& event);
@@ -170,6 +175,7 @@ private:
 };
 
 inline wxDate mmBillsDepositsPanel::getToday() const { return m_today; }
-
+inline int mmBillsDepositsPanel::getColumnsNumber() { return COL_MAX; }
+inline int mmBillsDepositsPanel::col_sort() { return COL_PAYMENT_DATE; }
 #endif
 

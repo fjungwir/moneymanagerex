@@ -1,7 +1,7 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel, Paulo Lopes
  copyright (C) 2012 - 2021 Nikolay Akimov
- Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
+ Copyright (C) 2021, 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -25,6 +25,9 @@
 #include "constants.h"
 #include "model/Model_Currency.h"
 #include "model/Model_Infotable.h"
+#include <iomanip>
+#include <ios>
+
 
 namespace tags
 {
@@ -34,6 +37,17 @@ namespace tags
     static const wxString END = R"(
 </body>
 <script>
+    $(".toggle").click(function() {
+        var kids = $(this).nextUntil(".toggle")
+        kids.toggle(kids.first().is(":hidden"))
+    })
+    function expandAllToggles() {
+        $(".xtoggle").show();
+    }
+    function collapseAllToggles() {
+        $(".xtoggle").hide();
+    }
+    collapseAllToggles();
     var elements = document.getElementsByClassName('money');
     for (var i = 0; i < elements.length; i++) {
         elements[i].style.textAlign = 'right';
@@ -44,11 +58,11 @@ namespace tags
 </script>
 </html>
 )";
-    static const char HTML[] = R"(<!DOCTYPE html>
+    static const wxString HTML = R"(<!DOCTYPE html>
 <html><head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>%s - Report</title>
-<link href = 'memory:master.css' rel = 'stylesheet' />
+<link href = 'memory:master.css' rel = 'stylesheet'>
 <script>
     window.Promise || document.write('<script src="memory:polyfill.min.js"><\/script>');
     window.Promise || document.write('<script src="memory:classlist.min.js"><\/script>');
@@ -58,6 +72,7 @@ namespace tags
 </script>
 <script src = 'memory:apexcharts.min.js'></script>
 <script src = 'memory:sorttable.js'></script>
+<script src = 'memory:jquery.min.js'></script>
 <style>
     /* Sortable tables */
     table.sortable thead {cursor: default;}
@@ -84,7 +99,7 @@ namespace tags
     static const wxString TFOOT_START = "<tfoot>\n";
     static const wxString TFOOT_END = "</tfoot>\n";
     static const wxString TABLE_ROW = "<tr>\n";
-    static const wxString TABLE_ROW_BG = "<tr %s>\n";
+    static const wxString TABLE_ROW_EXTRA = "<tr %s>\n";
     static const wxString TOTAL_TABLE_ROW = "<tr class='success'>\n";
     static const wxString TABLE_ROW_END = "</tr>\n";
     static const wxString TABLE_CELL = "<td%s>";
@@ -126,7 +141,7 @@ void mmHTMLBuilder::init(bool simple, const wxString& extra_style)
                     , fg.IsEmpty() ? "" : wxString::Format("text='%s';", fg));
     } else
     {
-        html_ = wxString::Format(wxString::FromUTF8(tags::HTML)
+        html_ = wxString::Format(tags::HTML
             , mmex::getProgramName()
             , wxString::Format("%d", Option::instance().getHtmlFontSize())
             , extra_style);
@@ -140,8 +155,9 @@ void mmHTMLBuilder::showUserName()
         addHeader(2, Option::instance().UserName());
 }
 
-void mmHTMLBuilder::addReportHeader(const wxString& name, int startDay)
+void mmHTMLBuilder::addReportHeader(const wxString& name, int startDay, bool futureIgnored)
 {
+    wxLogDebug("futureIgnored: %d",futureIgnored);
     addDivContainer("shadowTitle");
     {
         addText("<header>");
@@ -153,6 +169,7 @@ void mmHTMLBuilder::addReportHeader(const wxString& name, int startDay)
             showUserName();
             addText("<TMPL_VAR DATE_HEADING>");
             addOffsetIndication(startDay);
+            addFutureIgnoredIndication(futureIgnored);
             addReportCurrency();
             addDateNow();
         }
@@ -206,6 +223,12 @@ void mmHTMLBuilder::addOffsetIndication(int startDay)
         addHeader(5, wxString::Format ("%s: %d"
             , _("User specified start day")
             , startDay));
+}
+
+void mmHTMLBuilder::addFutureIgnoredIndication(bool ignore)
+{       
+    if (ignore)
+        addHeader(5, _("Future Transactions have been ignored"));
 }
 
 void mmHTMLBuilder::addDateNow()
@@ -444,14 +467,18 @@ void mmHTMLBuilder::startTableRow()
 {
     html_ += tags::TABLE_ROW;
 }
-void mmHTMLBuilder::startTableRow(const wxString& color)
+void mmHTMLBuilder::startTableRow(const wxString& classname)
 {
-    html_ += wxString::Format(tags::TABLE_ROW_BG, wxString::Format("style='background-color:%s'", color));
+    html_ += wxString::Format(tags::TABLE_ROW_EXTRA, wxString::Format("class='%s'", classname));
+}
+void mmHTMLBuilder::startTableRowColor(const wxString& color)
+{
+    html_ += wxString::Format(tags::TABLE_ROW_EXTRA, wxString::Format("style='background-color:%s'", color));
 }
 
 void mmHTMLBuilder::startAltTableRow()
 {
-    startTableRow(mmThemeMetaString(meta::COLOR_REPORT_ALTROW));
+    startTableRowColor(mmThemeMetaString(meta::COLOR_REPORT_ALTROW));
 }
 
 void mmHTMLBuilder::startTotalTableRow()
@@ -503,7 +530,7 @@ void mmHTMLBuilder::endTableCell()
 void mmHTMLBuilder::addChart(const GraphData& gd)
 {
     int precision = Model_Currency::precision(Model_Currency::GetBaseCurrency());
-    int round = pow10(precision);
+    int k = pow10(precision);
     wxString htmlChart, htmlPieData;
     wxString divid = wxString::Format("apex%i", rand()); // Generate unique identifier for each graph
  
@@ -617,16 +644,18 @@ void mmHTMLBuilder::addChart(const GraphData& gd)
         first = true;
         for (const auto& item : entry.values)
         {
-            double v = (floor(item * round) / round);
+            long double v = item * k;
+            v = round(v) / k;
 
             // avoid locale usage with standard printf functionality. Always want 00000.00 format
             std::ostringstream oss;
             oss.imbue(std::locale::classic());
-            
-            oss << fabs(v);
+
+            oss << std::fixed << std::setprecision(precision) << fabs(v);
             wxString valueAbs = oss.str();
+
             oss.str(std::string());
-            oss << v;
+            oss << std::fixed << std::setprecision(precision) << v;
             wxString value = oss.str();
 
             if (gd.type == GraphData::PIE || gd.type == GraphData::DONUT)

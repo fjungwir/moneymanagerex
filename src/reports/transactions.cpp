@@ -2,7 +2,7 @@
  Copyright (C) 2006 Madhan Kanagavel
  Copyright (C) 2011, 2012 Stefano Giorgio
  Copyright (C) 2011, 2012, 2015, 2017, 2021 Nikolay Akimov
- Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
+ Copyright (C) 2021, 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute transcation and/or modify
  transcation under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 #include <algorithm>
 #include <vector>
 
-mmReportTransactions::mmReportTransactions(mmFilterTransactionsDialog* transDialog)
+mmReportTransactions::mmReportTransactions(wxSharedPtr<mmFilterTransactionsDialog>& transDialog)
     : mmPrintableBase("Transaction Report")
     , m_transDialog(transDialog)
     , trans_()
@@ -37,9 +37,8 @@ mmReportTransactions::mmReportTransactions(mmFilterTransactionsDialog* transDial
 
 mmReportTransactions::~mmReportTransactions()
 {
-    // incase the user wants to print a report, we maintain the transaction dialog
-    // until we are finished with the report.
-    m_transDialog->Destroy();
+    if (m_transDialog)
+        m_transDialog->Destroy();
 }
 
 void mmReportTransactions::displayTotals(std::map<int, double> total, std::map<int, double> total_in_base_curr, int noOfCols)
@@ -70,7 +69,7 @@ wxString mmReportTransactions::getHTMLText()
     wxArrayInt selectedAccounts = m_transDialog->getAccountsID();
     wxString accounts = _("All Accounts");
     int allAccounts = true;
-    if (m_transDialog->getAccountCheckBox() && !m_transDialog->getAccountsID().empty()) {
+    if (m_transDialog->is_account_cb_active() && !m_transDialog->getAccountsID().empty()) {
         accounts.clear();
         allAccounts = false;
         for (const auto& acc : selectedAccounts) {
@@ -98,13 +97,14 @@ table {
 )";
 
     hb.init(false, extra_style);
-    hb.addReportHeader(getReportTitle());
+    hb.addReportHeader(getReportTitle(), 
+            ((m_transDialog->getRangeCheckBox() || m_transDialog->getStartDateCheckBox()) ? m_transDialog->getStartDay() : 1),
+            ((m_transDialog->getRangeCheckBox() || m_transDialog->getStartDateCheckBox()) ? m_transDialog->isFutureIgnored() : false ));
     wxDateTime start,end;
     start.ParseISODate(m_transDialog->getBeginDate());
     end.ParseISODate(m_transDialog->getEndDate());
     hb.DisplayDateHeading(start, end
-        , m_transDialog->getRangeCheckBox() || m_transDialog->getDateRangeCheckBox() || m_transDialog->getStartDateCheckBox()
-        , m_transDialog->getStartDateCheckBox());
+        , m_transDialog->getRangeCheckBox() || m_transDialog->is_date_range_cb_active() || m_transDialog->getStartDateCheckBox());
     hb.DisplayFooter(_("Accounts: ") + accounts);
 
     m_noOfCols = (m_transDialog->getHideColumnsCheckBox()) ? m_transDialog->getHideColumnsID().GetCount() : 11;
@@ -162,6 +162,15 @@ table {
                         if (showColumnById(8)) hb.addTableHeaderCell(_("Type"), "Type");
                         if (showColumnById(9)) hb.addTableHeaderCell(_("Amount"), "Amount text-right");
                         if (showColumnById(10)) hb.addTableHeaderCell(_("Notes"), "Notes");
+                        const auto& ref_type = Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION);
+                        int colNo = 11;
+                        for (const auto& udfc_entry : Model_CustomField::UDFC_FIELDS())
+                        {
+                            if (udfc_entry.empty()) continue;
+                            const auto& name = Model_CustomField::getUDFCName(ref_type, udfc_entry);
+                            if (showColumnById(colNo++) && name != udfc_entry)
+                                hb.addTableHeaderCell(name, name);
+                        }
                     hb.endTableRow();
                 hb.endThead();
             hb.startTbody();
@@ -177,6 +186,8 @@ table {
             && (selectedAccounts.Index(transaction.TOACCOUNTID) != wxNOT_FOUND))))
                 noOfTrans = 2;
 
+        auto custom_fields_data = Model_CustomFieldData::instance().get_all(Model_Attachment::TRANSACTION);
+        const int dt = static_cast<int>(Model_CustomField::DATE);
         while (noOfTrans--)
         {
             hb.startTableRow();
@@ -241,9 +252,62 @@ table {
                         AttRefType, transaction.TRANSID, mmAttachmentManage::GetAttachmentNoteSign());
                 }
 
-                //Notes
+                // Notes
                 if (showColumnById(10)) hb.addTableCell(AttachmentsLink + transaction.NOTES);
 
+                // Custom Fields
+                std::map<int, int> custom_field_type;
+                const wxString RefType = Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION);
+                Model_CustomField::Data_Set custom_fields = Model_CustomField::instance().find(Model_CustomField::DB_Table_CUSTOMFIELD_V1::REFTYPE(RefType));
+                for (const auto& entry : custom_fields)
+                {
+                    if (entry.REFTYPE != RefType) continue;
+                    custom_field_type[entry.FIELDID] = Model_CustomField::all_type().Index(entry.TYPE);
+                }
+                const auto matrix = Model_CustomField::getMatrix(Model_Attachment::TRANSACTION);
+                int udfc01_ref_id = matrix.at("UDFC01");
+                int udfc02_ref_id = matrix.at("UDFC02");
+                int udfc03_ref_id = matrix.at("UDFC03");
+                int udfc04_ref_id = matrix.at("UDFC04");
+                int udfc05_ref_id = matrix.at("UDFC05");
+
+                if (custom_fields_data.find(transaction.TRANSID) != custom_fields_data.end()) {
+                    const auto& udfcs = custom_fields_data.at(transaction.TRANSID);
+                    for (const auto& udfc : udfcs)
+                    {
+                        if (udfc.FIELDID == udfc01_ref_id) {
+                            transaction.UDFC01 = udfc.CONTENT;
+                            transaction.UDFC01_Type = custom_field_type.find(udfc.FIELDID) != custom_field_type.end() ? custom_field_type.at(udfc.FIELDID) : -1;
+                        }
+                        else if (udfc.FIELDID == udfc02_ref_id) {
+                            transaction.UDFC02 = udfc.CONTENT;
+                            transaction.UDFC02_Type = custom_field_type.find(udfc.FIELDID) != custom_field_type.end() ? custom_field_type.at(udfc.FIELDID) : -1;
+                        }
+                        else if (udfc.FIELDID == udfc03_ref_id) {
+                            transaction.UDFC03 = udfc.CONTENT;
+                            transaction.UDFC03_Type = custom_field_type.find(udfc.FIELDID) != custom_field_type.end() ? custom_field_type.at(udfc.FIELDID) : -1;
+                        }
+                        else if (udfc.FIELDID == udfc04_ref_id) {
+                            transaction.UDFC04 = udfc.CONTENT;
+                            transaction.UDFC04_Type = custom_field_type.find(udfc.FIELDID) != custom_field_type.end() ? custom_field_type.at(udfc.FIELDID) : -1;
+                        }
+                        else if (udfc.FIELDID == udfc05_ref_id) {
+                            transaction.UDFC05 = udfc.CONTENT;
+                            transaction.UDFC05_Type = custom_field_type.find(udfc.FIELDID) != custom_field_type.end() ? custom_field_type.at(udfc.FIELDID) : -1;
+                        }
+                    }
+                }
+
+                if (showColumnById(11) && udfc01_ref_id != -1)
+                        hb.addTableCell(transaction.UDFC01_Type == dt && !transaction.UDFC01.empty() ? mmGetDateForDisplay(transaction.UDFC01) : transaction.UDFC01);
+                if (showColumnById(12) && udfc02_ref_id != -1)
+                        hb.addTableCell(transaction.UDFC02_Type == dt && !transaction.UDFC02.empty() ? mmGetDateForDisplay(transaction.UDFC02) : transaction.UDFC02);
+                if (showColumnById(13) && udfc03_ref_id != -1)
+                        hb.addTableCell(transaction.UDFC03_Type == dt && !transaction.UDFC03.empty() ? mmGetDateForDisplay(transaction.UDFC03) : transaction.UDFC03);
+                if (showColumnById(14) && udfc04_ref_id != -1)
+                        hb.addTableCell(transaction.UDFC04_Type == dt && !transaction.UDFC04.empty() ? mmGetDateForDisplay(transaction.UDFC04) : transaction.UDFC04);
+                if (showColumnById(15) && udfc05_ref_id != -1)
+                        hb.addTableCell(transaction.UDFC05_Type == dt && !transaction.UDFC05.empty() ? mmGetDateForDisplay(transaction.UDFC05) : transaction.UDFC05);
             }
             hb.endTableRow();
         }
@@ -313,13 +377,13 @@ table {
     return hb.getHTMLText();
 }
 
-void mmReportTransactions::Run(mmFilterTransactionsDialog* dlg)
+void mmReportTransactions::Run(wxSharedPtr<mmFilterTransactionsDialog>& dlg)
 {
     trans_.clear();
     const auto splits = Model_Splittransaction::instance().get_all();
     for (const auto& tran : Model_Checking::instance().all()) //TODO: find should be faster
     {
-        if (!dlg->checkAll(tran, splits)) continue;
+        if (!dlg.get()->checkAll(tran, splits)) continue;
         Model_Checking::Full_Data full_tran(tran, splits);
 
         full_tran.PAYEENAME = full_tran.real_payee_name(full_tran.ACCOUNTID);
@@ -327,7 +391,7 @@ void mmReportTransactions::Run(mmFilterTransactionsDialog* dlg)
         {
             for (const auto& split : full_tran.m_splits)
             {
-                if (m_transDialog->getCategoryCheckBox())
+                if (m_transDialog->is_category_cb_active())
                 {
                     if (split.CATEGID != m_transDialog->getCategId() ) continue;
                     if (split.SUBCATEGID != m_transDialog->getSubCategId() 
@@ -342,7 +406,7 @@ void mmReportTransactions::Run(mmFilterTransactionsDialog* dlg)
     }
     
     std::stable_sort(trans_.begin(), trans_.end(), SorterByTRANSDATE());
-    switch (dlg->getGroupBy())
+    switch (dlg.get()->getGroupBy())
     {
         case mmFilterTransactionsDialog::GROUPBY_ACCOUNT:
             std::stable_sort(trans_.begin(), trans_.end(), SorterByACCOUNTNAME());
