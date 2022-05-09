@@ -1,8 +1,8 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
- Copyright (C) 2011-2018 Nikolay Akimov
+ Copyright (C) 2011-2022 Nikolay Akimov
  Copyright (C) 2011-2017 Stefano Giorgio [stef145g]
- Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
+ Copyright (C) 2021, 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 #include "mmSimpleDialogs.h"
 #include "mmTextCtrl.h"
 #include "paths.h"
+#include "payeedialog.h"
 #include "splittransactionsdialog.h"
 #include "util.h"
 #include "validators.h"
@@ -75,6 +76,7 @@ void mmTransDialog::SetEventHandlers()
         , wxCommandEventHandler(mmTransDialog::OnAccountOrPayeeUpdated), nullptr, this);
     cbAccount_->Connect(ID_DIALOG_TRANS_FROMACCOUNT, wxEVT_COMMAND_TEXT_UPDATED
         , wxCommandEventHandler(mmTransDialog::OnFromAccountUpdated), nullptr, this);
+    cbPayee_->Bind(wxEVT_CHAR_HOOK, &mmTransDialog::OnComboKey, this);
     m_textAmount->Connect(ID_DIALOG_TRANS_TEXTAMOUNT, wxEVT_COMMAND_TEXT_ENTER
         , wxCommandEventHandler(mmTransDialog::OnTextEntered), nullptr, this);
     toTextAmount_->Connect(ID_DIALOG_TRANS_TOTEXTAMOUNT, wxEVT_COMMAND_TEXT_ENTER
@@ -156,12 +158,17 @@ mmTransDialog::mmTransDialog(wxWindow* parent
         }
     }
 
-    int ref_id = m_trx_data.TRANSID;
-    if (m_duplicate || m_new_trx) ref_id = -1;
+    int ref_id = (m_new_trx) ? NULL : m_trx_data.TRANSID;
     m_custom_fields = new mmCustomDataTransaction(this, ref_id, ID_CUSTOMFIELD);
 
-    long style = wxCAPTION | wxSYSTEM_MENU | wxCLOSE_BOX;
-    Create(parent, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, style, name);
+    // If duplicate then we may need to copy the attachments
+    if (m_duplicate && Model_Infotable::instance().GetBoolInfo("ATTACHMENTSDUPLICATE", false))
+    {
+        const wxString& RefType = Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION);
+        mmAttachmentManage::CloneAllAttachments(RefType, transaction_id, -1);
+    }
+
+    Create(parent);
     this->SetMinSize(wxSize(500, 400));
 
     dataToControls();
@@ -522,6 +529,7 @@ void mmTransDialog::CreateControls()
 
     // Account ---------------------------------------------
     cbAccount_ = new wxComboBox(this, ID_DIALOG_TRANS_FROMACCOUNT);
+    cbAccount_->SetMaxSize(wxSize(m_textAmount->GetSize().GetX() * 2 + 5, -1));
 
     account_label_ = new wxStaticText(this, wxID_STATIC, _("Account"));
     account_label_->SetFont(this->GetFont().Bold());
@@ -569,32 +577,38 @@ void mmTransDialog::CreateControls()
     number_sizer->Add(textNumber_, g_flagsExpand);
     number_sizer->Add(bAuto, g_flagsH);
 
-    // Attachments ---------------------------------------------
-    bAttachments_ = new wxBitmapButton(this, wxID_FILE, mmBitmap(png::CLIP, mmBitmapButtonSize));
-    mmToolTip(bAttachments_, _("Organize attachments of this transaction"));
-
-    // Colours ---------------------------------------------
-    bColours_ = new wxButton(this, wxID_INFO, " ", wxDefaultPosition, bAttachments_->GetSize(), 0);
-    //bColours->SetBackgroundColour(mmColors::userDefColor1);
-    mmToolTip(bColours_, _("User Colors"));
-
-
-    // Notes ---------------------------------------------
-    flex_sizer->Add(new wxStaticText(this, wxID_STATIC, _("Notes")), g_flagsH);
-    wxButton* bFrequentUsedNotes = new wxButton(this, ID_DIALOG_TRANS_BUTTON_FREQENTNOTES, "...", wxDefaultPosition, bAttachments_->GetSize(), 0);
+    // Frequently Used Notes
+    wxButton* bFrequentUsedNotes = new wxButton(this, ID_DIALOG_TRANS_BUTTON_FREQENTNOTES
+        , "...", wxDefaultPosition, bAuto->GetSize(), 0);
     mmToolTip(bFrequentUsedNotes, _("Select one of the frequently used notes"));
     bFrequentUsedNotes->Connect(ID_DIALOG_TRANS_BUTTON_FREQENTNOTES
         , wxEVT_COMMAND_BUTTON_CLICKED
         , wxCommandEventHandler(mmTransDialog::OnFrequentUsedNotes), nullptr, this);
 
+    // Colours
+    bColours_ = new wxButton(this, wxID_INFO, " ", wxDefaultPosition, bAuto->GetSize(), 0);
+    //bColours->SetBackgroundColour(mmColors::userDefColor1);
+    mmToolTip(bColours_, _("User Colors"));
+
+    // Attachments
+    bAttachments_ = new wxBitmapButton(this, wxID_FILE, mmBitmap(png::CLIP, mmBitmapButtonSize));
+    mmToolTip(bAttachments_, _("Organize attachments of this transaction"));
+
+    // Now display the Frequently Used Notes, Colour, Attachment buttons
+    wxBoxSizer* notes_sizer = new wxBoxSizer(wxHORIZONTAL); 
+    flex_sizer->Add(notes_sizer);
+    notes_sizer->Add(new wxStaticText(this, wxID_STATIC, _("Notes")), g_flagsH);
+    notes_sizer->Add(bFrequentUsedNotes, g_flagsH);
 
     wxBoxSizer* RightAlign_sizer = new wxBoxSizer(wxHORIZONTAL);
     flex_sizer->Add(RightAlign_sizer, wxSizerFlags(g_flagsH).Align(wxALIGN_RIGHT));
-    RightAlign_sizer->Add(bAttachments_, wxSizerFlags().Border(wxRIGHT, 5));
     RightAlign_sizer->Add(bColours_, wxSizerFlags().Border(wxRIGHT, 5));
-    RightAlign_sizer->Add(bFrequentUsedNotes, wxSizerFlags().Border(wxRIGHT, 5));
+    RightAlign_sizer->Add(bAttachments_, wxSizerFlags());
 
-    textNotes_ = new wxTextCtrl(this, ID_DIALOG_TRANS_TEXTNOTES, "", wxDefaultPosition, wxSize(-1, dpc_->GetSize().GetHeight() * 5), wxTE_MULTILINE);
+    // Notes
+    textNotes_ = new wxTextCtrl(this, ID_DIALOG_TRANS_TEXTNOTES, ""
+        , wxDefaultPosition, wxSize(-1, dpc_->GetSize().GetHeight() * 5), wxTE_MULTILINE);
+    mmToolTip(textNotes_, _("Specify any text notes you want to add to this transaction."));
     box_sizer_left->Add(textNotes_, wxSizerFlags(g_flagsExpand).Border(wxLEFT | wxRIGHT | wxBOTTOM, 10));
 
     /**********************************************************************************************
@@ -606,20 +620,20 @@ void mmTransDialog::CreateControls()
     wxStdDialogButtonSizer*  buttons_sizer = new wxStdDialogButtonSizer;
     buttons_panel->SetSizer(buttons_sizer);
 
-    wxButton* itemButtonOK = new wxButton(buttons_panel, wxID_OK, _("&OK "));
-    itemButtonCancel_ = new wxButton(buttons_panel, wxID_CANCEL, wxGetTranslation(g_CancelLabel));
+    wxButton* button_ok = new wxButton(buttons_panel, wxID_OK, _("&OK "));
+    m_button_cancel = new wxButton(buttons_panel, wxID_CANCEL, wxGetTranslation(g_CancelLabel));
 
-    wxBitmapButton* itemButtonHide = new wxBitmapButton(buttons_panel, ID_DIALOG_TRANS_CUSTOMFIELDS, mmBitmap(png::RIGHTARROW, mmBitmapButtonSize));
-    mmToolTip(itemButtonHide, _("Show/Hide custom fields window"));
+    wxBitmapButton* button_hide = new wxBitmapButton(buttons_panel, ID_DIALOG_TRANS_CUSTOMFIELDS, mmBitmap(png::RIGHTARROW, mmBitmapButtonSize));
+    mmToolTip(button_hide, _("Show/Hide custom fields window"));
     if (m_custom_fields->GetCustomFieldsCount() == 0) {
-        itemButtonHide->Hide();
+        button_hide->Hide();
     }
 
-    buttons_sizer->Add(itemButtonOK, wxSizerFlags(g_flagsH).Border(wxBOTTOM | wxRIGHT, 10));
-    buttons_sizer->Add(itemButtonCancel_, wxSizerFlags(g_flagsH).Border(wxBOTTOM | wxRIGHT, 10));
-    buttons_sizer->Add(itemButtonHide, wxSizerFlags(g_flagsH).Border(wxBOTTOM | wxRIGHT, 10));
+    buttons_sizer->Add(button_ok, wxSizerFlags(g_flagsH).Border(wxBOTTOM | wxRIGHT, 10));
+    buttons_sizer->Add(m_button_cancel, wxSizerFlags(g_flagsH).Border(wxBOTTOM | wxRIGHT, 10));
+    buttons_sizer->Add(button_hide, wxSizerFlags(g_flagsH).Border(wxBOTTOM | wxRIGHT, 10));
 
-    if (!m_new_trx && !m_duplicate) itemButtonCancel_->SetFocus();
+    if (!m_new_trx && !m_duplicate) m_button_cancel->SetFocus();
 
     buttons_sizer->Realize();
 
@@ -776,7 +790,7 @@ bool mmTransDialog::ValidateData()
 void mmTransDialog::OnDpcKillFocus(wxFocusEvent& event)
 {
     if (wxGetKeyState(WXK_TAB) && wxGetKeyState(WXK_SHIFT))
-        itemButtonCancel_->SetFocus();
+        m_button_cancel->SetFocus();
     else if (wxGetKeyState(WXK_TAB))
         choiceStatus_->SetFocus();
     else if (wxGetKeyState(WXK_UP))
@@ -998,6 +1012,34 @@ void mmTransDialog::OnAccountOrPayeeUpdated(wxCommandEvent& WXUNUSED(event))
     OnFocusChange(evt);
 }
 
+void mmTransDialog::OnComboKey(wxKeyEvent& event)
+{
+    if (event.GetKeyCode() == WXK_RETURN)
+    {
+        if (!m_transfer)
+        {
+            const auto payeeName = cbPayee_->GetValue();
+            if (payeeName.empty())
+            {
+                mmPayeeDialog dlg(this, true);
+                dlg.DisableTools();
+                dlg.ShowModal();
+
+                int payee_id = dlg.getPayeeId();
+                Model_Payee::Data* payee = Model_Payee::instance().get(payee_id);
+                if (payee)
+                {
+                    cbPayee_->ChangeValue(payee->PAYEENAME);
+                    cbPayee_->SetInsertionPointEnd();
+                }
+            }
+            else
+                cbPayee_->Navigate(wxNavigationKeyEvent::IsForward);
+        }
+    }
+    else
+        event.Skip();
+}
 
 #if defined (__WXMAC__) 
 void mmTransDialog::OnFromAccountUpdated(wxCommandEvent& event)
@@ -1281,15 +1323,15 @@ void mmTransDialog::OnOk(wxCommandEvent& WXUNUSED(event))
 void mmTransDialog::OnCancel(wxCommandEvent& WXUNUSED(event))
 {
 #ifndef __WXMAC__
-    if (object_in_focus_ != itemButtonCancel_->GetId() && wxGetKeyState(WXK_ESCAPE))
-            return itemButtonCancel_->SetFocus();
+    if (object_in_focus_ != m_button_cancel->GetId() && wxGetKeyState(WXK_ESCAPE))
+            return m_button_cancel->SetFocus();
 #endif
 
-    if (m_new_trx)
+    if (m_new_trx || m_duplicate)
     {
         const wxString& RefType = Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION);
-        mmAttachmentManage::DeleteAllAttachments(RefType, m_trx_data.TRANSID);
-        Model_CustomFieldData::instance().DeleteAllData(RefType, m_trx_data.TRANSID);
+        mmAttachmentManage::DeleteAllAttachments(RefType, -1);
+        Model_CustomFieldData::instance().DeleteAllData(RefType, -1);
     }
     EndModal(wxID_CANCEL);
 }
@@ -1348,7 +1390,8 @@ void mmTransDialog::OnQuit(wxCloseEvent& WXUNUSED(event))
 {
     const wxString& RefType = Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION);
     if (m_new_trx || m_duplicate) {
-        mmAttachmentManage::DeleteAllAttachments(RefType, m_trx_data.TRANSID);
+        mmAttachmentManage::DeleteAllAttachments(RefType, -1);
+        Model_CustomFieldData::instance().DeleteAllData(RefType, -1);
     }
     EndModal(wxID_CANCEL);
 }

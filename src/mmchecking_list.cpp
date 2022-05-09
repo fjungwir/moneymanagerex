@@ -1,7 +1,7 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
- Copyright (C) 2013, 2014, 2020, 2021 Nikolay Akimov
- Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
+ Copyright (C) 2013, 2014, 2020, 2021, 2022 Nikolay Akimov
+ Copyright (C) 2021, 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public as published by
@@ -64,12 +64,14 @@ wxBEGIN_EVENT_TABLE(TransactionListCtrl, mmListCtrl)
     EVT_MENU(MENU_TREEPOPUP_EDIT2, TransactionListCtrl::OnEditTransaction)
     EVT_MENU(MENU_TREEPOPUP_MOVE2, TransactionListCtrl::OnMoveTransaction)
 
+    EVT_MENU(MENU_ON_SELECT_ALL, TransactionListCtrl::OnSelectAll)
     EVT_MENU(MENU_ON_COPY_TRANSACTION, TransactionListCtrl::OnCopy)
     EVT_MENU(MENU_ON_PASTE_TRANSACTION, TransactionListCtrl::OnPaste)
     EVT_MENU(MENU_ON_NEW_TRANSACTION, TransactionListCtrl::OnNewTransaction)
     EVT_MENU(MENU_ON_DUPLICATE_TRANSACTION, TransactionListCtrl::OnDuplicateTransaction)
     EVT_MENU_RANGE(MENU_ON_SET_UDC0, MENU_ON_SET_UDC7, TransactionListCtrl::OnSetUserColour)
 
+    EVT_MENU(MENU_TREEPOPUP_VIEW_OTHER_ACCOUNT, TransactionListCtrl::OnViewOtherAccount)
     EVT_MENU(MENU_TREEPOPUP_VIEW_SPLIT_CATEGORIES, TransactionListCtrl::OnViewSplitTransaction)
     EVT_MENU(MENU_TREEPOPUP_ORGANIZE_ATTACHMENTS, TransactionListCtrl::OnOrganizeAttachments)
     EVT_MENU(MENU_TREEPOPUP_CREATE_REOCCURANCE, TransactionListCtrl::OnCreateReoccurance)
@@ -183,6 +185,7 @@ TransactionListCtrl::TransactionListCtrl(
 
     const wxAcceleratorEntry entries[] =
     {
+        wxAcceleratorEntry(wxACCEL_CTRL, 'A', MENU_ON_SELECT_ALL),
         wxAcceleratorEntry(wxACCEL_CTRL, 'C', MENU_ON_COPY_TRANSACTION),
         wxAcceleratorEntry(wxACCEL_CTRL, 'V', MENU_ON_PASTE_TRANSACTION),
         wxAcceleratorEntry(wxACCEL_ALT,  'N', MENU_ON_NEW_TRANSACTION),
@@ -237,7 +240,7 @@ TransactionListCtrl::TransactionListCtrl(
     m_columns.push_back(PANEL_COLUMN(_("Notes"), 250, wxLIST_FORMAT_LEFT));
     m_real_columns.push_back(COL_NOTES);
 
-    int i = COL_NOTES;
+    int i = COL_UDFC01;
     const auto& ref_type = Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION);
     for (const auto& udfc_entry : Model_CustomField::UDFC_FIELDS())
     {
@@ -246,8 +249,9 @@ TransactionListCtrl::TransactionListCtrl(
         if (name != udfc_entry)
         {
             m_columns.push_back(PANEL_COLUMN(name, 100, wxLIST_FORMAT_LEFT));
-            m_real_columns.push_back(static_cast<EColumn>(++i));
+            m_real_columns.push_back(static_cast<EColumn>(i));
         }
+        i++;
     }
 
     // V2 used as now maps to real column names and this resets everything to default
@@ -383,6 +387,10 @@ void TransactionListCtrl::OnMouseRightClick(wxMouseEvent& event)
 
     menu.AppendSeparator();
 
+    menu.Append(MENU_TREEPOPUP_VIEW_OTHER_ACCOUNT, _("&View In Other Account"));
+    if (m_cp->m_allAccounts || is_nothing_selected || multiselect || is_foreign || !type_transfer)
+        menu.Enable(MENU_TREEPOPUP_VIEW_OTHER_ACCOUNT, false);
+
     menu.Append(MENU_TREEPOPUP_VIEW_SPLIT_CATEGORIES, _("&View Split Categories"));
     if (is_nothing_selected || multiselect || have_category)
         menu.Enable(MENU_TREEPOPUP_VIEW_SPLIT_CATEGORIES, false);
@@ -408,17 +416,17 @@ void TransactionListCtrl::OnMouseRightClick(wxMouseEvent& event)
     menu.AppendSeparator();
 
     wxMenu* subGlobalOpMenuMark = new wxMenu();
-    subGlobalOpMenuMark->Append(MENU_TREEPOPUP_MARKRECONCILED, _("as Reconciled"));
-    if (is_nothing_selected) subGlobalOpMenuMark->Enable(MENU_TREEPOPUP_MARKRECONCILED, false);
-    subGlobalOpMenuMark->Append(MENU_TREEPOPUP_MARKUNRECONCILED, _("as Unreconciled"));
+    subGlobalOpMenuMark->Append(MENU_TREEPOPUP_MARKUNRECONCILED, _("Unreconciled"));
     if (is_nothing_selected) subGlobalOpMenuMark->Enable(MENU_TREEPOPUP_MARKUNRECONCILED, false);
-    subGlobalOpMenuMark->Append(MENU_TREEPOPUP_MARKVOID, _("as Void"));
+    subGlobalOpMenuMark->Append(MENU_TREEPOPUP_MARKRECONCILED, _("Reconciled"));
+    if (is_nothing_selected) subGlobalOpMenuMark->Enable(MENU_TREEPOPUP_MARKRECONCILED, false);
+    subGlobalOpMenuMark->Append(MENU_TREEPOPUP_MARKVOID, _("Void"));
     if (is_nothing_selected) subGlobalOpMenuMark->Enable(MENU_TREEPOPUP_MARKVOID, false);
-    subGlobalOpMenuMark->Append(MENU_TREEPOPUP_MARK_ADD_FLAG_FOLLOWUP, _("as Followup"));
+    subGlobalOpMenuMark->Append(MENU_TREEPOPUP_MARK_ADD_FLAG_FOLLOWUP, _("Follow Up"));
     if (is_nothing_selected) subGlobalOpMenuMark->Enable(MENU_TREEPOPUP_MARK_ADD_FLAG_FOLLOWUP, false);
-    subGlobalOpMenuMark->Append(MENU_TREEPOPUP_MARKDUPLICATE, _("as Duplicate"));
+    subGlobalOpMenuMark->Append(MENU_TREEPOPUP_MARKDUPLICATE, _("Duplicate"));
     if (is_nothing_selected) subGlobalOpMenuMark->Enable(MENU_TREEPOPUP_MARKDUPLICATE, false);
-    menu.AppendSubMenu(subGlobalOpMenuMark, _("Mark all being selected"));
+    menu.AppendSubMenu(subGlobalOpMenuMark, _("Mark as"));
 
     // Disable menu items not ment for foreign transactions
     if (is_foreign)
@@ -633,6 +641,18 @@ void TransactionListCtrl::OnChar(wxKeyEvent& event)
 }
 //----------------------------------------------------------------------------
 
+void TransactionListCtrl::OnSelectAll(wxCommandEvent& WXUNUSED(event))
+{
+    m_selected_id.clear();
+    SetEvtHandlerEnabled(false);
+    for (int row = 0; row < GetItemCount(); row++) {
+        SetItemState(row, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+        m_selected_id.push_back(m_trans[row].TRANSID);
+    }
+    SetEvtHandlerEnabled(true);
+    setExtraTransactionData(GetSelectedItemCount() == 1);
+}
+
 void TransactionListCtrl::OnCopy(wxCommandEvent& WXUNUSED(event))
 {
     // we can't copy with multiple accounts open or there is nothing to copy
@@ -707,7 +727,8 @@ int TransactionListCtrl::OnPaste(Model_Checking::Data* tran)
 
     bool useOriginalDate = Model_Setting::instance().GetBoolSetting(INIDB_USE_ORG_DATE_COPYPASTE, false);
 
-    Model_Checking::Data* copy = Model_Checking::instance().clone(tran); //TODO: this function can't clone split transactions
+    //TODO: the clone function can't clone split transactions, or custom data
+    Model_Checking::Data* copy = Model_Checking::instance().clone(tran); 
     if (!useOriginalDate) copy->TRANSDATE = wxDateTime::Now().FormatISODate();
     if ((Model_Checking::type(copy->TRANSCODE) != Model_Checking::TRANSFER) ||
             (m_cp->m_AccountID != copy->ACCOUNTID && m_cp->m_AccountID != copy->TOACCOUNTID))
@@ -715,6 +736,7 @@ int TransactionListCtrl::OnPaste(Model_Checking::Data* tran)
     int transactionID = Model_Checking::instance().save(copy);
     m_pasted_id.push_back(transactionID);   // add the newly pasted transaction
 
+    // Clone split transactions
     Model_Splittransaction::Cache copy_split;
     for (const auto& split_item : Model_Checking::splittransaction(tran))
     {
@@ -723,6 +745,29 @@ int TransactionListCtrl::OnPaste(Model_Checking::Data* tran)
         copy_split.push_back(copy_split_item);
     }
     Model_Splittransaction::instance().save(copy_split);
+
+    // Clone duplicate custom fields
+    const auto& data_set = Model_CustomFieldData::instance().find(Model_CustomFieldData::REFID(tran->TRANSID));
+    if (data_set.size() > 0)
+    {
+        Model_CustomFieldData::instance().Savepoint();
+        for (const auto& item : data_set)
+        {
+            Model_CustomFieldData::Data* fieldData = Model_CustomFieldData::instance().create();
+            fieldData->FIELDID = item.FIELDID;
+            fieldData->REFID = transactionID;
+            fieldData->CONTENT = item.CONTENT;
+            Model_CustomFieldData::instance().save(fieldData);
+        }
+        Model_CustomFieldData::instance().ReleaseSavepoint();
+    }
+
+    // Clone attachments if wanted
+    if (Model_Infotable::instance().GetBoolInfo("ATTACHMENTSDUPLICATE", false))
+    {
+        const wxString& RefType = Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION);
+        mmAttachmentManage::CloneAllAttachments(RefType, tran->TRANSID, transactionID);
+    }
 
     return transactionID;
 }
@@ -754,22 +799,27 @@ void TransactionListCtrl::OnListKeyDown(wxListEvent& event)
     m_topItemIndex = GetTopItem() + GetCountPerPage() - 1;
 
     if (key == wxKeyCode('R')) {
+        // Reconciled
         wxCommandEvent evt(wxEVT_COMMAND_MENU_SELECTED, MENU_TREEPOPUP_MARKRECONCILED);
         OnMarkTransaction(evt);
     }
     else if (key == wxKeyCode('U')) {
+        // Unreconciled
         wxCommandEvent evt(wxEVT_COMMAND_MENU_SELECTED, MENU_TREEPOPUP_MARKUNRECONCILED);
         OnMarkTransaction(evt);
     }
     else if (key == wxKeyCode('F')) {
+        // Follow Up
         wxCommandEvent evt(wxEVT_COMMAND_MENU_SELECTED, MENU_TREEPOPUP_MARK_ADD_FLAG_FOLLOWUP);
         OnMarkTransaction(evt);
     }
     else if (key == wxKeyCode('D')) {
+        // Duplicate
         wxCommandEvent evt(wxEVT_COMMAND_MENU_SELECTED, MENU_TREEPOPUP_MARKDUPLICATE);
         OnMarkTransaction(evt);
     }
     else if (key == wxKeyCode('V')) {
+        // Void
         wxCommandEvent evt(wxEVT_COMMAND_MENU_SELECTED, MENU_TREEPOPUP_MARKVOID);
         OnMarkTransaction(evt);
     }
@@ -870,6 +920,7 @@ void TransactionListCtrl::OnDeleteTransaction(wxCommandEvent& WXUNUSED(event))
         Model_Checking::instance().Savepoint();
         Model_Attachment::instance().Savepoint();
         Model_Splittransaction::instance().Savepoint();
+        Model_CustomFieldData::instance().Savepoint();
         for (const auto& i : m_selected_id)
         {
             Model_Checking::Data* trx = Model_Checking::instance().get(i);
@@ -884,14 +935,20 @@ void TransactionListCtrl::OnDeleteTransaction(wxCommandEvent& WXUNUSED(event))
                 m_cp->m_frame->RefreshNavigationTree();
             }
 
-            // remove also removes any split transactions
             Model_Checking::instance().remove(i);
+
+            // remove also any split transactions
             mmAttachmentManage::DeleteAllAttachments(Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION), i);
+
+            // remove also any custom fields for the transaction
+            const wxString& RefType = Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION);
+            Model_CustomFieldData::DeleteAllData(RefType, i);
 
             m_selectedForCopy.erase(std::remove(m_selectedForCopy.begin(), m_selectedForCopy.end(), i)
                 , m_selectedForCopy.end());
         }
         m_selected_id.clear();
+        Model_CustomFieldData::instance().ReleaseSavepoint();
         Model_Splittransaction::instance().ReleaseSavepoint();
         Model_Attachment::instance().ReleaseSavepoint();
         Model_Checking::instance().ReleaseSavepoint();
@@ -981,8 +1038,7 @@ void TransactionListCtrl::OnEditTransaction(wxCommandEvent& /*event*/)
     int transaction_id = m_selected_id[0];
     Model_Checking::Data* checking_entry = Model_Checking::instance().get(transaction_id);
 
-    if (TransactionLocked(checking_entry->ACCOUNTID, checking_entry->TRANSDATE))
-    {
+    if (TransactionLocked(checking_entry->ACCOUNTID, checking_entry->TRANSDATE)) {
         return;
     }
 
@@ -997,13 +1053,17 @@ void TransactionListCtrl::OnEditTransaction(wxCommandEvent& /*event*/)
                 refreshVisualList(transaction_id);
             }
         }
-        else
+        else if (translink.LINKTYPE == Model_Attachment::reftype_desc(Model_Attachment::ASSET))
         {
             mmAssetDialog dlg(this, m_cp->m_frame, &translink, checking_entry);
             if (dlg.ShowModal() == wxID_OK)
             {
                 refreshVisualList(transaction_id);
             }
+        }
+        else
+        {
+            wxASSERT(false);
         }
     }
     else
@@ -1179,6 +1239,24 @@ void TransactionListCtrl::OnMoveTransaction(wxCommandEvent& /*event*/)
             refreshVisualList();
         }
     }
+}
+
+//----------------------------------------------------------------------------
+void TransactionListCtrl::OnViewOtherAccount(wxCommandEvent& /*event*/)
+{
+    // we can only get here for a single transfer transaction
+    FindSelectedTransactions();
+
+    const Model_Checking::Data* transel = Model_Checking::instance().get(m_selected_id[0]);
+    Model_Checking::Full_Data tran(*transel);
+
+    int gotoAccountID =  (m_cp->m_AccountID == tran.ACCOUNTID) ? tran.TOACCOUNTID : tran.ACCOUNTID;
+    wxString gotoAccountName =  (m_cp->m_AccountID == tran.ACCOUNTID) ? tran.TOACCOUNTNAME : tran.ACCOUNTNAME;   
+
+    m_cp->m_frame->setAccountNavTreeSection(gotoAccountName);
+    m_cp->m_frame->setGotoAccountID(gotoAccountID, tran.TRANSID);
+    wxCommandEvent event(wxEVT_COMMAND_MENU_SELECTED, MENU_GOTOACCOUNT);
+    m_cp->m_frame->GetEventHandler()->AddPendingEvent(event);
 }
 
 //----------------------------------------------------------------------------

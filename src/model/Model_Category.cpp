@@ -22,6 +22,7 @@
 #include "Model_Account.h"
 #include "Model_CurrencyHistory.h"
 #include "reports/mmDateRange.h"
+#include "option.h"
 #include <tuple>
 
 Model_Category::Model_Category(): Model<DB_Table_CATEGORY_V1>()
@@ -123,6 +124,19 @@ bool Model_Category::is_used(int id, int sub_id)
     return false;
 }
 
+bool Model_Category::is_used(int id)
+{
+    const auto& trans = Model_Checking::instance().find(Model_Checking::CATEGID(id));
+    if (!trans.empty()) return true;
+    const auto& split = Model_Splittransaction::instance().find(Model_Checking::CATEGID(id));
+    if (!split.empty()) return true;
+    const auto& deposits = Model_Billsdeposits::instance().find(Model_Billsdeposits::CATEGID(id));
+    if (!deposits.empty()) return true;
+    const auto& deposit_split = Model_Budgetsplittransaction::instance().find(Model_Billsdeposits::CATEGID(id));
+    if (!deposit_split.empty()) return true;
+
+    return false;
+}
 bool Model_Category::has_income(int id, int sub_id)
 {
     double sum = 0.0;
@@ -205,15 +219,16 @@ void Model_Category::getCategoryStats(
             }
         }
 
-
         const double convRate = Model_CurrencyHistory::getDayRate(
             Model_Account::instance().get(transaction.ACCOUNTID)->CURRENCYID, transaction.TRANSDATE);
         wxDateTime d = Model_Checking::TRANSDATE(transaction);
 
-        // If financial month starts midway through month then make sure the entries for the calendar month
+        // If month starts midway through month then make sure the entries for the calendar month
         // are adjusted accordingly so we only have a full 12 months
-        int fin_day_start = Model_Infotable::instance().GetIntInfo("FINANCIAL_YEAR_START_DAY", 1);
-        if (fin_months && (d.GetDay() < fin_day_start))
+        
+        int day_start = (fin_months) ? Model_Infotable::instance().GetIntInfo("FINANCIAL_YEAR_START_DAY", 1)
+                                     : Option::instance().getReportingFirstDay();
+        if (d.GetDay() < day_start)
             d.Subtract(wxDateSpan::Month());
 
         int idx = group_by_month ? (d.GetYear() * 100 + d.GetMonth()) : 0; 
@@ -242,7 +257,7 @@ void Model_Category::getCategoryStats(
             for (const auto& entry : splits[transaction.id()])
             {
                 categoryStats[entry.CATEGID][entry.SUBCATEGID][idx] += entry.SPLITTRANSAMOUNT
-                    * convRate * (Model_Checking::balance(transaction) < 0 ? -1 : 1);
+                    * convRate * ((Model_Checking::type(transaction) == Model_Checking::WITHDRAWAL) ? -1 : 1);
             }
         }
     }

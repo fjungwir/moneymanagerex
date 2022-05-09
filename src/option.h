@@ -44,7 +44,7 @@ public:
     // set and save the option: m_language
     wxLanguage getLanguageID(bool get_db = false);
     // get 2-letter ISO 639-1 code
-    const wxString getLanguageISO6391(bool get_db = false);
+    const wxString getLanguageCode(bool get_db = false);
     void setLanguage(wxLanguage& language);
 
     // set and save the option: m_userNameString
@@ -130,7 +130,7 @@ public:
     int getNavigationIconSize();
     int getToolbarIconSize();
 
-    int AccountImageId(int account_id, bool def = false);
+    int AccountImageId(int account_id, bool def, bool ignoreClosure = false);
     bool getSendUsageStatistics() const;
 
     void IgnoreFutureTransactions(bool value);
