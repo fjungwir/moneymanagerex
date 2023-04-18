@@ -12,12 +12,12 @@ import codecs
 
 currency_unicode_patch_filename = 'currencies_update_patch_unicode_only.mmdbg'
 currency_table_patch_filename = 'currencies_update_patch.mmdbg'
-sql_tables_data_filename = 'sql_tables_v1.sql'
+sql_tables_data_filename = 'sql_tables.sql'
 
 # http://stackoverflow.com/questions/196345/how-to-check-if-a-string-in-python-is-in-ascii
 def is_ascii(s):
     """Class: Check for Ascii String"""
-    if isinstance(s, unicode):
+    if isinstance(s, str):
         return all(ord(c) < 128 for c in s)
     return False
 
@@ -37,7 +37,7 @@ def is_trans(s):
 def adjust_translate(s):
     """Return the correct translated syntax for c++"""
     trans_str = s.replace("_tr_", "").replace('"','')
-    trans_str = 'wxTRANSLATE("' + trans_str + '")'
+    trans_str = '_("' + trans_str + '")'
 
     return trans_str
 
@@ -136,7 +136,7 @@ UPDATE OR IGNORE %s SET %s WHERE CURRENCY_SYMBOL='%s';''' % (self._table, row['C
         """Write database_version data to file
            Only extract unicode data"""
         if self._table.upper() == 'CURRENCYFORMATS_V1':
-            print 'Generate patch file: %s' % currency_unicode_patch_filename
+            print ('Generate patch file: %s' % currency_unicode_patch_filename)
             rfp = codecs.open(currency_unicode_patch_filename, 'w', 'utf-8')
             sf1 = '''-- MMEX Debug SQL - Update --
 -- MMEX db version required 10
@@ -148,7 +148,7 @@ UPDATE OR IGNORE %s SET %s WHERE CURRENCY_SYMBOL='%s';''' % (self._table, row['C
         """Write currency_table_upgrade_patch file
            Extract all currency data"""
         if self._table.upper() == 'CURRENCYFORMATS_V1':
-            print 'Generate patch file: %s' % currency_table_patch_filename
+            print ('Generate patch file: %s' % currency_table_patch_filename)
             rfp = codecs.open(currency_table_patch_filename, 'w', 'utf-8')
             sf1 = '''-- MMEX Debug SQL - Update --
 -- MMEX db version required 10
@@ -158,7 +158,7 @@ UPDATE OR IGNORE %s SET %s WHERE CURRENCY_SYMBOL='%s';''' % (self._table, row['C
 
     def generate_class(self, header, sql):
         """ Write the data to the appropriate .h file"""
-        print 'Generate Table: %s' % self._table
+        print ('Generate Table: %s' % self._table)
         rfp = codecs.open('DB_Table_' + self._table.title() + '.h', 'w', 'utf-8-sig')
         rfp.write(header + self.to_string(sql))
         rfp.close()
@@ -213,7 +213,7 @@ struct DB_Table_%s : public DB_Table
     /** Removes all records stored in memory (cache) for the table*/ 
     void destroy_cache()
     {
-        std::for_each(cache_.begin(), cache_.end(), std::mem_fun(&Data::destroy));
+        std::for_each(cache_.begin(), cache_.end(), std::mem_fn(&Data::destroy));
         cache_.clear();
         index_by_id_.clear(); // no memory release since it just stores pointer and the according objects are in cache
     }
@@ -388,6 +388,20 @@ struct DB_Table_%s : public DB_Table
 ''' % (self._primay_key, self._primay_key)
 
         s += '''
+        bool equals(const Data* r) const
+        {'''
+        for field in self._fields:
+            ftype = base_data_types_reverse[field['type']]
+            if ftype == 'int' or ftype == 'double':
+                s += '''
+            if(%s != r->%s) return false;''' % (field['name'], field['name'])
+            elif ftype == 'wxString':
+                s += '''
+            if(!%s.IsSameAs(r->%s)) return false;''' % (field['name'], field['name'])
+        s += '''
+            return true;
+        }
+        
         explicit Data(Self* table = 0) 
         {
             table_ = table;
@@ -774,6 +788,44 @@ struct DB_Table_%s : public DB_Table
  
         return entity;
     }
+    /**
+    * Search the database for the data record, bypassing the cache.
+    */
+    Self::Data* get_record(int id, wxSQLite3Database* db)
+    {
+        if (id <= 0) 
+        {
+            ++ skip_;
+            return 0;
+        }
+
+        Self::Data* entity = 0;
+        wxString where = wxString::Format(" WHERE %s = ?", PRIMARY::name().utf8_str());
+        try
+        {
+            wxSQLite3Statement stmt = db->PrepareStatement(this->query() + where);
+            stmt.Bind(1, id);
+
+            wxSQLite3ResultSet q = stmt.ExecuteQuery();
+            if(q.NextRow())
+            {
+                entity = new Self::Data(q, this);
+            }
+            stmt.Finalize();
+        }
+        catch(const wxSQLite3Exception &e) 
+        { 
+            wxLogError("%s: Exception %s", this->name().utf8_str(), e.GetMessage().utf8_str());
+        }
+        
+        if (!entity) 
+        {
+            entity = this->fake_;
+            // wxLogError("%s: %d not found", this->name().utf8_str(), id);
+        }
+ 
+        return entity;
+    }
 '''
         s += '''
     /**
@@ -816,6 +868,7 @@ def generate_base_class(header, fields=set):
 #include <map>
 #include <algorithm>
 #include <functional>
+#include <cwchar>
 #include <wx/wxsqlite3.h>
 #include <wx/intl.h>
 
@@ -960,7 +1013,7 @@ struct SorterBy%s
     template<class DATA>
     bool operator()(const DATA& x, const DATA& y)
     {
-        return (x.%s.CmpNoCase(y.%s) < 0);
+        return (std::wcscoll(x.%s.Lower().wc_str(),y.%s.Lower().wc_str()) < 0);  // Locale case-insensitive
     }
 };
 ''' % ( field, field, field)
@@ -1009,7 +1062,7 @@ if __name__ == '__main__':
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
     except:
-        print __doc__
+        print (__doc__)
         sys.exit(1)
 
     sql = ""
@@ -1020,7 +1073,8 @@ if __name__ == '__main__':
 
 '''
 
-    for line in open(sql_file, 'rb'):
+    for line_bytes in open(sql_file, 'rb'):
+        line = line_bytes.decode('utf-8)')
         sql = sql + line
 
         if line.find('_tr_') > 0: # Remove _tr_ identifyer for wxTRANSLATE
@@ -1029,8 +1083,8 @@ if __name__ == '__main__':
         sql_txt = sql_txt + line
     
     # Generate a table that does not contain translation code identifyer
-    print 'Generate SQL file: %s that can generate a clean database.' % sql_tables_data_filename
-    file_data = codecs.open(sql_tables_data_filename, 'w')
+    print ('Generate SQL file: %s that can generate a clean database.' % sql_tables_data_filename)
+    file_data = codecs.open(sql_tables_data_filename, 'w', 'utf-8')
     file_data.write(sql_txt)
     file_data.close()
 
@@ -1051,4 +1105,4 @@ if __name__ == '__main__':
     generate_base_class(header, all_fields)
 
     conn.close()
-    print 'End of Run'
+    print ('End of Run')

@@ -178,8 +178,6 @@ add_executable(${MMEX_EXE} WIN32 MACOSX_BUNDLE
     singleton.h
     sharetransactiondialog.cpp
     sharetransactiondialog.h
-    splitdetailsdialog.cpp
-    splitdetailsdialog.h
     splittransactionsdialog.cpp
     splittransactionsdialog.h
     stockdialog.cpp
@@ -245,7 +243,6 @@ add_executable(${MMEX_EXE} WIN32 MACOSX_BUNDLE
     db/DB_Table_Splittransactions_V1.h
     db/DB_Table_Stockhistory_V1.h
     db/DB_Table_Stock_V1.h
-    db/DB_Table_Subcategory_V1.h
     db/DB_Table_Translink_V1.h
     db/DB_Table_Usage_V1.h
 
@@ -326,8 +323,6 @@ add_executable(${MMEX_EXE} WIN32 MACOSX_BUNDLE
     model/Model_Stock.h
     model/Model_StockHistory.cpp
     model/Model_StockHistory.h
-    model/Model_Subcategory.cpp
-    model/Model_Subcategory.h
     model/Model_Translink.cpp
     model/Model_Translink.h
     model/Model_Usage.cpp
@@ -376,7 +371,6 @@ target_link_libraries(${MMEX_EXE} PUBLIC
     HTML-template
     CURL::libcurl
     fmt
-    lunasvg
     LuaGlue
     Lua)
 

@@ -17,6 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *******************************************************/
 
+#include <wx/bmpbndl.h>
 #include <wx/window.h>
 #include <wx/imaglist.h>
 #include <wx/arrstr.h>
@@ -67,9 +68,10 @@ enum img {
     TERMACCOUNT_NORMAL_PNG,
     STOCK_ACC_NORMAL_PNG,
     CASH_ACC_NORMAL_PNG,
+    TRASH_PNG,
     LOAN_ACC_NORMAL_PNG,
     ACCOUNT_CLOSED_PNG,
-    LAST_NAVTREE_PNG
+    LAST_NAVTREE_PNG,
 };
 
 /* Images set for accounts to be user assigned */
@@ -129,6 +131,7 @@ enum png {
     ASSET_NORMAL,
     ACCOUNT_CLOSED,
     RECURRING,
+    TRASH,
     BUDGET,
     PIE_CHART,
     
@@ -204,11 +207,13 @@ enum png {
 };
 
 extern const int mmBitmapButtonSize;
-wxImageList* navtree_images_list(int size = 0);
+//wxImageList* navtree_images_list(const int size = 0, const double dpiScale = 1.0);
+wxVector<wxBitmapBundle> navtree_images_list(const int size = 0);
 void LoadTheme();
+void CloseTheme();
 const wxString mmThemeMetaString(int ref);
 long mmThemeMetaLong(int ref);
 const wxColour mmThemeMetaColour(int ref);
 void mmThemeMetaColour(wxWindow *object, int ref, bool foreground = false);
 const std::vector<wxColour> mmThemeMetaColourArray(int ref);
-const wxBitmap mmBitmap(int ref, int size = -1);
+const wxBitmapBundle mmBitmapBundle(const int ref, const int defSize = -1);

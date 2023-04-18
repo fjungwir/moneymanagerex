@@ -108,7 +108,8 @@ wxString mmReportPayeeExpenses::getHTMLText()
     {
         GraphData gd;
         GraphSeries data_usage;
-
+        std::stable_sort(valueList_.begin(), valueList_.end(), [](const ValuePair& left, const ValuePair& right) {
+            return abs(left.amount) > abs(right.amount); });
         for (const auto &stats : valueList_)
         {
             data_usage.values.push_back(stats.amount);
@@ -190,7 +191,7 @@ void mmReportPayeeExpenses::getPayeeStats(std::map<int, std::pair<double, double
     const auto all_splits = Model_Splittransaction::instance().get_all();
     for (const auto& trx: transactions)
     {
-        if (Model_Checking::type(trx) == Model_Checking::TRANSFER) continue;
+        if (Model_Checking::type(trx) == Model_Checking::TRANSFER || !trx.DELETEDTIME.IsEmpty()) continue;
 
         // Do not include asset or stock transfers in income expense calculations.
         if (Model_Checking::foreignTransactionAsTransfer(trx))

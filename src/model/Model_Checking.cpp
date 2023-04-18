@@ -1,6 +1,6 @@
 /*******************************************************
  Copyright (C) 2013,2014 Guan Lisheng (guanlisheng@gmail.com)
-Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
+ Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@ Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 #include "Model_Category.h"
 #include <queue>
 #include "Model_Translink.h"
+#include "Model_CustomFieldData.h"
+#include "attachmentdialog.h"
 
 const std::vector<std::pair<Model_Checking::TYPE, wxString> > Model_Checking::TYPE_CHOICES =
 {
@@ -95,7 +97,52 @@ bool Model_Checking::remove(int id)
     //Model_Splittransaction::instance().remove(Model_Splittransaction::instance().find(Model_Splittransaction::TRANSID(id)));
     for (const auto& r : Model_Splittransaction::instance().find(Model_Splittransaction::TRANSID(id)))
         Model_Splittransaction::instance().remove(r.SPLITTRANSID);
+    if(foreignTransaction(*instance().get(id))) Model_Translink::RemoveTranslinkEntry(id);
+
+    const wxString& RefType = Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION);
+    // remove all attachments
+    mmAttachmentManage::DeleteAllAttachments(RefType, id);
+    // remove all custom fields for the transaction
+    Model_CustomFieldData::DeleteAllData(RefType, id);
+
     return this->remove(id, db_);
+}
+
+int Model_Checking::save(Data* r)
+{
+    wxSharedPtr<Data> oldData(instance().get_record(r->TRANSID));
+    if (!oldData || (!oldData->equals(r) && oldData->DELETEDTIME.IsEmpty() && r->DELETEDTIME.IsEmpty()))
+        r->LASTUPDATEDTIME = wxDateTime::Now().ToUTC().FormatISOCombined();
+    this->save(r, db_);
+    return r->TRANSID;
+}
+
+int Model_Checking::save(std::vector<Data>& rows)
+{
+    this->Savepoint();
+    for (auto& r : rows)
+    {
+        if (r.id() < 0)
+            wxLogDebug("Incorrect function call to save %s", r.to_json().utf8_str());
+        save(&r);
+    }
+    this->ReleaseSavepoint();
+
+    return rows.size();
+}
+
+int Model_Checking::save(std::vector<Data*>& rows)
+{
+    this->Savepoint();
+    for (auto& r : rows)
+    {
+        if (r->id() < 0)
+            wxLogDebug("Incorrect function call to save %s", r->to_json().utf8_str());
+        save(r);
+    }
+    this->ReleaseSavepoint();
+
+    return rows.size();
 }
 
 const Model_Splittransaction::Data_Set Model_Checking::splittransaction(const Data* r)
@@ -118,9 +165,19 @@ DB_Table_CHECKINGACCOUNT_V1::TRANSCODE Model_Checking::TRANSCODE(TYPE type, OP o
     return DB_Table_CHECKINGACCOUNT_V1::TRANSCODE(all_type()[type], op);
 }
 
+DB_Table_CHECKINGACCOUNT_V1::TRANSACTIONNUMBER Model_Checking::TRANSACTIONNUMBER(const wxString& num, OP op)
+{
+    return DB_Table_CHECKINGACCOUNT_V1::TRANSACTIONNUMBER(num, op);
+}
+
 DB_Table_CHECKINGACCOUNT_V1::TRANSDATE Model_Checking::TRANSDATE(const wxDate& date, OP op)
 {
     return DB_Table_CHECKINGACCOUNT_V1::TRANSDATE(date.FormatISODate(), op);
+}
+
+DB_Table_CHECKINGACCOUNT_V1::DELETEDTIME Model_Checking::DELETEDTIME(const wxString& date, OP op)
+{
+    return DB_Table_CHECKINGACCOUNT_V1::DELETEDTIME(date, op);
 }
 
 DB_Table_CHECKINGACCOUNT_V1::TRANSDATE Model_Checking::TRANSDATE(const wxString& date_iso_str, OP op)
@@ -229,7 +286,7 @@ double Model_Checking::amount(const Data&r, int account_id)
 
 double Model_Checking::balance(const Data* r, int account_id)
 {
-    if (Model_Checking::status(r->STATUS) == Model_Checking::VOID_) return 0;
+    if (Model_Checking::status(r->STATUS) == Model_Checking::VOID_ || !r->DELETEDTIME.IsEmpty()) return 0;
     return amount(r, account_id);
 }
 
@@ -317,7 +374,11 @@ wxString Model_Checking::toShortStatus(const wxString& fullStatus)
 Model_Checking::Full_Data::Full_Data()
     : Data(0), BALANCE(0), AMOUNT(0),
     UDFC01(""), UDFC02(""), UDFC03(""), UDFC04(""), UDFC05(""),
-    UDFC01_Type(-1), UDFC02_Type(-1), UDFC03_Type(-1), UDFC04_Type(-1), UDFC05_Type(-1)
+    UDFC01_Type(Model_CustomField::FIELDTYPE::UNKNOWN),
+    UDFC02_Type(Model_CustomField::FIELDTYPE::UNKNOWN),
+    UDFC03_Type(Model_CustomField::FIELDTYPE::UNKNOWN),
+    UDFC04_Type(Model_CustomField::FIELDTYPE::UNKNOWN),
+    UDFC05_Type(Model_CustomField::FIELDTYPE::UNKNOWN)
 {
 }
 
@@ -325,26 +386,22 @@ Model_Checking::Full_Data::Full_Data(const Data& r) : Data(r), BALANCE(0), AMOUN
 , m_splits(Model_Splittransaction::instance().find(Model_Splittransaction::TRANSID(r.TRANSID)))
 {
     ACCOUNTNAME = Model_Account::get_account_name(r.ACCOUNTID);
-
-    if (Model_Checking::type(r) == Model_Checking::TRANSFER)
-    {
+    displayID = wxString::Format("%i", r.TRANSID);
+    if (Model_Checking::type(r) == Model_Checking::TRANSFER) {
         TOACCOUNTNAME = Model_Account::get_account_name(r.TOACCOUNTID);
         PAYEENAME = TOACCOUNTNAME;
     }
-    else
-    {
+    else {
         PAYEENAME = Model_Payee::get_payee_name(r.PAYEEID);
     }
 
-    if (!m_splits.empty())
-    {
+    if (!m_splits.empty()) {
         for (const auto& entry : m_splits)
             this->CATEGNAME += (this->CATEGNAME.empty() ? " * " : ", ")
-            + Model_Category::full_name(entry.CATEGID, entry.SUBCATEGID);
+            + Model_Category::full_name(entry.CATEGID);
     }
-    else
-    {
-        this->CATEGNAME = Model_Category::instance().full_name(r.CATEGID, r.SUBCATEGID);
+    else {
+        this->CATEGNAME = Model_Category::instance().full_name(r.CATEGID);
     }
 }
 
@@ -356,6 +413,7 @@ Model_Checking::Full_Data::Full_Data(const Data& r
     if (it != splits.end()) m_splits = it->second;
 
     ACCOUNTNAME = Model_Account::get_account_name(r.ACCOUNTID);
+    displayID = wxString::Format("%i", r.TRANSID);
     if (Model_Checking::type(r) == Model_Checking::TRANSFER)
     {
         TOACCOUNTNAME = Model_Account::get_account_name(r.TOACCOUNTID);
@@ -370,11 +428,11 @@ Model_Checking::Full_Data::Full_Data(const Data& r
     {
         for (const auto& entry : m_splits)
             this->CATEGNAME += (this->CATEGNAME.empty() ? " * " : ", ")
-            + Model_Category::full_name(entry.CATEGID, entry.SUBCATEGID);
+            + Model_Category::full_name(entry.CATEGID);
     }
     else
     {
-        CATEGNAME = Model_Category::full_name(r.CATEGID, r.SUBCATEGID);
+        CATEGNAME = Model_Category::full_name(r.CATEGID);
     }
 }
 
@@ -386,13 +444,45 @@ wxString Model_Checking::Full_Data::real_payee_name(int account_id) const
 {
     if (TYPE::TRANSFER == type(this->TRANSCODE))
     {
-        if (this->ACCOUNTID == account_id || account_id == -1)
+        if (this->ACCOUNTID == account_id || account_id < 0)
             return ("> " + this->TOACCOUNTNAME);
         else
             return ("< " + this->ACCOUNTNAME);
     }
 
     return this->PAYEENAME;
+}
+
+const wxString Model_Checking::Full_Data::get_currency_code(int account_id) const
+{
+    if (TYPE::TRANSFER == type(this->TRANSCODE))
+    {
+        if (this->ACCOUNTID == account_id || account_id == -1)
+            account_id = this->ACCOUNTID;
+        else
+            account_id = this->TOACCOUNTID;
+    }
+    Model_Account::Data* acc = Model_Account::instance().get(account_id);
+    int currency_id = acc ? acc->CURRENCYID: -1;
+    Model_Currency::Data* curr = Model_Currency::instance().get(currency_id);
+
+    return curr ? curr->CURRENCY_SYMBOL : "";
+}
+
+const wxString Model_Checking::Full_Data::get_account_name(int account_id) const
+{
+    if (TYPE::TRANSFER == type(this->TRANSCODE))
+    {
+        if (this->ACCOUNTID == account_id || account_id == -1) {
+            return this->ACCOUNTNAME;
+        }
+        else {
+            Model_Account::Data* acc = Model_Account::instance().get(TOACCOUNTID);
+            return acc ? acc->ACCOUNTNAME : "";
+        }
+    }
+
+    return this->ACCOUNTNAME;
 }
 
 bool Model_Checking::Full_Data::is_foreign() const
@@ -413,6 +503,18 @@ wxString Model_Checking::Full_Data::info() const
     return info;
 }
 
+bool CompareUsedNotes(const std::tuple<int, wxString, wxString>& a, const std::tuple<int, wxString, wxString>& b)
+{
+    if (std::get<0>(a) < std::get<0>(b)) return true;
+    if (std::get<0>(b) < std::get<0>(a)) return false;
+
+    // a=b for primary condition, go to secondary (but reverse order)
+    if (std::get<1>(a) > std::get<1>(b)) return true;
+    if (std::get<1>(b) > std::get<1>(a)) return false;
+
+    return false;
+}
+
 void Model_Checking::getFrequentUsedNotes(std::vector<wxString> &frequentNotes, int accountID)
 {
     frequentNotes.clear();
@@ -421,22 +523,29 @@ void Model_Checking::getFrequentUsedNotes(std::vector<wxString> &frequentNotes, 
     const auto notes = instance().find(NOTES("", NOT_EQUAL)
         , accountID > 0 ? ACCOUNTID(accountID) : ACCOUNTID(-1, NOT_EQUAL));
 
-    std::map <wxString, int> counterMap;
+    // Count frequency
+    std::map <wxString, std::pair<int, wxString> > counterMap;
     for (const auto& entry : notes)
-        counterMap[entry.NOTES]--;
-
-    std::priority_queue<std::pair<int, wxString> > q; // largest element to appear as the top
-    for (const auto & kv : counterMap)
     {
-        q.push(std::make_pair(kv.second, kv.first));
-        if (q.size() > max) q.pop(); // keep fixed queue as max
+        counterMap[entry.NOTES].first--;
+        if (entry.TRANSDATE > counterMap[entry.NOTES].second)
+            counterMap[entry.NOTES].second = entry.TRANSDATE;
     }
 
-    while (!q.empty())
+    // Convert to vector
+    std::vector<std::tuple<int, wxString, wxString> > vec;
+    for (const auto& entry : counterMap)
+        vec.push_back(std::make_tuple(entry.second.first, entry.second.second, entry.first));
+
+    // Sort by frequency then date
+    std::sort(vec.begin(), vec.end(), CompareUsedNotes);
+
+    // Pull out top 20 (max)
+    for (const auto& kv : vec)
     {
-        const auto & kv = q.top();
-        frequentNotes.push_back(kv.second);
-        q.pop();
+        if (0 == max--)
+            break;
+        frequentNotes.push_back(std::get<2>(kv));
     }
 }
 
@@ -444,34 +553,28 @@ void Model_Checking::getEmptyTransaction(Data &data, int accountID)
 {
     data.TRANSID = -1;
     data.PAYEEID = -1;
-    wxDateTime todayDate = wxDate::Today();
-    wxDateTime trx_date = todayDate;
+    const wxString today_date = wxDate::Today().FormatISODate();
+    wxString max_trx_date;
     if (Option::instance().TransDateDefault() != Option::NONE)
     {
-        auto trans = instance().find(ACCOUNTID(accountID), TRANSDATE(trx_date, LESS_OR_EQUAL));
-        std::stable_sort(trans.begin(), trans.end(), SorterByTRANSDATE());
-        std::reverse(trans.begin(), trans.end());
-        if (!trans.empty())
-            trx_date = to_date(trans.begin()->TRANSDATE);
+        auto trans = instance().find_or(ACCOUNTID(accountID), TOACCOUNTID(accountID));
 
-        wxDateTime trx_date_b = todayDate;
-        auto trans_b = instance().find(TOACCOUNTID(accountID), TRANSDATE(trx_date_b, LESS_OR_EQUAL));
-        std::stable_sort(trans_b.begin(), trans_b.end(), SorterByTRANSDATE());
-        std::reverse(trans_b.begin(), trans_b.end());
-        if (!trans_b.empty())
-        {
-            trx_date_b = to_date(trans_b.begin()->TRANSDATE);
-            if (!trans.empty() && (trx_date_b > trx_date))
-                trx_date = trx_date_b;
+        for (const auto& t: trans) {
+            if (t.DELETEDTIME.IsNull() && max_trx_date < t.TRANSDATE && today_date >= t.TRANSDATE) {
+                max_trx_date = t.TRANSDATE;
+            }
         }
     }
 
-    data.TRANSDATE = trx_date.FormatISODate();
+    if (max_trx_date.empty()) {
+        max_trx_date = today_date;
+    }
+
+    data.TRANSDATE = max_trx_date;
     data.ACCOUNTID = accountID;
     data.STATUS = toShortStatus(all_status()[Option::instance().TransStatusReconciled()]);
     data.TRANSCODE = all_type()[WITHDRAWAL];
     data.CATEGID = -1;
-    data.SUBCATEGID = -1;
     data.FOLLOWUPID = -1;
     data.TRANSAMOUNT = 0;
     data.TOTRANSAMOUNT = 0;
@@ -487,7 +590,6 @@ bool Model_Checking::getTransactionData(Data &data, const Data* r)
         data.TOACCOUNTID = r->TOACCOUNTID;
         data.TRANSCODE = r->TRANSCODE;
         data.CATEGID = r->CATEGID;
-        data.SUBCATEGID = r->SUBCATEGID;
         data.TRANSAMOUNT = r->TRANSAMOUNT;
         data.TOTRANSAMOUNT = r->TOTRANSAMOUNT;
         data.FOLLOWUPID = r->FOLLOWUPID;
@@ -495,6 +597,8 @@ bool Model_Checking::getTransactionData(Data &data, const Data* r)
         data.TRANSACTIONNUMBER = r->TRANSACTIONNUMBER;
         data.PAYEEID = r->PAYEEID;
         data.TRANSID = r->TRANSID;
+        data.LASTUPDATEDTIME = r->LASTUPDATEDTIME;
+        data.DELETEDTIME = r->DELETEDTIME;
     }
     return r ? true : false;
 }
@@ -508,7 +612,6 @@ void Model_Checking::putDataToTransaction(Data *r, const Data &data)
     r->ACCOUNTID = data.ACCOUNTID;
     r->TRANSAMOUNT = data.TRANSAMOUNT;
     r->CATEGID = data.CATEGID;
-    r->SUBCATEGID = data.SUBCATEGID;
     r->TOACCOUNTID = data.TOACCOUNTID;
     r->TOTRANSAMOUNT = data.TOTRANSAMOUNT;
     r->NOTES = data.NOTES;
@@ -545,7 +648,7 @@ const wxString Model_Checking::Full_Data::to_json()
         for (const auto & item : m_splits)
         {
             json_writer.StartObject();
-            json_writer.Key(Model_Category::full_name(item.CATEGID, item.SUBCATEGID).utf8_str());
+            json_writer.Key(Model_Category::full_name(item.CATEGID).utf8_str());
             json_writer.Double(item.SPLITTRANSAMOUNT);
             json_writer.EndObject();
         }
@@ -554,7 +657,7 @@ const wxString Model_Checking::Full_Data::to_json()
     else
     {
         json_writer.Key("CATEG");
-        json_writer.String(Model_Category::full_name(this->CATEGID, this->SUBCATEGID).utf8_str());
+        json_writer.String(Model_Category::full_name(this->CATEGID).utf8_str());
     }
 
     json_writer.EndObject();
@@ -573,4 +676,13 @@ bool Model_Checking::foreignTransaction(const Data& data)
 bool Model_Checking::foreignTransactionAsTransfer(const Data& data)
 {
     return foreignTransaction(data) && (data.TOACCOUNTID == Model_Translink::AS_TRANSFER);
+}
+
+void Model_Checking::updateTimestamp(int id)
+{
+    Data* r = instance().get(id);
+    if (r && r->TRANSID == id) {
+        r->LASTUPDATEDTIME = wxDateTime::Now().ToUTC().FormatISOCombined();
+        this->save(r, db_);
+    }
 }

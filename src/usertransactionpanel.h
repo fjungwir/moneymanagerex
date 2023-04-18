@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "constants.h"
 #include "defs.h"
-#include <wx/spinbutt.h>
+#include "mmSimpleDialogs.h"
 #include "mmTextCtrl.h"
 #include "model/Model_Translink.h"
 
@@ -53,6 +53,9 @@ public:
     void SetTransactionValue(const double& trans_value, bool fixed_value = false);
     void SetTransactionNumber(const wxString& trans_number);
     void SetTransactionAccount(const wxString& trans_account);
+    void SetTransactionStatus(const int trans_status_enum);
+    void SetTransactionPayee(const int payeeid);
+    void SetTransactionCategory(const int categid);
 
     int TransactionType();
     Model_Translink::CHECKING_TYPE CheckingType();
@@ -76,17 +79,12 @@ private:
     void OnTransPayeeButton(wxCommandEvent& WXUNUSED(event));
     void OnTransCategoryButton(wxCommandEvent& WXUNUSED(event));
 
-    void OnDateSelectorForward(wxSpinEvent& WXUNUSED(event));
-    void OnDateSelectorBackward(wxSpinEvent& WXUNUSED(event));
-    void SetNewDate(wxDatePickerCtrl* dpc, bool forward = true);
-
-    void OnEnteredText(wxCommandEvent& event);
     void OnFrequentNotes(wxCommandEvent& event);
     void onSelectedNote(wxCommandEvent& event);
     void OnAttachments(wxCommandEvent& WXUNUSED(event));
 
 private:
-    wxDatePickerCtrl* m_date_selector;
+    mmDatePickerCtrl* m_date_selector;
 
     wxButton* m_account;
     wxChoice* m_status_selector;
@@ -100,6 +98,7 @@ private:
     wxTextCtrl* m_entered_notes;
     std::vector<wxString> m_frequent_notes;
     wxBitmapButton* m_attachment;
+    wxButton* frequent_notes;
  
     enum
     {

@@ -1,5 +1,6 @@
 /*******************************************************
 Copyright (C) 2009 VaDiM
+Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -78,6 +79,21 @@ const wxString g_CloseLabel =
 #else
     wxTRANSLATE("&Close ");
 #endif
+const wxString g_OkLabel =
+#if defined(__APPLE__)
+wxTRANSLATE("OK");
+#else
+wxTRANSLATE("&OK ");
+#endif
+
+//bug #5590
+const wxString grm_menu_undo = _("Undo");
+const wxString grm_menu_redo = _("Redo");
+const wxString grm_menu_cut = _("Cut");
+const wxString grm_menu_copy = _("Copy");
+const wxString grm_menu_paste = _("Paste");
+const wxString grm_menu_selall = _("Select All");
+
 //---------------------------------------------------------------------------
 int mmex::MIN_DATAVERSION = 2;
 const wxString mmex::DATAVERSION = "3";
@@ -92,7 +108,7 @@ const wxString mmex::getTitleProgramVersion()
 {
     const wxString architecture =
 #if defined(_WIN64) || defined(__x86_64__)
-        "64-bit";
+        _("64-bit");
 #else
         "";
 #endif
@@ -125,29 +141,27 @@ const wxString mmex::weblink::addReferralToURL(const wxString& BaseURL, const wx
     return url;
 }
 
-const wxString mmex::weblink::GA = "http://www.google-analytics.com/collect?";
-const wxString mmex::weblink::WebSite = mmex::weblink::addReferralToURL("http://www.moneymanagerex.org", "Website");
-const wxString mmex::weblink::Releases = "https://api.github.com/repos/moneymanagerex/moneymanagerex/releases";
-const wxString mmex::weblink::Download = mmex::weblink::addReferralToURL("http://www.moneymanagerex.org/download", "Download");
-const wxString mmex::weblink::News = mmex::weblink::addReferralToURL("http://www.moneymanagerex.org/news", "News");
-const wxString mmex::weblink::NewsRSS = "https://www.moneymanagerex.org/blog/index.xml";
-const wxString mmex::weblink::Forum = mmex::weblink::addReferralToURL("http://forum.moneymanagerex.org", "Forum");
-const wxString mmex::weblink::Wiki = "http://wiki.moneymanagerex.org";
-const wxString mmex::weblink::BugReport = "https://github.com/moneymanagerex/moneymanagerex/issues";
-const wxString mmex::weblink::Donate = "https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=moneymanagerex%40gmail%2ecom&lc=US&item_name=MoneyManagerEx&no_note=0&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest";
-const wxString mmex::weblink::Twitter = "https://twitter.com/MoneyManagerEx";
-const wxString mmex::weblink::Facebook = "http://www.facebook.com/pages/Money-Manager-Ex/242286559144586";
+const wxString mmex::weblink::GA             = "http://www.google-analytics.com/collect?";
+const wxString mmex::weblink::WebSite        = mmex::weblink::addReferralToURL("https://moneymanagerex.org", "Website");
+const wxString mmex::weblink::Releases       = "https://api.github.com/repos/moneymanagerex/moneymanagerex/releases";
+const wxString mmex::weblink::Download       = mmex::weblink::addReferralToURL("https://moneymanagerex.org/docs/downloads/latest", "Download");
+const wxString mmex::weblink::News           = mmex::weblink::addReferralToURL("https://moneymanagerex.org/blog/", "News");
+const wxString mmex::weblink::NewsRSS        = "https://moneymanagerex.org/blog/index.xml";
+const wxString mmex::weblink::Forum          = mmex::weblink::addReferralToURL("http://forum.moneymanagerex.org", "Forum");
+const wxString mmex::weblink::Wiki           = "https://github.com/moneymanagerex/moneymanagerex/wiki";
+const wxString mmex::weblink::BugReport      = "https://github.com/moneymanagerex/moneymanagerex/issues";
+const wxString mmex::weblink::Donate         = "https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=moneymanagerex%40gmail%2ecom&lc=US&item_name=MoneyManagerEx&no_note=0&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest";
+const wxString mmex::weblink::Twitter        = "https://twitter.com/MoneyManagerEx";
+const wxString mmex::weblink::Facebook       = "https://www.facebook.com/pages/Money-Manager-Ex/242286559144586";
 const wxString mmex::weblink::SquareCashGuan = "https://cash.me/$guanlisheng/1";
-// https://greenido.wordpress.com/2009/12/22/yahoo-finance-hidden-api/
-const wxString mmex::weblink::GitHub = "https://github.com/moneymanagerex/moneymanagerex";
-const wxString mmex::weblink::GitHubLogin = "https://github.com/login";
-const wxString mmex::weblink::YouTube = "http://www.youtube.com/user/moneymanagerex";
-const wxString mmex::weblink::Slack = "https://moneymanagerex.slack.com/"; //"http://slack.moneymanagerex.org/";
-
-const wxString mmex::weblink::GooglePlay = "http://android.moneymanagerex.org/";
-const wxString mmex::weblink::WebApp = "https://github.com/moneymanagerex/web-money-manager-ex";
-const wxString mmex::weblink::Chiark = "https://www.chiark.greenend.org.uk/~sgtatham/bugs.html";
-const wxString mmex::weblink::Crowdin = "https://crowdin.com/project/moneymanagerex/";
+const wxString mmex::weblink::GitHub         = "https://github.com/moneymanagerex/moneymanagerex";
+const wxString mmex::weblink::GitHubLogin    = "https://github.com/login";
+const wxString mmex::weblink::YouTube        = "https://www.youtube.com/user/moneymanagerex";
+const wxString mmex::weblink::Slack          = "https://moneymanagerex.slack.com/"; //"http://slack.moneymanagerex.org/";
+const wxString mmex::weblink::GooglePlay     = "https://android.moneymanagerex.org/";
+const wxString mmex::weblink::WebApp         = "https://github.com/moneymanagerex/web-money-manager-ex";
+const wxString mmex::weblink::Chiark         = "https://www.chiark.greenend.org.uk/~sgtatham/bugs.html";
+const wxString mmex::weblink::Crowdin        = "https://crowdin.com/project/moneymanagerex/";
 
 // Will display the stock page when using Looks up the current value
 const wxString mmex::weblink::DefStockUrl = "http://finance.yahoo.com/echarts?s=%s";
@@ -175,7 +189,7 @@ const wxString INIDB_USE_ORG_DATE_DUPLICATE = "USEORIGDATEONDUPLICATE";
 const wxString INIDB_SEND_USAGE_STATS = "SENDUSAGESTATS";
 const wxString INIDB_CHECK_NEWS = "CHECKNEWS";
 
-const wxString VIEW_TRANS_FILTER_DIALOG_STR  = wxTRANSLATE("Advanced Filter");
+const wxString VIEW_TRANS_FILTER_DIALOG_STR  = wxTRANSLATE("View with Transaction Filter...");
 const wxString VIEW_TRANS_ALL_STR            = wxTRANSLATE("View All Transactions");
 const wxString VIEW_TRANS_TODAY_STR          = wxTRANSLATE("View Today");
 const wxString VIEW_TRANS_CURRENT_MONTH_STR  = wxTRANSLATE("View Current Month");
@@ -195,10 +209,14 @@ const wxString VIEW_ACCOUNTS_OPEN_STR = wxTRANSLATE("Open");
 const wxString VIEW_ACCOUNTS_CLOSED_STR = wxTRANSLATE("Closed");
 const wxString VIEW_ACCOUNTS_FAVORITES_STR = wxTRANSLATE("Favorites");
 
+const wxString INIDB_HIDE_SHARE_ACCOUNTS          = "HIDE_SHARE_ACCOUNTS";
+const wxString INIDB_HIDE_DELETED_TRANSACTIONS    = "HIDE_DELETED_TRANSACTIONS";
 const wxString INIDB_BUDGET_FINANCIAL_YEARS       = "BUDGET_FINANCIAL_YEARS";
 const wxString INIDB_BUDGET_INCLUDE_TRANSFERS     = "BUDGET_INCLUDE_TRANSFERS";
 const wxString INIDB_BUDGET_SETUP_WITHOUT_SUMMARY = "BUDGET_SETUP_WITHOUT_SUMMARY";
 const wxString INIDB_BUDGET_SUMMARY_WITHOUT_CATEG = "BUDGET_SUMMARY_WITHOUT_CATEGORIES";
+const wxString INIDB_BUDGET_OVERRIDE              = "BUDGET_OVERRIDE";
+const wxString INIDB_BUDGET_DEDUCT_MONTH_FROM_YEAR = "BUDGET_DEDUCT_MONTH_FROM_YEAR";
 const wxString INIDB_IGNORE_FUTURE_TRANSACTIONS   = "IGNORE_FUTURE_TRANSACTIONS";
 const wxString INIDB_SHOW_TOOLTIPS                = "IGNORE_SHOW_TOOLTIPS";
 const wxString INIDB_SHOW_MONEYTIPS               = "IGNORE_SHOW_MONEYTIPS";

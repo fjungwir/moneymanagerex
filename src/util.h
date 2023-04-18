@@ -1,6 +1,6 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
- Copyright (C) 2013-2021 Nikolay Akimov
+ Copyright (C) 2013-2022 Nikolay Akimov
  Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
@@ -77,25 +77,47 @@ inline wxString mmListBoxItem::getName() const { return name_; }
 class mmTreeItemData : public wxTreeItemData
 {
 public:
-    mmTreeItemData(int id, bool isBudget, bool isReadOnly);
-    mmTreeItemData(const wxString& string, mmPrintableBase* report);
-    mmTreeItemData(mmPrintableBase* report);
-    mmTreeItemData(const wxString& string, bool isReadOnly);
+    mmTreeItemData(int type, int id);
+    mmTreeItemData(const wxString& data, mmPrintableBase* report);
+    mmTreeItemData(mmPrintableBase* report, const wxString& data);
+    mmTreeItemData(int type, const wxString& data);
     
     ~mmTreeItemData() {}
 
     int getData() const;
     const wxString getString() const;
     mmPrintableBase* get_report() const;
-    bool isStringData() const;
-    bool isBudgetingNode() const;
     bool isReadOnly() const;
+    int getType() const;
+    enum {
+        HOME_PAGE,
+        HELP_PAGE_MAIN,
+        HELP_PAGE_STOCKS,
+        HELP_PAGE_GRM,
+        HELP_INVESTMENT,
+        HELP_BUDGET,
+        HELP_REPORT,
+        BUDGET,
+        ACCOUNT,
+        STOCK,
+        REPORT,
+        GRM,
+        ALL_TRANSACTIONS,
+        FAVORITES,
+        ASSETS,
+        BILLS,
+        TRASH,
+        FILTER,
+        FILTER_REPORT,
+        MENU_ACCOUNT,
+        MENU_FAVORITES,
+        MENU_REPORT,
+        DO_NOTHING
+    };
 
 private:
     int id_;
-    bool isString_;
-    bool isBudgetingNode_;
-    bool isReadOnly_;
+    int type_;
     wxString stringData_;
     wxSharedPtr<mmPrintableBase> report_;
 };
@@ -103,13 +125,12 @@ private:
 inline int mmTreeItemData::getData() const { return id_; }
 inline const wxString mmTreeItemData::getString() const { return stringData_; }
 inline mmPrintableBase* mmTreeItemData::get_report() const { return report_.get(); }
-inline bool mmTreeItemData::isStringData() const { return isString_; }
-inline bool mmTreeItemData::isBudgetingNode() const { return isBudgetingNode_; }
-inline bool mmTreeItemData::isReadOnly() const { return isReadOnly_; }
+inline int mmTreeItemData::getType() const { return type_; }
 
 //----------------------------------------------------------------------------
 
 int CaseInsensitiveCmp(const wxString &s1, const wxString &s2);
+int CaseInsensitiveLocaleCmp(const wxString &s1, const wxString &s2);
 const wxString inQuotes(const wxString& label, const wxString& delimiter);
 void csv2tab_separated_values(wxString& line, const wxString& delimit);
 void correctEmptyFileExt(const wxString& ext, wxString & fileName );
@@ -141,14 +162,17 @@ bool get_yahoo_prices(std::map<wxString, double>& symbols
 bool getCoincapInfoFromSymbol(const wxString symbol, wxString& out_id, double& price_usd, wxString& output);
 bool getCoincapAssetHistory(const wxString asset_id, wxDateTime begin_date, std::map<wxDateTime, double> &historical_rates, wxString &msg);
 
+wxString cleanseNumberString(wxString str, bool decimal);
+double cleanseNumberStringToDouble(wxString str, bool decimal);
 const wxString mmPlatformType();
 
 //All components version in TXT, HTML, ABOUT
 const wxString getProgramDescription(int type = 0);
-void windowsFreezeThaw(wxWindow* w);
+void DoWindowsFreezeThaw(wxWindow* w);
 const wxString md2html(const wxString& md);
 const wxString getVFname4print(const wxString& name, const wxString& data);
 void clearVFprintedFiles(const wxString& name);
+const wxRect GetDefaultMonitorRect();
 
 //* Date Functions----------------------------------------------------------*//
 static const wxString MONTHS[12] =
@@ -162,7 +186,7 @@ static const wxString MONTHS[12] =
 const wxDateTime getUserDefinedFinancialYear(bool prevDayRequired = false);
 const wxString mmGetMonthName(wxDateTime::Month month);
 const std::map<wxString, wxString> &date_formats_regex();
-const wxDateTime mmParseISODate(const wxString& str);
+bool mmParseISODate(const wxString& in_str, wxDateTime& out_date);
 const wxString mmGetDateForDisplay(const wxString &iso_date, const wxString& dateFormat = Option::instance().getDateFormat());
 bool mmParseDisplayStringToDate(wxDateTime& date, const wxString& sDate, const wxString& sDateMask);
 extern const std::vector<std::pair<wxString, wxString>> g_date_formats_map();
@@ -248,3 +272,8 @@ int pow10(int y);
 
 // escape HTML characters
 wxString HTMLEncode(wxString input);
+
+void mmSetSize(wxWindow* w);
+void mmFontSize(wxWindow* widget);
+
+bool isValidURI(const wxString validate);

@@ -16,10 +16,15 @@
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  ********************************************************/
 
+#include "constants.h"
 #include "wizard_newdb.h"
 #include "maincurrencydialog.h"
 #include "model/Model_Account.h"
 #include "../resources/addacctwiz.xpm"
+
+BEGIN_EVENT_TABLE(mmNewDatabaseWizard, wxWizard)
+    EVT_WIZARD_CANCEL(wxID_ANY, mmNewDatabaseWizard::OnCancel)
+END_EVENT_TABLE()
 
 mmNewDatabaseWizard::mmNewDatabaseWizard(wxFrame *frame)
     : wxWizard(frame, wxID_ANY, _("New Database Wizard")
@@ -48,8 +53,9 @@ mmNewDatabaseWizard::mmNewDatabaseWizard(wxFrame *frame)
     GetPageAreaSizer()->Add(page1);
 }
 
-void mmNewDatabaseWizard::RunIt(bool modal)
+bool mmNewDatabaseWizard::RunIt(bool modal)
 {
+    success_ = true;
     if (modal)
     {
         if (RunWizard(page1))
@@ -65,6 +71,12 @@ void mmNewDatabaseWizard::RunIt(bool modal)
         ShowPage(page1);
         Show(true);
     }
+    return success_;
+}
+
+void mmNewDatabaseWizard::OnCancel(wxWizardEvent& evt)
+{
+    success_ = false;
 }
 
 BEGIN_EVENT_TABLE(mmNewDatabaseWizardPage, wxWizardPageSimple)
@@ -107,7 +119,8 @@ mmNewDatabaseWizardPage::mmNewDatabaseWizardPage(mmNewDatabaseWizard* parent)
     itemBoxSizer5->Add(itemStaticText6, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
     itemUserName_ = new wxTextCtrl(this, wxID_ANY);
-    itemBoxSizer5->Add(itemUserName_, 1, wxGROW | wxALL, 5);
+    itemUserName_->SetMinSize(wxSize(200,-1));
+    itemBoxSizer5->Add(itemUserName_, g_flagsExpand);
 
     helpMsg = _("(Optional) Specify a title or your name.") + "\n";
     helpMsg += _("Used as a database title for displayed and printed reports.");

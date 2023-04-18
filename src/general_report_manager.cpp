@@ -1,7 +1,7 @@
 /*******************************************************
  Copyright (C) 2011 Stefano Giorgio
  Copyright (C) 2014 -2017 Nikolay Akimov
- Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
+ Copyright (C) 2021-2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -244,26 +244,28 @@ mmGeneralReportManager::mmGeneralReportManager(wxWindow* parent, wxSQLite3Databa
     , m_sqlListBox(nullptr)
     , m_selectedReportID(0)
 {
-    long style = wxCAPTION | wxRESIZE_BORDER | wxSYSTEM_MENU | wxCLOSE_BOX;
-    Create(parent, wxID_ANY, _("General Reports Manager"), wxDefaultPosition, wxDefaultSize, style);
-    SetClientSize(wxSize(940, 576));
+    this->SetFont(parent->GetFont());
+    Create(parent);
+    mmSetSize(this);
     Centre();
 }
 
 mmGeneralReportManager::~mmGeneralReportManager()
 {
     clearVFprintedFiles("grm");
+    Model_Infotable::instance().Set("GRM_DIALOG_SIZE", GetSize());
 }
 
 bool mmGeneralReportManager::Create(wxWindow* parent
     , wxWindowID id
     , const wxString& caption
+    , const wxString& name
     , const wxPoint& pos
     , const wxSize& size
     , long style)
 {
     SetExtraStyle(GetExtraStyle() | wxWS_EX_BLOCK_EVENTS);
-    wxDialog::Create(parent, id, caption, pos, size, style);
+    wxDialog::Create(parent, id, caption, pos, size, style, name);
 
     wxAcceleratorEntry entries[2];
     entries[0].Set(wxACCEL_NORMAL, WXK_F9, wxID_EXECUTE);
@@ -284,7 +286,7 @@ bool mmGeneralReportManager::Create(wxWindow* parent
 
 void mmGeneralReportManager::fillControls()
 {
-    windowsFreezeThaw(this);
+    DoWindowsFreezeThaw(this);
     viewControls(false);
     SetEvtHandlerEnabled(false);
     m_treeCtrl->DeleteAllItems();
@@ -303,9 +305,11 @@ void mmGeneralReportManager::fillControls()
         {
             group_name = record.GROUPNAME;
             group = m_treeCtrl->AppendItem(m_rootItem, group_name);
+            m_treeCtrl->SetItemBold(group, true);
             m_treeCtrl->SetItemData(group, new MyTreeItemData(-1, group_name));
         }
-        wxTreeItemId item = m_treeCtrl->AppendItem(no_group ? m_rootItem : group, record.REPORTNAME);
+        wxTreeItemId item = m_treeCtrl->AppendItem(no_group ? m_rootItem : group
+            , wxString::Format("%s%s", (record.ACTIVE ? L"" : L"\u2717 "), record.REPORTNAME));
         m_treeCtrl->SetItemData(item, new MyTreeItemData(record.REPORTID, record.GROUPNAME));
 
         if (m_selectedReportID == record.REPORTID)
@@ -317,7 +321,7 @@ void mmGeneralReportManager::fillControls()
     m_treeCtrl->SelectItem(m_selectedItemID);
     SetEvtHandlerEnabled(true);
     m_treeCtrl->SetFocus();
-    windowsFreezeThaw(this);
+    DoWindowsFreezeThaw(this);
     //Show help page or report detailes (bugs:#421)
     wxTreeEvent evt(wxEVT_TREE_SEL_CHANGED, ID_REPORT_LIST);
     evt.SetItem(m_selectedItemID);
@@ -326,77 +330,81 @@ void mmGeneralReportManager::fillControls()
 
 void mmGeneralReportManager::CreateControls()
 {
-    wxBoxSizer* mainBoxSizer = new wxBoxSizer(wxVERTICAL);
-    this->SetSizer(mainBoxSizer);
+    wxBoxSizer* main_box_sizer = new wxBoxSizer(wxVERTICAL);
+    this->SetSizer(main_box_sizer);
+    wxBoxSizer* top_sizer = new wxBoxSizer(wxHORIZONTAL);
+    main_box_sizer->Add(top_sizer, 1, wxGROW | wxALL);
+    wxSplitterWindow* splitter_main = new wxSplitterWindow(this, wxID_ANY);
+    splitter_main->SetMinimumPaneSize(200);
+    top_sizer->Add(splitter_main, 1, wxEXPAND, 0);
 
     /****************************************
-     Parameters Area
+     Navigation tree
      ***************************************/
-    wxBoxSizer* topScreenSizer = new wxBoxSizer(wxHORIZONTAL);
-    mainBoxSizer->Add(topScreenSizer, 1, wxGROW | wxALL);
 
-#if defined (__WXMSW__)
-    long treeCtrlFlags = wxTR_SINGLE | wxTR_HAS_BUTTONS | wxTR_ROW_LINES;
-#else
-    long treeCtrlFlags = wxTR_SINGLE | wxTR_HAS_BUTTONS;
-#endif
-    m_treeCtrl = new wxTreeCtrl(this, ID_REPORT_LIST
-        , wxDefaultPosition, wxSize(200, 200), treeCtrlFlags);
+    wxPanel* left_panel = new wxPanel(splitter_main, wxID_ANY);
+    wxBoxSizer* left_sizer = new wxBoxSizer(wxVERTICAL);
+
+    m_treeCtrl = new wxTreeCtrl(left_panel, ID_REPORT_LIST, wxDefaultPosition, wxDefaultSize,
+        wxTR_SINGLE | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_TWIST_BUTTONS);
     mmThemeMetaColour(m_treeCtrl, meta::COLOR_NAVPANEL);
     mmThemeMetaColour(m_treeCtrl, meta::COLOR_NAVPANEL_FONT, true);
+    left_sizer->Add(m_treeCtrl, g_flagsExpand);
 
-    wxBoxSizer* reportTreeSizer = new wxBoxSizer(wxVERTICAL);
-    reportTreeSizer->Add(m_treeCtrl, g_flagsExpand);
+    left_panel->SetSizer(left_sizer);
+    left_panel->Fit();
 
     /****************************************
      Script Area
      ***************************************/
     // ListBox for source code
-    wxBoxSizer* notebookSizer = new wxBoxSizer(wxVERTICAL);
-    wxNotebook* editors_notebook = new wxNotebook(this
-        , ID_NOTEBOOK, wxDefaultPosition, wxDefaultSize, wxNB_MULTILINE);
-    notebookSizer->Add(editors_notebook, g_flagsExpand);
-    createOutputTab(editors_notebook, ID_TAB_OUT);
+    wxPanel* right_panel = new wxPanel(splitter_main, wxID_ANY);
+    wxBoxSizer* right_sizer = new wxBoxSizer(wxVERTICAL);
 
-    topScreenSizer->Add(reportTreeSizer, 0, wxEXPAND | wxALL, 5);
-    topScreenSizer->Add(notebookSizer, g_flagsExpand);
+    wxNotebook* editors_notebook = new wxNotebook(right_panel
+        , ID_NOTEBOOK, wxDefaultPosition, wxDefaultSize, wxNB_MULTILINE);
+    right_sizer->Add(editors_notebook, g_flagsExpand);
+    createOutputTab(editors_notebook, ID_TAB_OUT);
+    right_panel->SetSizer(right_sizer);
+
+    splitter_main->SplitVertically(left_panel, right_panel);
 
     /****************************************
      Separation Line
      ***************************************/
-    wxStaticLine* staticline1 = new wxStaticLine(this, wxID_ANY
+    wxStaticLine* static_line = new wxStaticLine(this, wxID_ANY
         , wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
-    mainBoxSizer->Add(staticline1, 0, wxEXPAND | wxALL, 1);
+    main_box_sizer->Add(static_line, 0, wxEXPAND | wxALL, 1);
 
     /****************************************
      Bottom Panel
      ***************************************/
-    wxPanel* buttonPanel = new wxPanel(this, wxID_STATIC
+    wxPanel* button_panel = new wxPanel(this, wxID_STATIC
         , wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
-    mainBoxSizer->Add(buttonPanel, wxSizerFlags(g_flagsV).Center());
+    main_box_sizer->Add(button_panel, wxSizerFlags(g_flagsV).Center());
 
     wxBoxSizer* buttonPanelSizer = new wxBoxSizer(wxHORIZONTAL);
-    buttonPanel->SetSizer(buttonPanelSizer);
+    button_panel->SetSizer(buttonPanelSizer);
 
     //
-    m_buttonOpen = new wxButton(buttonPanel, wxID_OPEN, _("&Import"));
+    m_buttonOpen = new wxButton(button_panel, wxID_OPEN, _("&Import"));
     buttonPanelSizer->Add(m_buttonOpen, g_flagsH);
     mmToolTip(m_buttonOpen, _("Locate and load a report file."));
 
-    m_buttonSaveAs = new wxButton(buttonPanel, wxID_SAVEAS, _("&Export"));
+    m_buttonSaveAs = new wxButton(button_panel, wxID_SAVEAS, _("&Export"));
     buttonPanelSizer->Add(m_buttonSaveAs, g_flagsH);
     mmToolTip(m_buttonSaveAs, _("Export the report to a new file."));
     buttonPanelSizer->AddSpacer(50);
 
-    m_buttonSave = new wxButton(buttonPanel, wxID_SAVE, _("&Save "));
+    m_buttonSave = new wxButton(button_panel, wxID_SAVE, _("&Save "));
     buttonPanelSizer->Add(m_buttonSave, g_flagsH);
     mmToolTip(m_buttonSave, _("Save changes."));
 
-    m_buttonRun = new wxButton(buttonPanel, wxID_EXECUTE, _("&Run"));
+    m_buttonRun = new wxButton(button_panel, wxID_EXECUTE, _("&Run"));
     buttonPanelSizer->Add(m_buttonRun, g_flagsH);
     mmToolTip(m_buttonRun, _("Run selected report."));
 
-    wxButton* button_Close = new wxButton(buttonPanel, wxID_CLOSE, wxGetTranslation(g_CloseLabel));
+    wxButton* button_Close = new wxButton(button_panel, wxID_CLOSE, wxGetTranslation(g_CloseLabel));
     buttonPanelSizer->Add(button_Close, g_flagsH);
     //mmToolTip(button_Close, _("Save changes before closing. Changes without Save will be lost."));
 
@@ -407,22 +415,22 @@ void mmGeneralReportManager::createOutputTab(wxNotebook* editors_notebook, int t
     //Output
     wxPanel* out_tab = new wxPanel(editors_notebook, wxID_ANY);
     editors_notebook->InsertPage(type, out_tab, _("Output"));
-    wxBoxSizer *out_sizer = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer* out_sizer = new wxBoxSizer(wxVERTICAL);
     out_tab->SetSizer(out_sizer);
 
-   browser_ = wxWebView::New();
+    browser_ = wxWebView::New();
 #ifdef __WXMAC__
     // With WKWebView handlers need to be registered before creation
     browser_->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewFSHandler("memory")));
-    browser_->Create(out_tab, ID_WEB);
+    browser_->Create(out_tab, mmID_BROWSER);
 #else
-    browser_->Create(out_tab, ID_WEB);
-   browser_->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewFSHandler("memory")));
+    browser_->Create(out_tab, mmID_BROWSER);
+    browser_->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewFSHandler("memory")));
 #endif
-     Bind(wxEVT_WEBVIEW_NEWWINDOW, &mmGeneralReportManager::OnNewWindow, this, browser_->GetId());
+    Bind(wxEVT_WEBVIEW_NEWWINDOW, &mmGeneralReportManager::OnNewWindow, this, mmID_BROWSER);
 
-    out_sizer->Add(browser_, g_flagsExpand);
-    out_tab->SetSizerAndFit(out_sizer);
+     out_sizer->Add(browser_, g_flagsExpand);
+     out_tab->SetSizerAndFit(out_sizer);
 }
 
 void mmGeneralReportManager::createEditorTab(wxNotebook* editors_notebook, int type)
@@ -616,6 +624,7 @@ void mmGeneralReportManager::importReport()
     report->LUACONTENT = lua;
     report->TEMPLATECONTENT = htt;
     report->DESCRIPTION = txt;
+    report->ACTIVE = 1;
     m_selectedReportID = Model_Report::instance().save(report);
 
     fillControls();
@@ -660,7 +669,7 @@ bool mmGeneralReportManager::openZipFile(const wxString &reportFileName
         }
         else
         {
-            wxString msg = wxString::Format(_("Unable to open file:\n%s\n\n"), reportFileName);
+            wxString msg = wxString() << _("Unable to open file:") << "\n" << "'" << reportFileName << "'" << "\n" << "\n";
             wxMessageBox(msg, _("General Reports Manager"), wxOK | wxICON_ERROR);
             return false;
         }
@@ -721,24 +730,31 @@ void mmGeneralReportManager::OnItemRightClick(wxTreeEvent& event)
     Model_Report::Data *report = Model_Report::instance().get(report_id);
 
     wxMenu* samplesMenu = new wxMenu;
-    samplesMenu->Append(ID_NEW_SAMPLE_ASSETS, _("Assets"));
+    samplesMenu->Append(ID_NEW_SAMPLE_ASSETS, _("Assets..."));
 
     wxMenu customReportMenu;
-    customReportMenu.Append(ID_NEW_EMPTY, _("New Empty Report"));
+    customReportMenu.Append(ID_NEW_EMPTY, _("New Empty Report..."));
     customReportMenu.Append(wxID_ANY, _("New Sample Report"), samplesMenu);
     customReportMenu.AppendSeparator();
     if (report)
-        customReportMenu.Append(ID_GROUP, _("Change Group"));
+        customReportMenu.Append(ID_GROUP, _("Change Group..."));
     else
-        customReportMenu.Append(ID_GROUP, _("Rename Group"));
+        customReportMenu.Append(ID_GROUP, _("Rename Group..."));
     customReportMenu.Append(ID_UNGROUP, _("UnGroup"));
-    customReportMenu.Append(ID_RENAME, _("Rename Report"));
+    customReportMenu.Append(ID_RENAME, _("Rename Report..."));
     customReportMenu.AppendSeparator();
-    customReportMenu.Append(ID_DELETE, _("Delete Report"));
+
+    wxMenuItem* menuItemActive = new wxMenuItem(&customReportMenu, ID_ACTIVE,
+        _("Active"), _("Show/Hide the report in the main navigation panel"), wxITEM_CHECK);
+    customReportMenu.Append(menuItemActive);
+
+    customReportMenu.AppendSeparator();
+    customReportMenu.Append(ID_DELETE, _("Delete Report..."));
 
     if (report)
     {
         customReportMenu.Enable(ID_UNGROUP, !report->GROUPNAME.empty());
+        menuItemActive->Check(report->ACTIVE);
     }
     else
     {
@@ -748,6 +764,7 @@ void mmGeneralReportManager::OnItemRightClick(wxTreeEvent& event)
         customReportMenu.Enable(ID_UNGROUP, false);
         customReportMenu.Enable(ID_RENAME, false);
         customReportMenu.Enable(ID_DELETE, false);
+        customReportMenu.Enable(ID_ACTIVE, false);
     }
     PopupMenu(&customReportMenu);
 }
@@ -864,6 +881,16 @@ bool mmGeneralReportManager::DeleteReport(int id)
     return false;
 }
 
+void mmGeneralReportManager::changeReportState(int id)
+{
+    Model_Report::Data* report = Model_Report::instance().get(id);
+    if (report)
+    {
+        report->ACTIVE = (report->ACTIVE + 1) % 2;
+        Model_Report::instance().save(report);
+    }
+}
+
 bool mmGeneralReportManager::changeReportGroup(int id, bool ungroup)
 {
     Model_Report::Data * report = Model_Report::instance().get(id);
@@ -942,6 +969,9 @@ void mmGeneralReportManager::OnMenuSelected(wxCommandEvent& event)
             case ID_UNGROUP:
                 this->changeReportGroup(report_id, true);
                 break;
+            case ID_ACTIVE:
+                this->changeReportState(report_id);
+                break;
             }
         }
         else if (id == ID_GROUP)
@@ -1009,6 +1039,7 @@ void mmGeneralReportManager::newReport(int sample)
     report->LUACONTENT = luaContent;
     report->TEMPLATECONTENT = httContent;
     report->DESCRIPTION = description;
+    report->ACTIVE = 1;
     m_selectedReportID = Model_Report::instance().save(report);
 }
 

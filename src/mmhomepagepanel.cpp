@@ -1,6 +1,7 @@
 ﻿/*******************************************************
 Copyright (C) 2006 Madhan Kanagavel
 Copyright (C) 2014 - 2020 Nikolay Akimov
+Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -71,7 +72,7 @@ bool mmHomePagePanel::Create(wxWindow *parent
     , const wxString& name)
 {
     SetExtraStyle(GetExtraStyle() | wxWS_EX_BLOCK_EVENTS);
-    wxPanelBase::Create(parent, winid, pos, size, style, name);
+    mmPanelBase::Create(parent, winid, pos, size, style, name);
 
     createControls();
     GetSizer()->Fit(this);
@@ -117,7 +118,7 @@ void mmHomePagePanel::createControls()
     browser_->EnableContextMenu(false);
 #endif
 
-    Bind(wxEVT_WEBVIEW_NEWWINDOW, &mmHomePagePanel::OnNewWindow, this, browser_->GetId());
+    Bind(wxEVT_WEBVIEW_NEWWINDOW, &mmHomePagePanel::OnNewWindow, this, mmID_BROWSER);
 
     itemBoxSizer2->Add(browser_, 1, wxGROW | wxALL, 0);
 }
@@ -131,23 +132,31 @@ void mmHomePagePanel::insertDataIntoTemplate()
 {
     m_frames["HTMLSCALE"] = wxString::Format("%d", Option::instance().getHtmlFontSize());
 
-    double tBalance = 0.0, cardBalance = 0.0, termBalance = 0.0, cashBalance = 0.0, loanBalance = 0.0;
+    double tBalance = 0.0, tReconciled = 0.0;
+    double cardBalance = 0.0, cardReconciled = 0.0;
+    double termBalance = 0.0, termReconciled = 0.0;
+    double cashBalance = 0.0, cashReconciled = 0.0;
+    double loanBalance = 0.0, loanReconciled = 0.0;
     //double shareBalance = 0.0, assetBalance = 0.0;
 
     htmlWidgetAccounts account_stats;
-    m_frames["ACCOUNTS_INFO"] = account_stats.displayAccounts(tBalance, Model_Account::CHECKING);
-    m_frames["CARD_ACCOUNTS_INFO"] = account_stats.displayAccounts(cardBalance, Model_Account::CREDIT_CARD);
+    m_frames["ACCOUNTS_INFO"] = account_stats.displayAccounts(tBalance, tReconciled, Model_Account::CHECKING);
+    m_frames["CARD_ACCOUNTS_INFO"] = account_stats.displayAccounts(cardBalance, cardReconciled, Model_Account::CREDIT_CARD);
     tBalance += cardBalance;
+    tReconciled += cardReconciled;
 
     // Accounts
-    m_frames["CASH_ACCOUNTS_INFO"] = account_stats.displayAccounts(cashBalance, Model_Account::CASH);
+    m_frames["CASH_ACCOUNTS_INFO"] = account_stats.displayAccounts(cashBalance, cashReconciled, Model_Account::CASH);
     tBalance += cashBalance;
+    tReconciled += cashReconciled;
 
-    m_frames["LOAN_ACCOUNTS_INFO"] = account_stats.displayAccounts(loanBalance, Model_Account::LOAN);
+    m_frames["LOAN_ACCOUNTS_INFO"] = account_stats.displayAccounts(loanBalance, loanReconciled, Model_Account::LOAN);
     tBalance += loanBalance;
+    tReconciled += loanReconciled;
 
-    m_frames["TERM_ACCOUNTS_INFO"] = account_stats.displayAccounts(termBalance, Model_Account::TERM);
+    m_frames["TERM_ACCOUNTS_INFO"] = account_stats.displayAccounts(termBalance, termReconciled, Model_Account::TERM);
     tBalance += termBalance;
+    tReconciled += termReconciled;
 
     //m_frames["ASSET_ACCOUNTS_INFO"] = account_stats.displayAccounts(assetBalance, Model_Account::ASSET);
     //tBalance += assetBalance;
@@ -161,10 +170,12 @@ void mmHomePagePanel::insertDataIntoTemplate()
     tBalance += stocks_widget.get_total();
 
     htmlWidgetAssets assets;
-    m_frames["ASSETS_INFO"] = assets.getHTMLText(tBalance);
+    m_frames["ASSETS_INFO"] = assets.getHTMLText();
+    tBalance += Model_Asset::instance().balance();
 
     htmlWidgetGrandTotals grand_totals;
-    m_frames["GRAND_TOTAL"] = grand_totals.getHTMLText(tBalance);
+    m_frames["GRAND_TOTAL"] = grand_totals.getHTMLText(tBalance, tReconciled
+                                                , Model_Asset::instance().balance(), stocks_widget.get_total());
 
     //
     htmlWidgetIncomeVsExpenses income_vs_expenses;
@@ -282,7 +293,7 @@ void mmHomePagePanel::OnLinkClicked(wxWebViewEvent& event)
 
         const wxString type[] = { "TOP_CATEGORIES", "INVEST", "ACCOUNTS_INFO"
             ,"CARD_ACCOUNTS_INFO" ,"CASH_ACCOUNTS_INFO", "LOAN_ACCOUNTS_INFO"
-            , "TERM_ACCOUNTS_INFO", "ASSET_ACCOUNTS_INFO", "SHARE_ACCOUNTS_INFO"
+            , "TERM_ACCOUNTS_INFO", "ASSETS", "SHARE_ACCOUNTS_INFO"
             , "CURRENCY_RATES", "BILLS_AND_DEPOSITS" };
 
         for (const auto& entry : type)

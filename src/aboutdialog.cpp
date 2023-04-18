@@ -21,7 +21,6 @@
 #include "constants.h"
 #include "paths.h"
 #include "reports/htmlbuilder.h"
-#include "model/allmodel.h"
 #include <wx/statline.h>
 #include <wx/version.h>
 #include <wx/regex.h>
@@ -38,24 +37,17 @@ mmAboutDialog::mmAboutDialog()
 
 mmAboutDialog::~mmAboutDialog()
 {
-    bool v = m_send_data->GetValue();
+    const bool v = m_send_data->GetValue();
     Option::instance().SendUsageStatistics(v);
 }
 
 
 mmAboutDialog::mmAboutDialog(wxWindow* parent, int tabToOpenNo)
-    : m_send_data(nullptr)
-    , aboutText_(nullptr)
-    , authorsText_(nullptr)
-    , sponsorsText_(nullptr)
-    , licenseText_(nullptr)
-    , privacyText_(nullptr)
 {
     const wxString caption = (tabToOpenNo == 4)
         ? _("License agreement")
-        : wxString::Format("%s - %s", ::mmex::getProgramName(), ::mmex::getTitleProgramVersion());
+        : wxString::Format("%s %s", ::mmex::getProgramName(), ::mmex::getTitleProgramVersion());
     createWindow(parent, caption, tabToOpenNo);
-    SetMinClientSize(wxSize(300, 400));
 }
 
 bool mmAboutDialog::createWindow(wxWindow* parent
@@ -76,8 +68,10 @@ bool mmAboutDialog::createWindow(wxWindow* parent
     {
         createControls(tabToOpenNo);
         initControls();
+        SetMinSize(wxSize(400, 600));
         this->SetIcon(::mmex::getProgramIcon());
-        this->Centre();
+        Fit();
+        Centre();
     }
 
     return ok;
@@ -256,8 +250,6 @@ void mmAboutDialog::createControls(int tabToOpenNo)
     buttonPanelSizer->Add(buttonOk, g_flagsCenter);
 
     aboutNotebook->ChangeSelection(tabToOpenNo);
-
-    GetSizer()->Fit(this);
 }
 
 void mmAboutDialog::handleLink(wxHtmlLinkEvent& event)

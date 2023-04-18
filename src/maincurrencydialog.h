@@ -25,7 +25,7 @@
 #include <wx/dataview.h>
 #include <wx/srchctrl.h>
 
-class wxDatePickerCtrl;
+class mmDatePickerCtrl;
 class mmTextCtrl;
 
 struct CurrencyHistoryRate
@@ -44,7 +44,7 @@ class mmMainCurrencyDialog: public wxDialog
 public:
     /// Constructors
     mmMainCurrencyDialog( ) {}
-
+    ~mmMainCurrencyDialog();
     mmMainCurrencyDialog(wxWindow* parent
         , int currencyID = -1, bool bEnableSelect = true);
 
@@ -74,6 +74,7 @@ private:
     bool Create(wxWindow* parent
         , wxWindowID id = wxID_ANY
         , const wxString& caption = wxTRANSLATE("Currency Dialog")
+        , const wxString& name = "Currency Dialog"
         , const wxPoint& pos = wxDefaultPosition
         , const wxSize& size = wxDefaultSize
         , long style = wxCAPTION | wxRESIZE_BORDER | wxSYSTEM_MENU | wxCLOSE_BOX);
@@ -106,25 +107,25 @@ private:
     void OnMenuSelected(wxCommandEvent& event);
     bool SetBaseCurrency(int& baseCurrencyID);
 
-    wxDataViewListCtrl* currencyListBox_;
+    wxDataViewListCtrl* currencyListBox_ = nullptr;
     std::map<int, wxString> ColName_;
-    bool bHistoryEnabled_;
-    bool bEnableSelect_;
-    wxBitmapButton* buttonDownloadHistory_;
-    wxBitmapButton* buttonDelUnusedHistory_;
-    wxSearchCtrl* m_maskTextCtrl;
-    wxCheckBox* cbShowAll_;
-    wxListCtrl* valueListBox_;
-    wxDatePickerCtrl* valueDatePicker_;
-    mmTextCtrl* valueTextBox_;
-    wxStaticBox* historyStaticBox_;
-    wxButton* historyButtonAdd_;
-    wxButton* historyButtonDelete_;
-    wxButton* m_select_btn;
+    bool bHistoryEnabled_ = false;
+    bool bEnableSelect_ = false;
+    wxBitmapButton* buttonDownloadHistory_ = nullptr;
+    wxBitmapButton* buttonDelUnusedHistory_ = nullptr;
+    wxSearchCtrl* m_maskTextCtrl = nullptr;
+    wxCheckBox* cbShowAll_ = nullptr;
+    wxListCtrl* valueListBox_ = nullptr;
+    mmDatePickerCtrl* valueDatePicker_ = nullptr;
+    mmTextCtrl* valueTextBox_ = nullptr;
+    wxStaticBox* historyStaticBox_ = nullptr;
+    wxButton* historyButtonAdd_ = nullptr;
+    wxButton* historyButtonDelete_ = nullptr;
+    wxButton* m_select_btn = nullptr;
 
-    wxString m_maskStr;
+    wxString m_maskStr = "";
     int m_currency_id;
-    bool m_static_dialog;
+    bool m_static_dialog = false;
 
     bool ConvertHistoryRates(const std::vector<CurrencyHistoryRate>& Bce, std::vector<CurrencyHistoryRate>& ConvertedRate, const wxString& BaseCurrencySymbol);
     bool GetOnlineHistory(const wxString &symbol, wxDateTime begin_date, std::map<wxDateTime, double> &historical_rates, wxString &msg);

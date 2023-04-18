@@ -63,7 +63,7 @@ mmAttachmentDialog::mmAttachmentDialog (wxWindow* parent, const wxString& RefTyp
     if (AttachmentsFolder == wxEmptyString)
     {
         wxString msgStr = wxString() << _("Attachment folder not defined.") << "\n"
-            << _("Please set it in Tools -> Options -> Attachments") << "\n";
+            << wxString::FromUTF8(_("Please set it in Tools → Options → Attachments").ToStdString()) << "\n";
         wxMessageBox(msgStr, _("Attachment folder not defined"), wxICON_ERROR);
     }
     else if (!wxDirExists(AttachmentsFolder))
@@ -83,8 +83,39 @@ void mmAttachmentDialog::Create(wxWindow* parent, const wxString& name)
 
     wxString WindowTitle;
     if (m_RefId > 0)
-        WindowTitle = wxString::Format(_("Organize Attachments | %s %i"), wxGetTranslation(m_RefType), m_RefId);
-    else
+    {
+        int refEnum = 0;
+        for(const auto& pair : Model_Attachment::REFTYPE_CHOICES)
+        {
+            if(pair.second == m_RefType)
+                break;
+            refEnum++;
+        }
+        wxString RefName;
+        switch (refEnum)
+        {
+        case Model_Attachment::STOCK:
+            RefName = Model_Stock::get_stock_name(m_RefId);
+            break;
+        case Model_Attachment::ASSET:
+            RefName = Model_Asset::get_asset_name(m_RefId);
+            break;
+        case Model_Attachment::BANKACCOUNT:
+            RefName = Model_Account::get_account_name(m_RefId);
+            break;
+        case Model_Attachment::PAYEE:
+            RefName = Model_Payee::get_payee_name(m_RefId);
+            break;
+        case Model_Attachment::TRANSACTION:
+        case Model_Attachment::BILLSDEPOSIT:
+        default:
+            RefName = "";
+        }       
+        if (RefName.IsEmpty())
+            WindowTitle = wxString::Format(_("Organize Attachments | %s | %i"), wxGetTranslation(m_RefType), m_RefId);
+        else
+            WindowTitle = wxString::Format(_("Organize Attachments | %s | %s"), wxGetTranslation(m_RefType), RefName);
+    } else
         WindowTitle = wxString::Format(_("Organize Attachments | New %s"), wxGetTranslation(m_RefType));
 
     if (!wxDialog::Create(parent, wxID_ANY, WindowTitle, wxDefaultPosition, wxDefaultSize, style, name))
@@ -124,7 +155,7 @@ void mmAttachmentDialog::CreateControls()
     buttons_sizer->Add(btnCancel, g_flagsH);
 
     wxBitmapButton* magicButton = new wxBitmapButton(buttons_panel
-        , wxID_APPLY, mmBitmap(png::MORE_OPTIONS, mmBitmapButtonSize));
+        , wxID_APPLY, mmBitmapBundle(png::MORE_OPTIONS, mmBitmapButtonSize));
     mmToolTip(magicButton, _("Other tools"));
     buttons_sizer->Add(magicButton, g_flagsH);
 
@@ -193,6 +224,9 @@ void mmAttachmentDialog::AddAttachment(wxString FilePath)
         NewAttachment->FILENAME = importedFileName;
         m_attachment_id = Model_Attachment::instance().save(NewAttachment);
         m_attachment_id = NewAttachment->ATTACHMENTID;
+
+        if (m_RefType == Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION))
+            Model_Checking::instance().updateTimestamp(m_RefId);
     }
 
     fillControls();
@@ -227,6 +261,9 @@ void mmAttachmentDialog::EditAttachment()
         m_attachment_id = Model_Attachment::instance().save(attachment);
         m_attachment_id = attachment->ATTACHMENTID;
 
+        if (attachment->REFTYPE == Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION))
+            Model_Checking::instance().updateTimestamp(attachment->REFID);
+
         fillControls();
     }
 }
@@ -245,6 +282,8 @@ void mmAttachmentDialog::DeleteAttachment()
             const wxString AttachmentsFolder = mmex::getPathAttachment(mmAttachmentManage::InfotablePathSetting()) + attachment->REFTYPE;
             if (mmAttachmentManage::DeleteAttachment(AttachmentsFolder + m_PathSep + attachment->FILENAME))
             {
+                if (attachment->REFTYPE == Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION))
+                    Model_Checking::instance().updateTimestamp(attachment->REFID);
                 Model_Attachment::instance().remove(m_attachment_id);
             }
             m_attachment_id = -1;
@@ -505,23 +544,38 @@ bool mmAttachmentManage::DeleteAllAttachments(const wxString& RefType, int RefId
         mmAttachmentManage::DeleteAttachment(AttachmentsFolder + m_PathSep + entry.FILENAME);
         Model_Attachment::instance().remove(entry.ATTACHMENTID);
     }
+
+    if (RefType == Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION))
+        Model_Checking::instance().updateTimestamp(RefId);
+
     return true;
 }
 
-bool mmAttachmentManage::RelocateAllAttachments(const wxString& RefType, int OldRefId, int NewRefId)
+bool mmAttachmentManage::RelocateAllAttachments(const wxString& OldRefType, int OldRefId, const wxString& NewRefType, int NewRefId)
 {
-    auto attachments = Model_Attachment::instance().find(Model_Attachment::DB_Table_ATTACHMENT_V1::REFTYPE(RefType), Model_Attachment::REFID(OldRefId));
-    const wxString AttachmentsFolder = mmex::getPathAttachment(mmAttachmentManage::InfotablePathSetting()) + RefType + m_PathSep;
+    auto attachments = Model_Attachment::instance().find(Model_Attachment::DB_Table_ATTACHMENT_V1::REFTYPE(OldRefType), Model_Attachment::REFID(OldRefId));
+
+    if (attachments.size() == 0)
+        return false;
+
+    const wxString OldAttachmentsFolder = mmex::getPathAttachment(mmAttachmentManage::InfotablePathSetting()) + OldRefType + m_PathSep;
+    const wxString NewAttachmentsFolder = mmex::getPathAttachment(mmAttachmentManage::InfotablePathSetting()) + NewRefType + m_PathSep;
 
     for (auto &entry : attachments)
     {
         wxString NewFileName = entry.FILENAME;
-        NewFileName.Replace(entry.REFTYPE + "_" + wxString::Format("%i", entry.REFID), entry.REFTYPE + "_" + wxString::Format("%i", NewRefId));
-        wxRenameFile(AttachmentsFolder + entry.FILENAME, AttachmentsFolder + NewFileName);
+        NewFileName.Replace(entry.REFTYPE + "_" + wxString::Format("%i", entry.REFID), NewRefType + "_" + wxString::Format("%i", NewRefId));
+        wxRenameFile(OldAttachmentsFolder + entry.FILENAME, NewAttachmentsFolder + NewFileName);
+        entry.REFTYPE = NewRefType;
         entry.REFID = NewRefId;
         entry.FILENAME = NewFileName;
     }
     Model_Attachment::instance().save(attachments);
+
+    if (OldRefType == Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION))
+        Model_Checking::instance().updateTimestamp(OldRefId);
+    if (NewRefType == Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION))
+        Model_Checking::instance().updateTimestamp(NewRefId);
 
     return true;
 }
@@ -543,6 +597,10 @@ bool mmAttachmentManage::CloneAllAttachments(const wxString& RefType, int OldRef
         NewAttachment->DESCRIPTION = entry.DESCRIPTION;
         Model_Attachment::instance().save(NewAttachment);
     }
+
+    if (RefType == Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION))
+        Model_Checking::instance().updateTimestamp(NewRefId);
+
     return true;
 }
 

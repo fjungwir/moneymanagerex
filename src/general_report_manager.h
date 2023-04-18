@@ -53,18 +53,19 @@ class mmGeneralReportManager: public wxDialog
 public:
     /// Constructors
     mmGeneralReportManager( ) {}
-    virtual ~mmGeneralReportManager();
+    ~mmGeneralReportManager();
 
     mmGeneralReportManager(wxWindow* parent, wxSQLite3Database* db);
     wxString OnGetItemText(long item, long column) const;
 
 private:
     bool Create(wxWindow* parent
-        , wxWindowID id
-        , const wxString& caption
-        , const wxPoint& pos
-        , const wxSize& size
-        , long style);
+        , wxWindowID id = wxID_ANY
+        , const wxString& caption = _("General Reports Manager")
+        , const wxString& name = "General Reports Manager"
+        , const wxPoint& pos = wxDefaultPosition
+        , const wxSize& size = wxDefaultSize
+        , long style = wxCAPTION | wxRESIZE_BORDER | wxSYSTEM_MENU | wxCLOSE_BOX);
     /// Creates the controls and sizers
     void CreateControls();
     void fillControls();
@@ -85,6 +86,7 @@ private:
     void renameReport(int id);
     bool DeleteReport(int id);
     bool changeReportGroup(int id, bool ungroup);
+    void changeReportState(int id);
     bool renameReportGroup(const wxString& GroupName);
     void OnMenuSelected(wxCommandEvent& event);
     void newReport(int sample = ID_NEW_EMPTY);
@@ -135,7 +137,6 @@ private:
         ID_GROUP,
         ID_UNGROUP,
         ID_NOTEBOOK,
-        ID_WEB,
         ID_TYPELABEL,
         ID_TEST,
         ID_SQL_CONTENT,
@@ -143,6 +144,7 @@ private:
         ID_TEMPLATE,
         ID_DESCRIPTION,
         ID_REPORT_LIST,
+        ID_ACTIVE
     };
 
 };

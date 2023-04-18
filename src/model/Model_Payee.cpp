@@ -1,5 +1,6 @@
 /*******************************************************
  Copyright (C) 2013,2014 Guan Lisheng (guanlisheng@gmail.com)
+ Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -96,23 +97,69 @@ const wxArrayString Model_Payee::all_payee_names()
     return payees;
 }
 
-const wxArrayString Model_Payee::used_payee_names()
+const std::map<wxString, int> Model_Payee::all_payees(bool excludeHidden)
 {
-    wxArrayString payees;
-    for (const auto &payee : this->all(COL_PAYEENAME))
+    std::map<wxString, int> payees;
+    for (const auto& payee : this->all())
     {
-        if (is_used(payee.PAYEEID))
-        {
-            payees.Add(payee.PAYEENAME);
-        }
+        if (!excludeHidden || (payee.ACTIVE == 1))
+            payees[payee.PAYEENAME] = payee.PAYEEID;
     }
     return payees;
 }
 
+const std::map<wxString, int> Model_Payee::used_payee()
+{
+    std::map<int, wxString> cache;
+    for (const auto& p : all())
+        cache[p.PAYEEID] = p.PAYEENAME;
+
+    std::map<wxString, int> payees;
+    for (const auto &t : Model_Checking::instance().all())
+    {
+        if (cache.count(t.PAYEEID) > 0)
+            payees[cache[t.PAYEEID]] = t.PAYEEID;
+    }
+    for (const auto& b : Model_Billsdeposits::instance().all())
+    {
+        if (cache.count(b.PAYEEID) > 0)
+            payees[cache[b.PAYEEID]] = b.PAYEEID;
+    }
+    return payees;
+}
+
+// -- Check if Payee should be made available for use
+
+bool Model_Payee::is_hidden(int id)
+{
+    const auto payee = Model_Payee::instance().get(id);
+    if (payee && payee->ACTIVE == 0)
+        return true;
+
+    return false;
+}
+
+bool Model_Payee::is_hidden(const Data* record)
+{
+    return is_hidden(record->PAYEEID);
+}
+
+bool Model_Payee::is_hidden(const Data& record)
+{
+    return is_hidden(&record);
+}
+
+// -- Check if Payee if being used
+
 bool Model_Payee::is_used(int id)
 {
     const auto &trans = Model_Checking::instance().find(Model_Checking::PAYEEID(id));
-    if (!trans.empty()) return true;
+    if (!trans.empty())
+    {
+        for (const auto& txn : trans)
+            if (txn.DELETEDTIME.IsEmpty())
+                return true;
+    }
     const auto &bills = Model_Billsdeposits::instance().find(Model_Billsdeposits::PAYEEID(id));
     if (!bills.empty()) return true;
 

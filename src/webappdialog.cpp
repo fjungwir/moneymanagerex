@@ -55,16 +55,7 @@ void mmWebAppDialog::OnButtonHelpClick(wxCommandEvent& WXUNUSED(event))
 }
 
 mmWebAppDialog::mmWebAppDialog(wxWindow *parent, const bool startup, const wxString& name) :
-    m_webtran_id(-1)
-    , webtranListBox_(nullptr)
-    , m_maskTextCtrl(nullptr)
-    , url_text_(nullptr)
-    , guid_text_(nullptr)
-    , net_button_(nullptr)
-    , refreshRequested_(false)
-    , isStartup_(false)
-    , isFilledOnce_(false)
-    , autoWebAppDialogTimer_(this, wxID_REFRESH)
+    autoWebAppDialogTimer_(this, wxID_REFRESH)
 {
     isStartup_ = startup;
     Create(parent, name);
@@ -96,11 +87,11 @@ void mmWebAppDialog::CreateControls()
     // Header --------------------------------------------
     wxFlexGridSizer* flex_sizer = new wxFlexGridSizer(0, 6, 0, 0);
 
-    net_button_ = new wxBitmapButton(this, wxID_EXECUTE, mmBitmap(png::LED_OFF, mmBitmapButtonSize));
+    net_button_ = new wxBitmapButton(this, wxID_EXECUTE, mmBitmapBundle(png::LED_OFF, mmBitmapButtonSize));
     mmToolTip(net_button_, _("Network status (click to refresh)"));
     flex_sizer->Add(net_button_, g_flagsCenter);
 
-    wxStaticText* url_label = new wxStaticText(this, wxID_STATIC, _("Url"));
+    wxStaticText* url_label = new wxStaticText(this, wxID_STATIC, _("URL"));
     url_text_ = new wxTextCtrl(this, wxID_FILE, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
     url_text_->SetMinSize(wxSize(300, -1));
     url_text_->Enable(false);
@@ -113,7 +104,7 @@ void mmWebAppDialog::CreateControls()
     guid_text_->Enable(false);
     guid_text_->SetValue(mmWebApp::getGuid());
 
-    wxBitmapButton* help_button = new wxBitmapButton(this, wxID_HELP, mmBitmap(png::HELP, mmBitmapButtonSize));
+    wxBitmapButton* help_button = new wxBitmapButton(this, wxID_HELP, mmBitmapBundle(png::HELP, mmBitmapButtonSize));
     if (isStartup_)
     {
         help_button->Disable();
@@ -129,7 +120,7 @@ void mmWebAppDialog::CreateControls()
     //Loading --------------------------------------------
     loadingSizer_ = new wxFlexGridSizer(0, 2, 0, 0);
 
-    wxStaticText* gauge_label = new wxStaticText(this, wxID_STATIC, _("Checking for new transactions..."));
+    wxStaticText* gauge_label = new wxStaticText(this, wxID_STATIC, _("Checking for new transactions"));
     gauge_ = new wxGauge(this, wxID_STATIC, 100, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL, wxDefaultValidator);
     gauge_->SetMinSize(wxSize(300, -1));
 
@@ -183,7 +174,7 @@ void mmWebAppDialog::OnCheckNetwork(wxCommandEvent& /*event*/)
 void mmWebAppDialog::fillControls()
 {
     isFilledOnce_ = true;
-    net_button_->SetBitmap(mmBitmap(png::LED_OFF, mmBitmapButtonSize));
+    net_button_->SetBitmap(mmBitmapBundle(png::LED_OFF, mmBitmapButtonSize));
     webtranListBox_->DeleteAllItems();
     WebAppTransactions_.clear();
     mainBoxSizer_->Show(loadingSizer_, true);
@@ -215,10 +206,10 @@ void mmWebAppDialog::fillControls()
             wxMessageBox(msgStr, _("Transactions download error"), wxICON_ERROR);
         }
 
-        return net_button_->SetBitmap(mmBitmap(png::LED_RED, mmBitmapButtonSize));
+        return net_button_->SetBitmap(mmBitmapBundle(png::LED_RED, mmBitmapButtonSize));
     }
 
-    net_button_->SetBitmap(mmBitmap(png::LED_GREEN));
+    net_button_->SetBitmap(mmBitmapBundle(png::LED_GREEN));
 
     for (const auto& WebTran : WebAppTransactions_)
     {
@@ -291,12 +282,12 @@ bool mmWebAppDialog::ImportWebTr(int WebTrID, bool open)
     mmWebApp::webtran_holder WebTrToImport;
     bool bFound = false;
 
-    for (const auto WebTr : WebAppTransactions_)
+    for (const auto &webTr : WebAppTransactions_)
     {
-        if (WebTr.ID == WebTrID)
+        if (webTr.ID == WebTrID)
         {
             bFound = true;
-            WebTrToImport = WebTr;
+            WebTrToImport = webTr;
             int InsertedTransactionID = mmWebApp::MMEX_InsertNewTransaction(WebTrToImport);
             if (InsertedTransactionID > 0)
             {

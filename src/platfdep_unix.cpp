@@ -38,7 +38,7 @@ void SetInstallPrefix()
         fname.RemoveLastDir();
 
     if (wxStandardPaths *pp = dynamic_cast<wxStandardPaths*>(&p))
-    pp->SetInstallPrefix(fname.GetFullPath());
+        pp->SetInstallPrefix(fname.GetFullPath());
 }
 
 } // namespace
@@ -109,4 +109,4 @@ const wxString mmex::GetAppName()
 }
 //----------------------------------------------------------------------------
 
-const bool mmex::isDarkMode() { return false; }   // Not implemented yet
+bool mmex::isDarkMode() { return false; }   // Not implemented yet

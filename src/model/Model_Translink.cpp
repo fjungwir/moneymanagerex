@@ -136,12 +136,7 @@ void Model_Translink::RemoveTransLinkRecords(Model_Attachment::REFTYPE table_typ
 {
     for (const auto& translink : TranslinkList(table_type, entry_id))
     {
-        if (table_type == Model_Attachment::STOCK)
-        {
-            Model_Shareinfo::RemoveShareEntry(translink.CHECKINGACCOUNTID);
-        }
         Model_Checking::instance().remove(translink.CHECKINGACCOUNTID);
-        Model_Translink::instance().remove(translink.TRANSLINKID);
     }
 }
 
@@ -149,7 +144,6 @@ void Model_Translink::RemoveTranslinkEntry(const int checking_account_id)
 {
     Data translink = TranslinkRecord(checking_account_id);
     Model_Shareinfo::RemoveShareEntry(translink.CHECKINGACCOUNTID);
-    Model_Checking::instance().remove(translink.CHECKINGACCOUNTID);
     Model_Translink::instance().remove(translink.TRANSLINKID);
 
     if (translink.LINKTYPE == Model_Attachment::reftype_desc(Model_Attachment::ASSET))
@@ -171,17 +165,33 @@ void Model_Translink::UpdateStockValue(Model_Stock::Data* stock_entry)
     double total_shares = 0;
     double total_initial_value = 0;
     double total_commission = 0;
+    double avg_share_price = 0;
+    wxString earliest_date = wxDate::Today().FormatISODate();
+
     for (const auto trans : trans_list)
     {
+        Model_Checking::Data* checking_entry = Model_Checking::instance().get(trans.CHECKINGACCOUNTID);
+        if (!checking_entry->DELETEDTIME.IsEmpty()) continue;
+
         Model_Shareinfo::Data* share_entry = Model_Shareinfo::ShareEntry(trans.CHECKINGACCOUNTID);
 
         total_shares += share_entry->SHARENUMBER;
         if (total_shares < 0) total_shares = 0;
 
-        total_initial_value += share_entry->SHARENUMBER * share_entry->SHAREPRICE;
+        if (share_entry->SHARENUMBER > 0) {
+            total_initial_value += share_entry->SHARENUMBER * share_entry->SHAREPRICE + share_entry->SHARECOMMISSION;
+        }
+        else {
+            total_initial_value += share_entry->SHARENUMBER * avg_share_price;
+        }
+
         if (total_initial_value < 0) total_initial_value = 0;
+        if (total_shares > 0) avg_share_price = total_initial_value / total_shares;
 
         total_commission += share_entry->SHARECOMMISSION;
+
+        wxString transdate = checking_entry->TRANSDATE;
+        if (transdate < earliest_date) earliest_date = transdate;
     }
 
     // The stock record contains the total of share transactions.
@@ -191,7 +201,8 @@ void Model_Translink::UpdateStockValue(Model_Stock::Data* stock_entry)
     }
     else
     {
-        stock_entry->PURCHASEPRICE = 0;
+        stock_entry->PURCHASEDATE = earliest_date;
+        stock_entry->PURCHASEPRICE = avg_share_price;
         stock_entry->NUMSHARES = total_shares;
         stock_entry->VALUE = total_initial_value;
         stock_entry->COMMISSION = total_commission;
@@ -202,35 +213,29 @@ void Model_Translink::UpdateStockValue(Model_Stock::Data* stock_entry)
 void Model_Translink::UpdateAssetValue(Model_Asset::Data* asset_entry)
 {
     Data_Set trans_list = TranslinkList(Model_Attachment::REFTYPE::ASSET, asset_entry->ASSETID);
-    bool value_updated = false;
     double new_value = 0;
-    for (const auto trans : trans_list)
+    for (const auto &trans : trans_list)
     {
         Model_Checking::Data* asset_trans = Model_Checking::instance().get(trans.CHECKINGACCOUNTID);
-        if (asset_trans)
+        if (asset_trans && asset_trans->DELETEDTIME.IsEmpty())
         {
-            if (!Model_Checking::foreignTransactionAsTransfer(*asset_trans))
+            Model_Currency::Data* asset_currency = Model_Account::currency(Model_Account::instance().get(asset_trans->ACCOUNTID));
+            const double conv_rate = Model_CurrencyHistory::getDayRate(asset_currency->CURRENCYID, asset_trans->TRANSDATE);
+
+            if (asset_trans->TRANSCODE == Model_Checking::all_type()[Model_Checking::DEPOSIT])
             {
-                Model_Currency::Data* asset_currency = Model_Account::currency(Model_Account::instance().get(asset_trans->ACCOUNTID));
-                const double conv_rate = Model_CurrencyHistory::getDayRate(asset_currency->CURRENCYID, asset_trans->TRANSDATE);
-
-                if (asset_trans->TRANSCODE == Model_Checking::all_type()[Model_Checking::DEPOSIT])
-                {
-                    new_value -= asset_trans->TRANSAMOUNT * conv_rate; // Withdrawal from asset value
-                }
-                else
-                {
-                    new_value += asset_trans->TRANSAMOUNT * conv_rate;  // Deposit to asset value
-                }
-
-                asset_entry->VALUE = new_value;
-                value_updated = true;
+                new_value -= asset_trans->TRANSAMOUNT * conv_rate; // Withdrawal from asset value
             }
+            else
+            {
+                new_value += asset_trans->TRANSAMOUNT * conv_rate;  // Deposit to asset value
+            }  
         }
     }
 
-    if (value_updated)
+    if (asset_entry->VALUE != new_value)
     {
+        asset_entry->VALUE = new_value;
         Model_Asset::instance().save(asset_entry);
     }
 }

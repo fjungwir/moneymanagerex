@@ -1,6 +1,6 @@
 /*******************************************************
 Copyright (C) 2014 - 2021 Nikolay Akimov
-Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
+Copyright (C) 2021-2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -132,7 +132,7 @@ void htmlWidgetStocks::calculate_stats(std::map<int, std::pair<double, double> >
         }
         std::pair<double, double>& values = stockStats[stock.HELDAT];
         double current_value = Model_Stock::CurrentValue(stock);
-        double gain_lost = (current_value - stock.VALUE - stock.COMMISSION);
+        double gain_lost = current_value - Model_Stock::InvestmentValue(stock);
         values.first += gain_lost;
         values.second += current_value;
         if (account && account->STATUS == VIEW_ACCOUNTS_OPEN_STR)
@@ -206,7 +206,7 @@ void htmlWidgetTop7Categories::getTopCategoryStats(
         acc_conv_rates[account.ACCOUNTID] = Model_CurrencyHistory::getDayRate(account.CURRENCYID, today);
     }
     //Temporary map
-    std::map<std::pair<int /*category*/, int /*sub category*/>, double> stat;
+    std::map<int /*category*/, double> stat;
 
     const auto split = Model_Splittransaction::instance().get_all();
     const auto &transactions = Model_Checking::instance().find(
@@ -217,8 +217,8 @@ void htmlWidgetTop7Categories::getTopCategoryStats(
 
     for (const auto &trx : transactions)
     {
-        // Do not include asset or stock transfers in income expense calculations.
-        if (Model_Checking::foreignTransactionAsTransfer(trx))
+        // Do not include asset or stock transfers or deleted transactions in income expense calculations.
+        if (Model_Checking::foreignTransactionAsTransfer(trx) || !trx.DELETEDTIME.IsEmpty())
             continue;
 
         bool withdrawal = Model_Checking::type(trx) == Model_Checking::WITHDRAWAL;
@@ -226,7 +226,7 @@ void htmlWidgetTop7Categories::getTopCategoryStats(
 
         if (it == split.end())
         {
-            std::pair<int, int> category = std::make_pair(trx.CATEGID, trx.SUBCATEGID);
+            int category = trx.CATEGID;
             if (withdrawal)
                 stat[category] -= trx.TRANSAMOUNT * (acc_conv_rates[trx.ACCOUNTID]);
             else
@@ -236,7 +236,7 @@ void htmlWidgetTop7Categories::getTopCategoryStats(
         {
             for (const auto& entry : it->second)
             {
-                std::pair<int, int> category = std::make_pair(entry.CATEGID, entry.SUBCATEGID);
+                int category = entry.CATEGID;
                 double val = entry.SPLITTRANSAMOUNT
                     * (acc_conv_rates[trx.ACCOUNTID])
                     * (withdrawal ? -1 : 1);
@@ -251,7 +251,7 @@ void htmlWidgetTop7Categories::getTopCategoryStats(
         if (i.second < 0)
         {
             std::pair <wxString, double> stat_pair;
-            stat_pair.first = Model_Category::full_name(i.first.first, i.first.second);
+            stat_pair.first = Model_Category::full_name(i.first);
             stat_pair.second = i.second;
             categoryStats.push_back(stat_pair);
         }
@@ -301,12 +301,7 @@ const wxString htmlWidgetBillsAndDeposits::getHTMLText()
         if (daysPayment > 14)
             break; // Done searching for all to include
 
-        int repeats = entry.REPEATS;
-        // DeMultiplex the Auto Executable fields.
-        if (repeats >= BD_REPEATS_MULTIPLEX_BASE)    // Auto Execute User Acknowlegement required
-            repeats -= BD_REPEATS_MULTIPLEX_BASE;
-        if (repeats >= BD_REPEATS_MULTIPLEX_BASE)    // Auto Execute Silent mode
-            repeats -= BD_REPEATS_MULTIPLEX_BASE;
+        int repeats = entry.REPEATS % BD_REPEATS_MULTIPLEX_BASE; // DeMultiplex the Auto Executable fields
 
         if (daysPayment == 0 && repeats > 10 && repeats < 15 && entry.NUMOCCURRENCES < 0) {
             continue; // Inactive
@@ -360,7 +355,7 @@ const wxString htmlWidgetBillsAndDeposits::getHTMLText()
 
         output += wxString::Format("<table class='table' id='%s'>\n", idStr);
         output += wxString::Format("<thead><tr><th>%s</th>\n<th class='text-right'>%s</th>\n<th class='text-right'>%s</th></tr></thead>\n"
-            , _("Account / Payee"), _("Amount"), _("Payment"));
+            , _("Account/Payee"), _("Amount"), _("Payment"));
 
         for (const auto& item : bd_days)
         {
@@ -405,8 +400,8 @@ const wxString htmlWidgetIncomeVsExpenses::getHTMLText()
     for (const auto& pBankTransaction : transactions)
     {
 
-        // Do not include asset or stock transfers in income expense calculations.
-        if (Model_Checking::foreignTransactionAsTransfer(pBankTransaction))
+        // Do not include asset or stock transfers or deleted transactions in income expense calculations.
+        if (Model_Checking::foreignTransactionAsTransfer(pBankTransaction) || !pBankTransaction.DELETEDTIME.IsEmpty())
             continue;
 
         double convRate = Model_CurrencyHistory::getDayRate(Model_Account::instance().get(pBankTransaction.ACCOUNTID)->CURRENCYID, pBankTransaction.TRANSDATE);
@@ -532,17 +527,37 @@ htmlWidgetStatistics::~htmlWidgetStatistics()
 {
 }
 
-const wxString htmlWidgetGrandTotals::getHTMLText(double& tBalance)
+const wxString htmlWidgetGrandTotals::getHTMLText(double tBalance, double tReconciled, double tAssets, double tStocks)
 {
-    const wxString tBalanceStr = Model_Currency::toCurrency(tBalance);
+
+    const wxString tReconciledStr  = wxString::Format("%s: <span class='money'>%s</span>"
+                                        , _("Reconciled")
+                                        , Model_Currency::toCurrency(tReconciled));
+    const wxString tAssetStr  = wxString::Format("%s: <span class='money'>%s</span>"
+                                        , _("Assets")
+                                        , Model_Currency::toCurrency(tAssets));
+    const wxString tStockStr  = wxString::Format("%s: <span class='money'>%s</span>"
+                                        , _("Stock")
+                                        , Model_Currency::toCurrency(tStocks));
+    const wxString tBalanceStr  = wxString::Format("%s: <span class='money'>%s</span>"
+                                        , _("Balance")
+                                        , Model_Currency::toCurrency(tBalance));
 
     StringBuffer json_buffer;
     PrettyWriter<StringBuffer> json_writer(json_buffer);
     json_writer.StartObject();
     json_writer.Key("NAME");
-    json_writer.String(_("Grand Total:").utf8_str());
-    json_writer.Key("VALUE");
+    json_writer.String(_("Total Net Worth").utf8_str());
+    json_writer.Key("RECONVALUE");
+    json_writer.String(tReconciledStr.utf8_str());
+    json_writer.Key("ASSETVALUE");
+    json_writer.String(tAssetStr.utf8_str());
+    json_writer.Key("STOCKVALUE");
+    json_writer.String(tStockStr.utf8_str());
+    json_writer.Key("BALVALUE");
     json_writer.String(tBalanceStr.utf8_str());
+
+
     json_writer.EndObject();
 
     wxLogDebug("======= mmHomePagePanel::getGrandTotalsJSON =======");
@@ -555,24 +570,71 @@ htmlWidgetGrandTotals::~htmlWidgetGrandTotals()
 {
 }
 
-const wxString htmlWidgetAssets::getHTMLText(double& tBalance)
+const wxString htmlWidgetAssets::getHTMLText()
 {
-    double asset_balance = Model_Asset::instance().balance();
-    tBalance += asset_balance;
+    Model_Asset::Data_Set assets = Model_Asset::instance().all();
+    if (assets.empty())
+        return wxEmptyString;
+    std::stable_sort(assets.begin(), assets.end(), SorterByVALUE());
+    std::reverse(assets.begin(), assets.end());
 
-    StringBuffer json_buffer;
-    PrettyWriter<StringBuffer> json_writer(json_buffer);
-    json_writer.StartObject();
-    json_writer.Key("NAME");
-    json_writer.String(_("Assets").utf8_str());
-    json_writer.Key("VALUE");
-    json_writer.String(Model_Currency::toCurrency(asset_balance).utf8_str());
-    json_writer.EndObject();
+    static const int MAX_ASSETS = 10;
+    wxString output = "";
+    output = R"(<div class="shadow">)";
+    output += "<table class ='sortable table'><col style='width: 50%'><col style='width: 25%'><col style='width: 25%'><thead><tr class='active'>\n";
+    output += "<th>" + _("Assets") + "</th>";
+    output += "<th class='text-right'>" + _("Initial Value") + "</th>\n";
+    output += "<th class='text-right'>" + _("Current Value") + "</th>\n";
+    output += wxString::Format("<th nowrap class='text-right sorttable_nosort'><a id='%s_label' onclick='toggleTable(\"%s\");' href='#%s' oncontextmenu='return false;'>[-]</a></th>\n"
+        , "ASSETS", "ASSETS", "ASSETS");
+    output += "</tr></thead><tbody id='ASSETS'>\n";
 
-    wxLogDebug("======= mmHomePagePanel::getAssetsJSON =======");
-    wxLogDebug("RapidJson\n%s", wxString::FromUTF8(json_buffer.GetString()));
+    int rows = 0;
+    double initialDisplayed = 0.0;
+    double initialTotal = 0.0;
+    double currentDisplayed = 0.0;
+    double currentTotal = 0.0;
+    for (const auto& asset : assets)
+    {
+        double initial = asset.VALUE;
+        double current = Model_Asset::value(asset);
+        initialTotal += initial;
+        currentTotal += current;
+        if (rows++ < MAX_ASSETS)
+        {
+            initialDisplayed += initial;
+            currentDisplayed += current;
+            output += "<tr>";
+            output += wxString::Format("<td sorttable_customkey='*%s*'>%s</td>\n"
+                , asset.ASSETNAME, asset.ASSETNAME);
+            output += wxString::Format("<td class='money' sorttable_customkey='%f'>%s</td>\n"
+                , initial, Model_Currency::toCurrency(initial));
+            output += wxString::Format("<td colspan='2' class='money' sorttable_customkey='%f'>%s</td>\n"
+                , current, Model_Currency::toCurrency(current));
+            output += "</tr>";
+        }
+    }
+    if (rows > MAX_ASSETS)
+    {       
+            output += "<tr>";
+            output += wxString::Format("<td sorttable_customkey='*%s*'>%s (%i)</td>\n"
+                , _("Other Assets"), _("Other Assets"), rows - MAX_ASSETS);
+            output += wxString::Format("<td class='money' sorttable_customkey='%f'>%s</td>\n"
+                , initialTotal - initialDisplayed, Model_Currency::toCurrency(initialTotal - initialDisplayed));
+            output += wxString::Format("<td class='money' sorttable_customkey='%f'>%s</td>\n"
+                , currentTotal - currentDisplayed, Model_Currency::toCurrency(currentTotal - currentDisplayed));
+            output += "</tr>";
+    }
 
-    return wxString::FromUTF8(json_buffer.GetString());
+    output += "</tbody><tfoot><tr class = 'total'><td>" + _("Total:") + "</td>";
+    output += wxString::Format("<td class='money'>%s</td>\n"
+        , Model_Currency::toCurrency(initialTotal));
+    output += wxString::Format("<td colspan='2' class='money'>%s</td></tr></tfoot></table>\n"
+        , Model_Currency::toCurrency(currentTotal));
+
+    output += "</div>";
+
+    return output;
 }
 
 htmlWidgetAssets::~htmlWidgetAssets()
@@ -624,7 +686,7 @@ void htmlWidgetAccounts::get_account_stats()
 
 }
 
-const wxString htmlWidgetAccounts::displayAccounts(double& tBalance, int type = Model_Account::CHECKING)
+const wxString htmlWidgetAccounts::displayAccounts(double& tBalance, double& tReconciled, int type = Model_Account::CHECKING)
 {
     static const std::vector < std::pair <wxString, wxString> > typeStr
     {
@@ -651,7 +713,6 @@ const wxString htmlWidgetAccounts::displayAccounts(double& tBalance, int type = 
     output += "</tr></thead>\n";
     output += wxString::Format("<tbody id = '%s'>\n", idStr);
 
-    double tReconciled = 0;
     wxString body = "";
     const wxDate today = wxDate::Today();
     wxString vAccts = Model_Setting::instance().GetViewAccounts();

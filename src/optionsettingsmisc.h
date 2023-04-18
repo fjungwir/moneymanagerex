@@ -48,7 +48,9 @@ private:
 
 private:
     wxSpinCtrl* m_max_files;
+    wxSpinCtrl* m_deleted_trans_retain_days;
     wxSpinCtrl* m_share_precision;
+    wxCheckBox* m_refresh_quotes_on_open;
 
     enum
     {
@@ -58,7 +60,8 @@ private:
         ID_DIALOG_OPTIONS_TEXTCTRL_STOCKURL,
         ID_DIALOG_OPTIONS_BULK_ENTER,
         ID_DIALOG_OPTIONS_DEFAULT_TRANSACTION_PAYEE,
-        ID_DIALOG_OPTIONS_DEFAULT_TRANSACTION_CATEGORY,
+        ID_DIALOG_OPTIONS_DEFAULT_TRANSACTION_CATEGORY_NONTRANSFER,
+        ID_DIALOG_OPTIONS_DEFAULT_TRANSACTION_CATEGORY_TRANSFER,
         ID_DIALOG_OPTIONS_DEFAULT_TRANSACTION_STATUS,
         ID_DIALOG_OPTIONS_DEFAULT_TRANSACTION_DATE,
     };

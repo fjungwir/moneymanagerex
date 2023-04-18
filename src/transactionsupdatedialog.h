@@ -1,6 +1,6 @@
 /*******************************************************
  Copyright (C) 2017 - 2022 Nikolay Akimov
- Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
+ Copyright (C) 2021-2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 #ifndef MM_EX_TRANSACTIONSUPDATE_H_
 #define MM_EX_TRANSACTIONSUPDATE_H_
 
+#include "mmSimpleDialogs.h"
 #include "defs.h"
 #include "mmcombobox.h"
 #include "mmcustomdata.h"
@@ -44,46 +45,43 @@ private:
         , long style = wxCAPTION | wxSYSTEM_MENU | wxCLOSE_BOX);
 
     void CreateControls();
-    void SetEventHandlers();
     void OnOk(wxCommandEvent& event);
     void OnCheckboxClick(wxCommandEvent& event);
+    void OnComboKey(wxKeyEvent& event);
     void onFocusChange(wxChildFocusEvent& event);
-    void OnCategChange(wxCommandEvent& event);
-    void OnPayeeUpdated(wxCommandEvent& event);
-    void OnAccountUpdated(wxCommandEvent& event);
     void SetPayeeTransferControls();
     void OnTransTypeChanged(wxCommandEvent& event);
     void OnMoreFields(wxCommandEvent& event);
 
 private:
-    wxCheckBox* m_payee_checkbox;
-    wxComboBox* m_payee;
+    wxCheckBox* m_payee_checkbox = nullptr;
+    mmComboBoxPayee* cbPayee_ = nullptr;
     wxCheckBox* m_transferAcc_checkbox;
-    wxComboBox* m_transferAcc;    
-    wxCheckBox* m_date_checkbox;
-    wxDatePickerCtrl* m_dpc;
-    wxCheckBox* m_status_checkbox;
-    wxChoice* m_status_choice;
-    wxCheckBox* m_categ_checkbox;
-    wxButton* m_categ_btn;
-    wxCheckBox* m_type_checkbox;
-    wxChoice* m_type_choice;
-    wxCheckBox* m_amount_checkbox;
-    mmTextCtrl* m_amount_ctrl;
-    wxCheckBox* m_notes_checkbox;
-    wxCheckBox* m_append_checkbox;
-    wxTextCtrl* m_notes_ctrl;
+    mmComboBoxAccount* cbAccount_ = nullptr;
+    wxCheckBox* m_date_checkbox = nullptr;
+    mmDatePickerCtrl* m_dpc = nullptr;
+    wxCheckBox* m_status_checkbox = nullptr;
+    wxChoice* m_status_choice = nullptr;
+    wxCheckBox* m_categ_checkbox = nullptr;
+    mmComboBoxCategory* cbCategory_ = nullptr;
+    mmColorButton* bColours_ = nullptr;
+    wxCheckBox* m_color_checkbox = nullptr;
+    wxCheckBox* m_type_checkbox = nullptr;
+    wxChoice* m_type_choice = nullptr;
+    wxCheckBox* m_amount_checkbox = nullptr;
+    mmTextCtrl* m_amount_ctrl = nullptr;
+    wxCheckBox* m_notes_checkbox = nullptr;
+    wxCheckBox* m_append_checkbox = nullptr;
+    wxTextCtrl* m_notes_ctrl = nullptr;
     std::vector<int> m_transaction_id;
-    Model_Currency::Data* m_currency;
-    int m_categ_id;
-    int m_subcateg_id;
-    bool m_hasTransfers, m_hasNonTransfers, m_hasSplits;
+    Model_Currency::Data* m_currency = nullptr;
+    bool m_hasTransfers = false, m_hasNonTransfers = false, m_hasSplits = false;
     wxSharedPtr<mmCustomData> m_custom_fields;
 
     enum
     {
         /* Transaction Dialog */
-        ID_PAYEE = wxID_HIGHEST + 897,
+        ID_PAYEE = wxID_HIGHEST + 997,
         ID_TRANS_TYPE,
         ID_TRANS_ACC,
         ID_BTN_CUSTOMFIELDS,

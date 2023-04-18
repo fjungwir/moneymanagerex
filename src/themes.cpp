@@ -44,7 +44,7 @@ const char HTMLPANEL[] = R"(
 <h1>%s <a href="%s"><img src="%s"></a></h1>
 <h2>%s</h2>
 <p>%s</p>
-<p><img src="%s" width="300" height="150"></p>
+<p><img src="%s"></p>
 )";
 
 bool mmThemesDialog::vfsThemeImageLoaded = false;
@@ -126,8 +126,14 @@ void mmThemesDialog::addThemes(const wxString& themeDir, bool isSystem)
     }
 }
 
+mmThemesDialog::~mmThemesDialog()
+{
+    Model_Infotable::instance().Set("THEMES_DIALOG_SIZE", GetSize());
+}
+
 mmThemesDialog::mmThemesDialog(wxWindow *parent, const wxString &name)
 {
+    this->SetFont(parent->GetFont());
     Create(parent, name);
 }
 
@@ -147,8 +153,8 @@ void mmThemesDialog::Create(wxWindow* parent, const wxString &name)
     ReadThemes();
     RefreshView();
 
+    mmSetSize(this);
     SetMinSize(wxSize(555, 455));
-    Fit();
     Centre();
 }
 
@@ -246,13 +252,13 @@ void mmThemesDialog::RefreshView()
         wxMemoryFSHandler::RemoveFile(webImageName);
         wxMemoryFSHandler::RemoveFile(themeImageName);
     }
-    wxMemoryFSHandler::AddFile(webImageName, mmBitmap(png::WEB), wxBITMAP_TYPE_PNG);
+    wxMemoryFSHandler::AddFile(webImageName, mmBitmapBundle(png::WEB).GetBitmap(wxDefaultSize), wxBITMAP_TYPE_PNG);
     imgUrl = "memory:" + webImageName;
     wxMemoryFSHandler::AddFile(themeImageName, thisTheme.bitMap, wxBITMAP_TYPE_PNG);
     themeImageUrl = "memory:" + themeImageName;
     vfsThemeImageLoaded = true;
 #else
-    mmBitmap(png::WEB).SaveFile(mmex::getTempFolder() + webImageName, wxBITMAP_TYPE_PNG);
+    mmBitmapBundle(png::WEB).GetBitmap(wxDefaultSize).SaveFile(mmex::getTempFolder() + webImageName, wxBITMAP_TYPE_PNG);
     imgUrl = "file://" + mmex::getTempFolder() + webImageName;
     thisTheme.bitMap.SaveFile(mmex::getTempFolder() + themeImageName, wxBITMAP_TYPE_PNG);
     themeImageUrl = "file://" + mmex::getTempFolder() + themeImageName;
@@ -278,7 +284,7 @@ void mmThemesDialog::OnImport(wxCommandEvent& event)
 {
     wxString fileName = wxFileSelector(_("Choose theme file to import")
         , wxEmptyString, wxEmptyString, wxEmptyString
-        , "MMX Theme (*.mmxtheme)|*.mmextheme"
+        , "MMX Theme (*.mmextheme)|*.mmextheme"
         , wxFD_FILE_MUST_EXIST | wxFD_OPEN
         , this
     );
