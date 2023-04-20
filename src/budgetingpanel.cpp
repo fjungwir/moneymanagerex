@@ -1,6 +1,8 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
  Copyright (C) 2012 Stefano Giorgio
+ Copyright (C) 2013 - 2022 Nikolay Akimov
+ Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -179,6 +181,7 @@ wxString mmBudgetingPanel::GetPanelTitle() const
     else
     {
         yearStr = wxString::Format(_("Month: %s"), yearStr);
+        yearStr += wxString::Format(" (%s)", m_monthName);
     }
 
     if (Option::instance().getBudgetDaysOffset() != 0)
@@ -223,7 +226,7 @@ void mmBudgetingPanel::CreateControls()
 
     m_bitmapTransFilter = new wxButton(itemPanel3, wxID_FILE2);
     m_bitmapTransFilter->SetBitmap(mmBitmap(png::TRANSFILTER, mmBitmapButtonSize));
-    m_bitmapTransFilter->SetMinSize(wxSize(220, -1));
+    m_bitmapTransFilter->SetMinSize(wxSize(300, -1));
     itemBoxSizerHHeader2->Add(m_bitmapTransFilter, g_flagsBorder1H);
 
     wxFlexGridSizer* itemIncomeSizer = new wxFlexGridSizer(0, 7, 5, 10);
@@ -279,9 +282,9 @@ void mmBudgetingPanel::CreateControls()
     /* Get data from inidb */
     for (int i = 0; i < listCtrlBudget_->GetColumnCount(); ++i)
     {
-        int col = Model_Setting::instance().GetIntSetting(wxString::Format(listCtrlBudget_->m_col_width, i)
+        int col_width = Model_Setting::instance().GetIntSetting(wxString::Format(listCtrlBudget_->m_col_width, i)
             , listCtrlBudget_->m_columns[i].WIDTH);
-        listCtrlBudget_->SetColumnWidth(i, col);
+        listCtrlBudget_->SetColumnWidth(i, col_width);
     }
     itemBoxSizer2->Add(listCtrlBudget_.get(), 1, wxGROW | wxALL, 1);
 }
@@ -366,21 +369,21 @@ void mmBudgetingPanel::initVirtualListControl()
     const wxString budgetYearStr = Model_Budgetyear::instance().Get(budgetYearID_);
     long year = 0;
     budgetYearStr.ToLong(&year);
-    wxDateTime dtBegin(1, wxDateTime::Jan, year);
-    wxDateTime dtEnd(31, wxDateTime::Dec, year);
+
+    int startDay = 1;
+    wxDate::Month startMonth = wxDateTime::Jan;
+    if (Option::instance().BudgetFinancialYears())
+        budgetDetails.GetFinancialYearValues(startDay, startMonth);
+    wxDateTime dtBegin(startDay, startMonth);
+    wxDateTime dtEnd = dtBegin;
+    dtEnd.Add(wxDateSpan::Year()).Subtract(wxDateSpan::Day());
 
     monthlyBudget_ = (budgetYearStr.length() > 5);
 
     if (monthlyBudget_)
     {
         budgetDetails.SetBudgetMonth(budgetYearStr, dtBegin, dtEnd);
-    }
-    else
-    {
-        int day = -1;
-        wxDateTime::Month month = wxDateTime::Month::Inv_Month;
-        budgetDetails.AdjustYearValues(day, month, dtBegin);
-        budgetDetails.AdjustDateForEndFinancialYear(dtEnd);
+        m_monthName = wxGetTranslation(wxDateTime::GetEnglishMonthName(dtBegin.GetMonth()));
     }
 
     // Readjust dates by the Budget Offset Option
@@ -392,7 +395,7 @@ void mmBudgetingPanel::initVirtualListControl()
     //Get statistics
     Model_Budget::instance().getBudgetEntry(budgetYearID_, budgetPeriod_, budgetAmt_);
     Model_Category::instance().getCategoryStats(categoryStats_
-        , nullptr
+        , static_cast<wxSharedPtr<wxArrayString>>(nullptr)
         , &date_range, Option::instance().getIgnoreFutureTransactions()
         , false, (evaluateTransfer ? &budgetAmt_ : 0));
 
@@ -480,7 +483,7 @@ void mmBudgetingPanel::initVirtualListControl()
     if (actExpenses < 0.0) actExpenses = -actExpenses;
     est_amount = Model_Currency::toCurrency(estExpenses);
     act_amount = Model_Currency::toCurrency(actExpenses);
-    diff_amount = Model_Currency::toCurrency(actExpenses - estExpenses);
+    diff_amount = Model_Currency::toCurrency(estExpenses - actExpenses);
 
     expenses_estimated_->SetLabelText(est_amount);
     expenses_actual_->SetLabelText(act_amount);

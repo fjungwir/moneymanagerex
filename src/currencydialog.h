@@ -45,6 +45,7 @@ public:
 private:
     bool Create(wxWindow* parent, wxWindowID id = wxID_ANY,
         const wxString& caption = "Currency Manager",
+        const wxString& name = "Currency Manager",
         const wxPoint& pos = wxDefaultPosition,
         const wxSize& size = wxDefaultSize,
         long style = wxCAPTION | wxSYSTEM_MENU | wxCLOSE_BOX | wxRESIZE_BORDER);
@@ -60,9 +61,9 @@ private:
     Model_Currency::Data* m_currency;
     int m_scale;
 
-    mmTextCtrl* m_currencyName;
+    wxTextCtrl* m_currencyName;
     wxStaticText* sampleText_;
-    mmTextCtrl* m_currencySymbol;
+    wxTextCtrl* m_currencySymbol;
     mmTextCtrl* baseConvRate_;
     wxTextCtrl* pfxTx_;
     wxTextCtrl* sfxTx_;

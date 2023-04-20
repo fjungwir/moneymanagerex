@@ -1,6 +1,6 @@
 /*******************************************************
  Copyright (C) 2013,2014 Guan Lisheng (guanlisheng@gmail.com)
-Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
+ Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -116,6 +116,11 @@ DB_Table_CHECKINGACCOUNT_V1::STATUS Model_Checking::STATUS(STATUS_ENUM status, O
 DB_Table_CHECKINGACCOUNT_V1::TRANSCODE Model_Checking::TRANSCODE(TYPE type, OP op)
 {
     return DB_Table_CHECKINGACCOUNT_V1::TRANSCODE(all_type()[type], op);
+}
+
+DB_Table_CHECKINGACCOUNT_V1::TRANSACTIONNUMBER Model_Checking::TRANSACTIONNUMBER(const wxString& num, OP op)
+{
+    return DB_Table_CHECKINGACCOUNT_V1::TRANSACTIONNUMBER(num, op);
 }
 
 DB_Table_CHECKINGACCOUNT_V1::TRANSDATE Model_Checking::TRANSDATE(const wxDate& date, OP op)
@@ -317,7 +322,11 @@ wxString Model_Checking::toShortStatus(const wxString& fullStatus)
 Model_Checking::Full_Data::Full_Data()
     : Data(0), BALANCE(0), AMOUNT(0),
     UDFC01(""), UDFC02(""), UDFC03(""), UDFC04(""), UDFC05(""),
-    UDFC01_Type(-1), UDFC02_Type(-1), UDFC03_Type(-1), UDFC04_Type(-1), UDFC05_Type(-1)
+    UDFC01_Type(Model_CustomField::FIELDTYPE::UNKNOWN),
+    UDFC02_Type(Model_CustomField::FIELDTYPE::UNKNOWN),
+    UDFC03_Type(Model_CustomField::FIELDTYPE::UNKNOWN),
+    UDFC04_Type(Model_CustomField::FIELDTYPE::UNKNOWN),
+    UDFC05_Type(Model_CustomField::FIELDTYPE::UNKNOWN)
 {
 }
 
@@ -445,6 +454,18 @@ wxString Model_Checking::Full_Data::info() const
     return info;
 }
 
+bool CompareUsedNotes(const std::tuple<int, wxString, wxString>& a, const std::tuple<int, wxString, wxString>& b) 
+{ 
+   if (std::get<0>(a) < std::get<0>(b)) return true;
+   if (std::get<0>(b) < std::get<0>(a)) return false;
+
+   // a=b for primary condition, go to secondary (but reverse order)
+   if (std::get<1>(a) > std::get<1>(b)) return true;
+   if (std::get<1>(b) > std::get<1>(a)) return false;
+
+   return false;
+} 
+
 void Model_Checking::getFrequentUsedNotes(std::vector<wxString> &frequentNotes, int accountID)
 {
     frequentNotes.clear();
@@ -453,22 +474,29 @@ void Model_Checking::getFrequentUsedNotes(std::vector<wxString> &frequentNotes, 
     const auto notes = instance().find(NOTES("", NOT_EQUAL)
         , accountID > 0 ? ACCOUNTID(accountID) : ACCOUNTID(-1, NOT_EQUAL));
 
-    std::map <wxString, int> counterMap;
+    // Count frequency
+    std::map <wxString, std::pair<int, wxString> > counterMap;
     for (const auto& entry : notes)
-        counterMap[entry.NOTES]--;
-
-    std::priority_queue<std::pair<int, wxString> > q; // largest element to appear as the top
-    for (const auto & kv : counterMap)
     {
-        q.push(std::make_pair(kv.second, kv.first));
-        if (q.size() > max) q.pop(); // keep fixed queue as max
+        counterMap[entry.NOTES].first--;
+        if (entry.TRANSDATE > counterMap[entry.NOTES].second)
+            counterMap[entry.NOTES].second = entry.TRANSDATE;
     }
 
-    while (!q.empty())
+    // Convert to vector
+    std::vector<std::tuple<int, wxString, wxString> > vec;
+    for (const auto& entry : counterMap)
+        vec.push_back(std::make_tuple(entry.second.first, entry.second.second, entry.first));
+
+    // Sort by frequency then date
+    std::sort(vec.begin(), vec.end(), CompareUsedNotes);
+
+    // Pull out top 20 (max)
+    for (const auto& kv : vec)
     {
-        const auto & kv = q.top();
-        frequentNotes.push_back(kv.second);
-        q.pop();
+        if (0 == max--)
+            break;
+        frequentNotes.push_back(std::get<2>(kv));
     }
 }
 

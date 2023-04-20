@@ -1,5 +1,6 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
+ Copyright (C) 2015, 2016, 2020, 2022 Nikolay Akimov
  Copyright (C) 2022 Mark Whalleuy (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
@@ -22,6 +23,8 @@
 
 
 #include "defs.h"
+#include <wx/srchctrl.h>
+#include <wx/tglbtn.h>
 #include "model/Model_Category.h"
 
 class mmCategDialogTreeCtrl : public wxTreeCtrl
@@ -57,62 +60,65 @@ class mmCategDialog : public wxDialog
     wxDECLARE_EVENT_TABLE();
 
 public:
+    ~mmCategDialog();
     mmCategDialog();
     mmCategDialog(wxWindow* parent
         , bool bIsSelection
         , int category_id, int subcategory_id);
 
     bool Create(wxWindow* parent
-        , wxWindowID id
-        , const wxString& caption
-        , const wxPoint& pos
-        , const wxSize& size
-        , long style);
+        , wxWindowID id = wxID_ANY
+        , const wxString& caption = _("Organize Categories")
+        , const wxString& name = "Organize Categories"
+        , const wxPoint& pos = wxDefaultPosition
+        , const wxSize& size = wxDefaultSize
+        , long style = wxCAPTION | wxSYSTEM_MENU | wxCLOSE_BOX | wxRESIZE_BORDER);
 
-    int getCategId()
-    {
-        return m_categ_id;
-    }
-    int getSubCategId()
-    {
-        return m_subcateg_id;
-    }
-    bool getRefreshRequested()
-    {
-        return m_refresh_requested;
-    }
+    int getCategId() const;
+    int getSubCategId() const;
+    bool getRefreshRequested() const;
+    bool mmIsUsed() const;
     wxString getFullCategName();
 
 private:
     void CreateControls();
     void fillControls();
     void setTreeSelection(int category_id, int subcategory_id);
+    void saveCurrentCollapseState();
 
     void OnOk(wxCommandEvent& event);
     void OnCancel(wxCommandEvent& event);
     void OnAdd(wxCommandEvent& event);
     void OnDelete(wxCommandEvent& event);
+    void mmDoDeleteSelectedCategory();
     void OnBSelect(wxCommandEvent& event);
     void OnEdit(wxCommandEvent& event);
     void OnSelChanged(wxTreeEvent& event);
     void OnDoubleClicked(wxTreeEvent& event);
     void showCategDialogDeleteError(bool category = true);
     void OnCategoryRelocation(wxCommandEvent& /*event*/);
-    void OnExpandChbClick(wxCommandEvent& /*event*/);
-    void OnShowHiddenChbClick(wxCommandEvent& /*event*/);
+    void OnExpandOrCollapseToggle(wxCommandEvent& event);
+    void OnShowHiddenToggle(wxCommandEvent& /*event*/);
+    void OnTextChanged(wxCommandEvent& event);
     void OnMenuSelected(wxCommandEvent& event);
     void OnItemRightClick(wxTreeEvent& event);
+    void OnItemCollapseOrExpand(wxTreeEvent& event);
+    void OnBeginDrag(wxTreeEvent& event);
+    void OnEndDrag(wxTreeEvent& event);
     bool categShowStatus(int categId, int subCategId);
     void setTreeSelection(const wxString& catName, const wxString& subCatName);
-
+    bool validateName(wxString name);
+    
     mmCategDialogTreeCtrl* m_treeCtrl;
+    wxSearchCtrl* m_maskTextCtrl;
     wxButton* m_buttonAdd;
     wxButton* m_buttonEdit;
     wxButton* m_buttonSelect;
     wxButton* m_buttonDelete;
     wxBitmapButton* m_buttonRelocate;
-    wxCheckBox* m_cbExpand;
-    wxCheckBox* m_cbShowAll;
+    wxToggleButton* m_tbCollapse;
+    wxToggleButton* m_tbExpand;
+    wxToggleButton* m_tbShowAll;
     wxTreeItemId m_selectedItemId;
     wxTreeItemId root_;
     wxTreeItemId getTreeItemFor(const wxTreeItemId& itemID, const wxString& itemText);
@@ -121,17 +127,28 @@ private:
     int m_subcateg_id;
     int m_init_selected_categ_id;
     int m_init_selected_subcateg_id;
+    int m_dragSourceCATEGID, m_dragSourceSUBCATEGID;
+    std::map<int, bool> m_categoryVisible;
+    bool m_processExpandCollapse;
     wxColour NormalColor_;
     wxArrayString m_hidden_categs;
     bool m_refresh_requested;
+    wxString m_maskStr;
 
     enum
     {
         MENU_ITEM_HIDE = wxID_HIGHEST + 1500,
         MENU_ITEM_UNHIDE,
         MENU_ITEM_CLEAR,
-        ID_DIALOG_CATEGORY
+        MENU_ITEM_DELETE,
+        ID_DIALOG_CATEGORY,
+        ID_EXPAND,
+        ID_COLLAPSE
     };
 };
+
+inline int mmCategDialog::getCategId() const { return m_categ_id; }
+inline int mmCategDialog::getSubCategId() const { return m_subcateg_id; }
+inline bool mmCategDialog::getRefreshRequested() const { return m_refresh_requested; }
 
 #endif

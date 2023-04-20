@@ -32,12 +32,13 @@ public:
         , const wxString &value = wxEmptyString
         , const wxPoint &pos = wxDefaultPosition
         , const wxSize &size = wxDefaultSize
-        , long style = 0
+        , long style = wxTE_PROCESS_ENTER | wxALIGN_RIGHT
         , const wxValidator &validator = wxDefaultValidator
         , const Model_Currency::Data* currency = Model_Currency::GetBaseCurrency()
         , const wxString &name = "mmTextCtrl")
     : wxTextCtrl(parent, id, value, pos, size, style, validator, name)
         , m_currency(currency)
+        , m_alt_precision(-1)
     {}
 
     void SetValue(double value);
@@ -50,7 +51,16 @@ public:
     bool GetDouble(double &amount) const;
     bool checkValue(double &amount, bool positive_value = true);
     wxChar GetDecimalPoint();
+    void SetCurrency(const Model_Currency::Data* currency);
+    void SetAltPrecision(int precision);
 
 private:
+    int m_alt_precision;
+    void OnTextEntered(wxCommandEvent& event);
+    void OnKillFocus(wxFocusEvent& event);
     const Model_Currency::Data* m_currency;
+    wxDECLARE_EVENT_TABLE();
 };
+
+inline void mmTextCtrl::SetAltPrecision(int precision) { m_alt_precision = precision; }
+inline void mmTextCtrl::SetCurrency(const Model_Currency::Data* currency) { m_currency = currency; }

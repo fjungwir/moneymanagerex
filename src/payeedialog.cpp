@@ -1,7 +1,7 @@
 /*******************************************************
-Copyright (C) 2006 Madhan Kanagavel
-Copyright (C) 2012 Nikolay Akimov
-Copyright (C) 2021, 2022 Mark Whalley (mark@ipx.co.uk)
+ Copyright (C) 2006 Madhan Kanagavel
+ Copyright (C) 2012 - 2016, 2020 - 2022 Nikolay Akimov
+ Copyright (C) 2021, 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -40,10 +40,16 @@ wxBEGIN_EVENT_TABLE(mmPayeeDialog, wxDialog)
     EVT_TEXT(wxID_FIND, mmPayeeDialog::OnTextChanged)
     EVT_LIST_COL_CLICK(wxID_ANY, mmPayeeDialog::OnSort)
     EVT_LIST_ITEM_ACTIVATED(wxID_ANY, mmPayeeDialog::OnListItemActivated)
+    EVT_LIST_ITEM_SELECTED(wxID_ANY, mmPayeeDialog::OnListItemSelected)
+    EVT_LIST_ITEM_DESELECTED(wxID_ANY, mmPayeeDialog::OnListItemDeselected)
     EVT_LIST_ITEM_RIGHT_CLICK(wxID_ANY, mmPayeeDialog::OnItemRightClick)
     EVT_MENU_RANGE(MENU_DEFINE_CATEGORY, MENU_RELOCATE_PAYEE, mmPayeeDialog::OnMenuSelected)
 wxEND_EVENT_TABLE()
 
+mmPayeeDialog::~mmPayeeDialog()
+{
+    Model_Infotable::instance().Set("PAYEES_DIALOG_SIZE", GetSize());
+}
 
 mmPayeeDialog::mmPayeeDialog(wxWindow *parent, bool payee_choose, const wxString &name) :
     m_payee_id(-1)
@@ -57,10 +63,21 @@ mmPayeeDialog::mmPayeeDialog(wxWindow *parent, bool payee_choose, const wxString
     , m_sortReverse (false)
 {
     ColName_[PAYEE_NAME] = _("Name");
-    ColName_[PAYEE_CATEGORY]  = (Option::instance().TransCategorySelection() == Option::LASTUSED) ?
+    ColName_[PAYEE_CATEGORY]  = (Option::instance().TransCategorySelectionNonTransfer() == Option::LASTUSED) ?
                                 _("Last Used Category") : _("Default Category");
 
+    this->SetFont(parent->GetFont());
     Create(parent, name);
+
+    const wxAcceleratorEntry entries[] =
+    {
+        wxAcceleratorEntry(wxACCEL_NORMAL, WXK_F2, MENU_EDIT_PAYEE),
+        wxAcceleratorEntry(wxACCEL_NORMAL, WXK_INSERT, MENU_NEW_PAYEE),
+        wxAcceleratorEntry(wxACCEL_NORMAL, WXK_DELETE, MENU_DELETE_PAYEE)
+    };
+
+    wxAcceleratorTable tab(sizeof(entries) / sizeof(*entries), entries);
+    SetAcceleratorTable(tab);
 }
 
 int mmPayeeDialog::FindSelectedPayee()
@@ -95,7 +112,7 @@ void mmPayeeDialog::Create(wxWindow* parent, const wxString &name)
     SetIcon(mmex::getProgramIcon());
 
     fillControls();
-
+    mmSetSize(this);
     Centre();
 }
 
@@ -103,8 +120,9 @@ void mmPayeeDialog::CreateControls()
 {
     wxBoxSizer* mainBoxSizer = new wxBoxSizer(wxVERTICAL);
 
-    payeeListBox_ = new wxListView(this, wxID_ANY, wxDefaultPosition, wxSize(450, 500), 
+    payeeListBox_ = new wxListView(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 
         wxLC_REPORT | wxLC_SINGLE_SEL | wxLC_AUTOARRANGE);
+    payeeListBox_->SetMinSize(wxSize(250, 100));
 
     wxListItem col0, col1;
     // Add first column
@@ -166,8 +184,9 @@ void mmPayeeDialog::fillControls()
         std::stable_sort(payees.begin(), payees.end(), [] (Model_Payee::Data x, Model_Payee::Data y)
         {
             return(
-                Model_Category::instance().full_name(x.CATEGID, x.SUBCATEGID).
-                    CmpNoCase(Model_Category::instance().full_name(y.CATEGID, y.SUBCATEGID)) < 0
+                CaseInsensitiveLocaleCmp(
+                    Model_Category::instance().full_name(x.CATEGID, x.SUBCATEGID)
+                    , Model_Category::instance().full_name(y.CATEGID, y.SUBCATEGID)) < 0
             ); 
         });
     }
@@ -189,6 +208,11 @@ void mmPayeeDialog::fillControls()
     this->Thaw();
 }
 
+void mmPayeeDialog::OnListItemSelected(wxListEvent& WXUNUSED(event))
+{
+    m_payee_id = FindSelectedPayee();
+}
+
 void mmPayeeDialog::OnListItemActivated(wxListEvent& WXUNUSED(event))
 {
     m_payee_id = FindSelectedPayee();
@@ -199,7 +223,7 @@ void mmPayeeDialog::OnListItemActivated(wxListEvent& WXUNUSED(event))
 }
 void mmPayeeDialog::OnTextChanged(wxCommandEvent& event)
 {
-    m_maskStr = event.GetString();
+    m_maskStr = event.GetString().Prepend("*");
     fillControls();
 }
 
@@ -370,31 +394,30 @@ void mmPayeeDialog::OnItemRightClick(wxListEvent& event)
 
     Model_Payee::Data* payee = Model_Payee::instance().get(m_payee_id);
 
-    wxMenu* mainMenu = new wxMenu;
-    if (payee) mainMenu->SetTitle(payee->PAYEENAME);
-    mainMenu->Append(new wxMenuItem(mainMenu, MENU_DEFINE_CATEGORY, _("Define Category")));
-    if (!payee) mainMenu->Enable(MENU_DEFINE_CATEGORY, false);
-    mainMenu->Append(new wxMenuItem(mainMenu, MENU_REMOVE_CATEGORY, _("Remove Category")));
-    if (!payee) mainMenu->Enable(MENU_REMOVE_CATEGORY, false);
-    mainMenu->AppendSeparator();
+    wxMenu mainMenu;
+    if (payee) mainMenu.SetTitle(payee->PAYEENAME);
+    mainMenu.Append(new wxMenuItem(&mainMenu, MENU_DEFINE_CATEGORY, _("Define Category")));
+    if (!payee) mainMenu.Enable(MENU_DEFINE_CATEGORY, false);
+    mainMenu.Append(new wxMenuItem(&mainMenu, MENU_REMOVE_CATEGORY, _("Remove Category")));
+    if (!payee) mainMenu.Enable(MENU_REMOVE_CATEGORY, false);
+    mainMenu.AppendSeparator();
 
-    mainMenu->Append(new wxMenuItem(mainMenu, MENU_NEW_PAYEE, _("&Add ")));
-    mainMenu->Append(new wxMenuItem(mainMenu, MENU_EDIT_PAYEE, _("&Edit ")));
-    if (!payee) mainMenu->Enable(MENU_EDIT_PAYEE, false);
-    mainMenu->Append(new wxMenuItem(mainMenu, MENU_DELETE_PAYEE, _("&Remove ")));
-    if (!payee || Model_Payee::is_used(m_payee_id)) mainMenu->Enable(MENU_DELETE_PAYEE, false);
-    mainMenu->AppendSeparator();
+    mainMenu.Append(new wxMenuItem(&mainMenu, MENU_NEW_PAYEE, _("&Add ")));
+    mainMenu.Append(new wxMenuItem(&mainMenu, MENU_EDIT_PAYEE, _("&Edit ")));
+    if (!payee) mainMenu.Enable(MENU_EDIT_PAYEE, false);
+    mainMenu.Append(new wxMenuItem(&mainMenu, MENU_DELETE_PAYEE, _("&Remove ")));
+    if (!payee || Model_Payee::is_used(m_payee_id)) mainMenu.Enable(MENU_DELETE_PAYEE, false);
+    mainMenu.AppendSeparator();
 
-    mainMenu->Append(new wxMenuItem(mainMenu, MENU_ORGANIZE_ATTACHMENTS, _("&Organize Attachments")));
-    if (!payee) mainMenu->Enable(MENU_ORGANIZE_ATTACHMENTS, false);
-    mainMenu->AppendSeparator();
+    mainMenu.Append(new wxMenuItem(&mainMenu, MENU_ORGANIZE_ATTACHMENTS, _("&Organize Attachments")));
+    if (!payee) mainMenu.Enable(MENU_ORGANIZE_ATTACHMENTS, false);
+    mainMenu.AppendSeparator();
 
-    mainMenu->Append(new wxMenuItem(mainMenu, MENU_RELOCATE_PAYEE, _("Relocate Payee")));
+    mainMenu.Append(new wxMenuItem(&mainMenu, MENU_RELOCATE_PAYEE, _("Relocate Payee")));
     //SetToolTip(_("Change all transactions using one Payee to another Payee"));
-    if (!payee) mainMenu->Enable(MENU_RELOCATE_PAYEE, false);
+    if (!payee) mainMenu.Enable(MENU_RELOCATE_PAYEE, false);
 
-    PopupMenu(mainMenu);
-    delete mainMenu;
+    PopupMenu(&mainMenu);
     event.Skip();
 }
 

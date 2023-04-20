@@ -1,6 +1,7 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
  Copyright (C) 2015 -2021 Nikolay Akimov
+ Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -53,7 +54,6 @@ mmAssetsListCtrl::mmAssetsListCtrl(mmAssetsPanel* cp, wxWindow *parent, wxWindow
 , m_panel(cp)
 {
     mmThemeMetaColour(this, meta::COLOR_LISTPANEL);
-    ToggleWindowStyle(wxLC_EDIT_LABELS);
 
     m_columns.push_back(PANEL_COLUMN(" ", 25, wxLIST_FORMAT_LEFT));
     m_columns.push_back(PANEL_COLUMN(_("ID"), wxLIST_AUTOSIZE, wxLIST_FORMAT_RIGHT));
@@ -94,18 +94,19 @@ void mmAssetsListCtrl::OnMouseRightClick(wxMouseEvent& event)
     }
     m_panel->updateExtraAssetData(m_selected_row);
     wxMenu menu;
-    menu.Append(MENU_TREEPOPUP_NEW, _("&New Asset"));
+    menu.Append(MENU_TREEPOPUP_NEW, __(wxTRANSLATE("&New Asset")));
     menu.AppendSeparator();
-    menu.Append(MENU_ON_DUPLICATE_TRANSACTION, _("D&uplicate Asset"));
+    menu.Append(MENU_ON_DUPLICATE_TRANSACTION, __(wxTRANSLATE("D&uplicate Asset")));
     menu.AppendSeparator();
-    menu.Append(MENU_TREEPOPUP_ADDTRANS, _("&Add Asset Transaction"));
+    menu.Append(MENU_TREEPOPUP_ADDTRANS, __(wxTRANSLATE("&Add Asset Transaction")));
     menu.Append(MENU_TREEPOPUP_VIEWTRANS, _("&View Asset Transactions"));
-    menu.Append(MENU_TREEPOPUP_GOTOACCOUNT, _("&Open Asset Account"));
+    menu.Append(MENU_TREEPOPUP_GOTOACCOUNT, __(wxTRANSLATE("&Open Asset Account")));
     menu.AppendSeparator();
-    menu.Append(MENU_TREEPOPUP_EDIT, _("&Edit Asset"));
-    menu.Append(MENU_TREEPOPUP_DELETE, _("&Delete Asset"));
+    menu.Append(MENU_TREEPOPUP_EDIT, __(wxTRANSLATE("&Edit Asset")));
     menu.AppendSeparator();
-    menu.Append(MENU_TREEPOPUP_ORGANIZE_ATTACHMENTS, _("&Organize Attachments"));
+    menu.Append(MENU_TREEPOPUP_DELETE, __(wxTRANSLATE("&Delete Asset")));
+    menu.AppendSeparator();
+    menu.Append(MENU_TREEPOPUP_ORGANIZE_ATTACHMENTS, __(wxTRANSLATE("&Organize Attachments")));
     if (m_selected_row < 0)
     {
         menu.Enable(MENU_ON_DUPLICATE_TRANSACTION, false);
@@ -115,6 +116,11 @@ void mmAssetsListCtrl::OnMouseRightClick(wxMouseEvent& event)
         menu.Enable(MENU_TREEPOPUP_DELETE, false);
         menu.Enable(MENU_TREEPOPUP_ORGANIZE_ATTACHMENTS, false);
     }
+
+    const auto& asset_accounts = Model_Account::instance().find(Model_Account::ACCOUNTTYPE(Model_Account::all_type()[Model_Account::ASSET]));
+    menu.Enable(MENU_TREEPOPUP_GOTOACCOUNT, !asset_accounts.empty());
+    menu.Enable(MENU_TREEPOPUP_VIEWTRANS, !asset_accounts.empty());
+
     PopupMenu(&menu, event.GetPosition());
 }
 
@@ -165,7 +171,7 @@ void mmAssetsListCtrl::OnNewAsset(wxCommandEvent& /*event*/)
     if (dlg.ShowModal() == wxID_OK)
     {
         doRefreshItems(dlg.m_asset->ASSETID);
-        m_panel->m_frame->RefreshNavigationTree();
+        //m_panel->m_frame->RefreshNavigationTree();
     }
 }
 
@@ -322,7 +328,7 @@ void mmAssetsListCtrl::OnColClick(wxListEvent& event)
 
     m_selected_col = ColumnNr;
 
-    item.SetImage(m_asc ? mmAssetsPanel::ICON_DOWNARROW : mmAssetsPanel::ICON_UPARROW);
+    item.SetImage(m_asc ? mmAssetsPanel::ICON_UPARROW : mmAssetsPanel::ICON_DOWNARROW);
     SetColumn(m_selected_col, item);
 
     Model_Setting::instance().Set("ASSETS_ASC", m_asc);
@@ -563,7 +569,7 @@ int mmAssetsPanel::initVirtualListControl(int id, int col, bool asc)
 
     wxListItem item;
     item.SetMask(wxLIST_MASK_IMAGE);
-    item.SetImage(asc ? ICON_DOWNARROW : ICON_UPARROW);
+    item.SetImage(asc ? ICON_UPARROW : ICON_DOWNARROW);
     m_listCtrlAssets->SetColumn(col, item);
 
     if (this->m_filter_type == Model_Asset::TYPE(-1)) // ALL
@@ -639,6 +645,7 @@ wxString mmAssetsPanel::getItem(long item, long column)
     case COL_NOTES:
     {
         wxString full_notes = asset.NOTES;
+        full_notes.Replace("\n", " ");
         if (Model_Attachment::NrAttachments(Model_Attachment::reftype_desc(Model_Attachment::ASSET), asset.ASSETID))
             full_notes = full_notes.Prepend(mmAttachmentManage::GetAttachmentNoteSign());
         return full_notes;

@@ -138,7 +138,7 @@ billsDepositsListCtrl::billsDepositsListCtrl(mmBillsDepositsPanel* bdp, wxWindow
     m_columns.push_back(PANEL_COLUMN(_("Type"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_LEFT));
     m_columns.push_back(PANEL_COLUMN(_("Amount"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_RIGHT));
     m_columns.push_back(PANEL_COLUMN(_("Frequency"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_LEFT));
-    m_columns.push_back(PANEL_COLUMN(_("Repetitions"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_LEFT));
+    m_columns.push_back(PANEL_COLUMN(_("Repetitions"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_RIGHT));
     m_columns.push_back(PANEL_COLUMN(_("Autorepeat"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_LEFT));
     m_columns.push_back(PANEL_COLUMN(_("Payment"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_LEFT));
     m_columns.push_back(PANEL_COLUMN(_("Number"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_LEFT));
@@ -215,7 +215,7 @@ bool mmBillsDepositsPanel::Create(wxWindow *parent
     /* Set up the transaction filter.  The transFilter dialog will be destroyed
        when the checking panel is destroyed. */
     transFilterActive_ = false;
-    transFilterDlg_ = new mmFilterTransactionsDialog(this, false, false);
+    transFilterDlg_ = new mmFilterTransactionsDialog(this, -1, false);
 
     initVirtualListControl();
 
@@ -339,7 +339,7 @@ int mmBillsDepositsPanel::initVirtualListControl(int id)
 
     wxListItem item;
     item.SetMask(wxLIST_MASK_IMAGE);
-    item.SetImage(listCtrlAccount_->m_asc ? ICON_DOWNARROW : ICON_UPARROW);
+    item.SetImage(listCtrlAccount_->m_asc ? ICON_UPARROW : ICON_DOWNARROW);
     listCtrlAccount_->SetColumn(listCtrlAccount_->m_selected_col, item);
 
     bills_.clear();
@@ -347,7 +347,7 @@ int mmBillsDepositsPanel::initVirtualListControl(int id)
     for (const Model_Billsdeposits::Data& data
         : Model_Billsdeposits::instance().all(Model_Billsdeposits::COL_NEXTOCCURRENCEDATE))
     {
-        if (transFilterActive_ && !transFilterDlg_->checkAll(data, split))
+        if (transFilterActive_ && !transFilterDlg_->mmIsRecordMatches(data, split))
             continue;
 
         Model_Billsdeposits::Full_Data r(data);
@@ -424,16 +424,17 @@ void billsDepositsListCtrl::OnItemRightClick(wxMouseEvent& event)
     m_bdp->updateBottomPanelData(m_selected_row);
     bool item_active = (m_selected_row >= 0);
     wxMenu menu;
-    menu.Append(MENU_POPUP_BD_ENTER_OCCUR, _("Enter next Occurrence..."));
+    menu.Append(MENU_POPUP_BD_ENTER_OCCUR, __(wxTRANSLATE("Enter next Occurrence")));
     menu.AppendSeparator();
     menu.Append(MENU_POPUP_BD_SKIP_OCCUR, _("Skip next Occurrence"));
     menu.AppendSeparator();
-    menu.Append(MENU_TREEPOPUP_NEW, _("&New Recurring Transaction..."));
-    menu.Append(MENU_TREEPOPUP_EDIT, _("&Edit Recurring Transaction..."));
-    menu.Append(MENU_TREEPOPUP_DUPLICATE, _("D&uplicate Recurring Transaction..."));
-    menu.Append(MENU_TREEPOPUP_DELETE, _("&Delete Recurring Transaction..."));
+    menu.Append(MENU_TREEPOPUP_NEW, __(wxTRANSLATE("&New Recurring Transaction")));
+    menu.Append(MENU_TREEPOPUP_EDIT, __(wxTRANSLATE("&Edit Recurring Transaction")));
+    menu.Append(MENU_TREEPOPUP_DUPLICATE, __(wxTRANSLATE("D&uplicate Recurring Transaction")));
     menu.AppendSeparator();
-    menu.Append(MENU_TREEPOPUP_ORGANIZE_ATTACHMENTS, _("&Organize Attachments"));
+    menu.Append(MENU_TREEPOPUP_DELETE, __(wxTRANSLATE("&Delete Recurring Transaction")));
+    menu.AppendSeparator();
+    menu.Append(MENU_TREEPOPUP_ORGANIZE_ATTACHMENTS, __(wxTRANSLATE("&Organize Attachments")));
     
     menu.Enable(MENU_POPUP_BD_ENTER_OCCUR, item_active);
     menu.Enable(MENU_POPUP_BD_SKIP_OCCUR, item_active);
@@ -460,7 +461,7 @@ wxString mmBillsDepositsPanel::getItem(long item, long column)
     case COL_ACCOUNT:
         return bill.ACCOUNTNAME;
     case COL_PAYEE:
-        return bill.PAYEENAME;
+        return bill.real_payee_name();
     case COL_STATUS:
         return bill.STATUS;
     case COL_CATEGORY:
@@ -497,9 +498,13 @@ wxString mmBillsDepositsPanel::getItem(long item, long column)
     case COL_NUMBER:
         return bill.TRANSACTIONNUMBER;
     case COL_NOTES:
+    {
+        wxString value = bill.NOTES;
+        value.Replace("\n", " ");
         if (Model_Attachment::NrAttachments(Model_Attachment::reftype_desc(Model_Attachment::BILLSDEPOSIT), bill.BDID))
-            return mmAttachmentManage::GetAttachmentNoteSign() + bill.NOTES;
-        return bill.NOTES;
+            value.Prepend(mmAttachmentManage::GetAttachmentNoteSign());
+        return value;
+    }
     default:
         return wxEmptyString;
     }
@@ -693,7 +698,7 @@ void billsDepositsListCtrl::OnEnterBDTransaction(wxCommandEvent& /*event*/)
     mmBDDialog dlg(this, id, false, true);
     if ( dlg.ShowModal() == wxID_OK )
     {
-        if ((size_t)(++m_selected_row) < m_bdp->bills_.size())
+        if (++m_selected_row < m_bdp->bills_.size())
             id = m_bdp->bills_[m_selected_row].BDID;
         refreshVisualList(m_bdp->initVirtualListControl(id));
     }
@@ -705,7 +710,7 @@ void billsDepositsListCtrl::OnSkipBDTransaction(wxCommandEvent& /*event*/)
 
     int id = m_bdp->bills_[m_selected_row].BDID;
     Model_Billsdeposits::instance().completeBDInSeries(id);
-    if ((size_t)(++m_selected_row) < m_bdp->bills_.size())
+    if (++m_selected_row < m_bdp->bills_.size())
         id = m_bdp->bills_[m_selected_row].BDID;
     refreshVisualList(m_bdp->initVirtualListControl(id));
 }
@@ -930,16 +935,16 @@ void billsDepositsListCtrl::OnSetUserColour(wxCommandEvent& event)
     if (m_selected_row == -1) return;
     int id = m_bdp->bills_[m_selected_row].BDID;
 
-    int user_colour_id = event.GetId();
-    user_colour_id -= MENU_ON_SET_UDC0;
-    wxLogDebug("id: %i", user_colour_id);
+    int user_color_id = event.GetId();
+    user_color_id -= MENU_ON_SET_UDC0;
+    wxLogDebug("id: %i", user_color_id);
 
     Model_Billsdeposits::instance().Savepoint();
 
     Model_Billsdeposits::Data* item = Model_Billsdeposits::instance().get(id);
     if (item)
     {
-        item->FOLLOWUPID = user_colour_id;
+        item->FOLLOWUPID = user_color_id;
         Model_Billsdeposits::instance().save(item);
     }
     Model_Billsdeposits::instance().ReleaseSavepoint();
@@ -955,7 +960,7 @@ void mmBillsDepositsPanel::RefreshList()
 void mmBillsDepositsPanel::OnFilterTransactions(wxCommandEvent& WXUNUSED(event))
 {
 
-    if (transFilterDlg_->ShowModal() == wxID_OK && transFilterDlg_->isSomethingSelected())
+    if (transFilterDlg_->ShowModal() == wxID_OK && transFilterDlg_->mmIsSomethingChecked())
     {
         transFilterActive_ = true;
         m_bitmapTransFilter->SetBitmap(mmBitmap(png::TRANSFILTER_ACTIVE, mmBitmapButtonSize));

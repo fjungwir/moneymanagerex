@@ -1,7 +1,7 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
  Copyright (C) 2012 - 2021 Nikolay Akimov
- Copyright (C) 2021. 2022 Mark Whalley (mark@ipx.co.uk)
+ Copyright (C) 2021 - 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ struct GraphSeries
 struct GraphData
 {
     wxString title;
-    enum { BAR = 0, LINE, LINE_DATETIME, PIE, DONUT, RADAR, BARLINE, STACKEDAREA } type;
+    enum { BAR = 0, LINE, LINE_DATETIME, PIE, DONUT, RADAR, BARLINE, STACKEDBARLINE, STACKEDAREA } type;
     std::vector<wxString> labels;
     std::vector<GraphSeries> series;
     std::vector<wxColour> colors;
@@ -88,10 +88,10 @@ public:
     //void addTableHeaderCell(const wxString& value, bool numeric = false, bool sortable = true, int cols = 1, bool center = false);
     void addTableHeaderCell(const wxString& value, const wxString& css_class = "", int cols = 1);
 
-    void addCurrencyCell(double amount, const Model_Currency::Data *currency = Model_Currency::instance().GetBaseCurrency(), int precision = -1);
+    void addCurrencyCell(double amount, const Model_Currency::Data *currency = Model_Currency::instance().GetBaseCurrency(), int precision = -1, bool isVoid = false);
     void addMoneyCell(double amount, int precision = -1);
-    void addTableCellMonth(int month);
-    void addColorMarker(const wxString& color);
+    void addTableCellMonth(int month, int year = 0);
+    void addColorMarker(const wxString& color, bool center = false);
     const wxString getColor(int i);
     const wxString getRandomColor(bool positive);
 
@@ -101,7 +101,7 @@ public:
     void addEmptyTableCell(const int number = 1);
 
     /** Add a Cell value */
-    void addTableCellLink(const wxString& href, const wxString& value);
+    void addTableCellLink(const wxString& href, const wxString& value, bool numeric = false, bool center = false);
 
     void end(bool simple=false);
     void endTable();

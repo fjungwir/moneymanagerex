@@ -84,73 +84,137 @@ wxEND_EVENT_TABLE();
 TransactionListCtrl::EColumn TransactionListCtrl::toEColumn(long col)
 {
     EColumn res = COL_DEF_SORT;
-    if (col >= 0 && (size_t)(col) < m_real_columns.size()) res = static_cast<EColumn>(col);
+    if (col >= 0 && col < m_real_columns.size()) res = static_cast<EColumn>(col);
         return res;
+}
+
+void TransactionListCtrl::SortTransactions(int sortcol, bool ascend)
+{
+    const auto& ref_type = Model_Attachment::reftype_desc(Model_Attachment::TRANSACTION);
+    Model_CustomField::FIELDTYPE type;
+
+    switch (m_real_columns[sortcol])
+    {
+    case TransactionListCtrl::COL_ID:
+        ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByTRANSID())
+              : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterByTRANSID());
+        break;
+    case TransactionListCtrl::COL_NUMBER:
+        ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), Model_Checking::SorterByNUMBER())
+              : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), Model_Checking::SorterByNUMBER());
+        break;
+    case TransactionListCtrl::COL_ACCOUNT:
+        ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByACCOUNTNAME())
+              : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterByACCOUNTNAME());
+        break;
+    case TransactionListCtrl::COL_PAYEE_STR:
+        ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByPAYEENAME())
+              : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterByPAYEENAME());
+        break;
+    case TransactionListCtrl::COL_STATUS:
+        ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterBySTATUS())
+              : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterBySTATUS());
+        break;
+    case TransactionListCtrl::COL_CATEGORY:
+        ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByCATEGNAME())
+              : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterByCATEGNAME());
+        break;
+    case TransactionListCtrl::COL_WITHDRAWAL:
+        ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), Model_Checking::SorterByWITHDRAWAL())
+              : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), Model_Checking::SorterByWITHDRAWAL());
+        break;
+    case TransactionListCtrl::COL_DEPOSIT:
+        ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), Model_Checking::SorterByDEPOSIT())
+              : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), Model_Checking::SorterByDEPOSIT());
+        break;
+    case TransactionListCtrl::COL_BALANCE:
+        ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), Model_Checking::SorterByBALANCE())
+              : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), Model_Checking::SorterByBALANCE());
+        break;
+    case TransactionListCtrl::COL_CREDIT:
+        ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), Model_Checking::SorterByBALANCE())
+              : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), Model_Checking::SorterByBALANCE());
+        break;
+    case TransactionListCtrl::COL_NOTES:
+        ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByNOTES())
+              : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterByNOTES());
+        break;
+    case TransactionListCtrl::COL_DATE:
+        ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByTRANSDATE())
+              : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterByTRANSDATE());
+        break;
+    case TransactionListCtrl::COL_UDFC01:
+        type = Model_CustomField::getUDFCType(ref_type, "UDFC01");
+        if (type == Model_CustomField::FIELDTYPE::DECIMAL || type == Model_CustomField::FIELDTYPE::INTEGER)
+            ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByUDFC01_val)
+                  : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterByUDFC01_val);
+        else
+            ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByUDFC01)
+                  : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterByUDFC01);
+        break;
+    case TransactionListCtrl::COL_UDFC02:
+        type = Model_CustomField::getUDFCType(ref_type, "UDFC02");
+        if (type == Model_CustomField::FIELDTYPE::DECIMAL || type == Model_CustomField::FIELDTYPE::INTEGER)
+            ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByUDFC02_val)
+                  : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterByUDFC02_val);
+        else
+            ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByUDFC02)
+                  : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterByUDFC02);
+        break;
+    case TransactionListCtrl::COL_UDFC03:
+        type = Model_CustomField::getUDFCType(ref_type, "UDFC03");
+        if (type == Model_CustomField::FIELDTYPE::DECIMAL || type == Model_CustomField::FIELDTYPE::INTEGER)
+            ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByUDFC03_val)
+                  : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterByUDFC03_val);
+        else
+            ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByUDFC03)
+                  : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterByUDFC03);
+        break;
+    case TransactionListCtrl::COL_UDFC04:
+        type = Model_CustomField::getUDFCType(ref_type, "UDFC04");
+        if (type == Model_CustomField::FIELDTYPE::DECIMAL || type == Model_CustomField::FIELDTYPE::INTEGER)
+            ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByUDFC04_val)
+                  : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterByUDFC04_val);
+        else
+            ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByUDFC04)
+                  : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterByUDFC04);
+        break;
+    case TransactionListCtrl::COL_UDFC05:
+        type = Model_CustomField::getUDFCType(ref_type, "UDFC05");
+        if (type == Model_CustomField::FIELDTYPE::DECIMAL || type == Model_CustomField::FIELDTYPE::INTEGER)
+            ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByUDFC05_val)
+                  : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterByUDFC05_val);
+        else
+            ascend ? std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByUDFC05)
+                  : std::stable_sort(this->m_trans.rbegin(), this->m_trans.rend(), SorterByUDFC05);
+        break;
+    default:
+        break;
+    }
 }
 
 void TransactionListCtrl::sortTable()
 {
     if (m_trans.empty()) return;
 
-    std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByTRANSID());
-
-    switch (m_real_columns[g_sortcol])
+    if (m_firstSort)
     {
-    case TransactionListCtrl::COL_NUMBER:
-        std::stable_sort(this->m_trans.begin(), this->m_trans.end(), Model_Checking::SorterByNUMBER());
-        break;
-    case TransactionListCtrl::COL_ACCOUNT:
-        std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByACCOUNTNAME());
-        break;
-    case TransactionListCtrl::COL_PAYEE_STR:
-        std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByPAYEENAME());
-        break;
-    case TransactionListCtrl::COL_STATUS:
-        std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterBySTATUS());
-        break;
-    case TransactionListCtrl::COL_CATEGORY:
-        std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByCATEGNAME());
-        break;
-    case TransactionListCtrl::COL_WITHDRAWAL:
-        std::stable_sort(this->m_trans.begin(), this->m_trans.end(), Model_Checking::SorterByWITHDRAWAL());
-        break;
-    case TransactionListCtrl::COL_DEPOSIT:
-        std::stable_sort(this->m_trans.begin(), this->m_trans.end(), Model_Checking::SorterByDEPOSIT());
-        break;
-    case TransactionListCtrl::COL_BALANCE:
-        std::stable_sort(this->m_trans.begin(), this->m_trans.end(), Model_Checking::SorterByBALANCE());
-        break;
-    case TransactionListCtrl::COL_CREDIT:
-        std::stable_sort(this->m_trans.begin(), this->m_trans.end(), Model_Checking::SorterByBALANCE());
-        break;
-    case TransactionListCtrl::COL_NOTES:
-        std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByNOTES());
-        break;
-    case TransactionListCtrl::COL_DATE:
-        std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByTRANSDATE());
-        break;
-    case TransactionListCtrl::COL_UDFC01:
-        std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByUDFC01);
-        break;
-    case TransactionListCtrl::COL_UDFC02:
-        std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByUDFC02);
-        break;
-    case TransactionListCtrl::COL_UDFC03:
-        std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByUDFC03);
-        break;
-    case TransactionListCtrl::COL_UDFC04:
-        std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByUDFC04);
-        break;
-    case TransactionListCtrl::COL_UDFC05:
-        std::stable_sort(this->m_trans.begin(), this->m_trans.end(), SorterByUDFC05);
-        break;
-    default:
-        break;
+        int sortCol2 = COL_DEF_SORT;
+        bool sortAsc2 = true;
+        long val = COL_DEF_SORT;
+        wxString strVal = Model_Setting::instance().GetStringSetting(wxString::Format("%s_SORT_COL2", m_cp->m_sortSaveTitle), wxString() << val);
+        if (strVal.ToLong(&val)) 
+            sortCol2 = toEColumn(val);
+        val = 1; // asc sorting default
+        strVal = Model_Setting::instance().GetStringSetting(wxString::Format("%s_ASC2", m_cp->m_sortSaveTitle), wxString() << val);
+        if (strVal.ToLong(&val)) 
+            sortAsc2 = val != 0;
+        SortTransactions(sortCol2, sortAsc2);
+        m_firstSort = false;
     }
 
-    if (!g_asc)
-        std::reverse(this->m_trans.begin(), this->m_trans.end());
-
+    SortTransactions(g_sortcol, g_asc);
+    
     RefreshItems(0, m_trans.size() - 1);
 }
 
@@ -161,9 +225,9 @@ TransactionListCtrl::TransactionListCtrl(
 ) :
     mmListCtrl(parent, id),
     m_cp(cp),
-    m_attr1(new wxListItemAttr(*bestFontColour(m_cp->m_allAccounts ? mmThemeMetaColour(meta::COLOR_LISTALT0A) : mmThemeMetaColour(meta::COLOR_LISTALT0)), m_cp->m_allAccounts ? mmThemeMetaColour(meta::COLOR_LISTALT0A) : mmThemeMetaColour(meta::COLOR_LISTALT0), wxNullFont)),
+    m_attr1(new wxListItemAttr(*bestFontColour(m_cp->isAllAccounts_ ? mmThemeMetaColour(meta::COLOR_LISTALT0A) : mmThemeMetaColour(meta::COLOR_LISTALT0)), m_cp->isAllAccounts_ ? mmThemeMetaColour(meta::COLOR_LISTALT0A) : mmThemeMetaColour(meta::COLOR_LISTALT0), wxNullFont)),
     m_attr2(new wxListItemAttr(*bestFontColour(mmThemeMetaColour(meta::COLOR_LIST)), mmThemeMetaColour(meta::COLOR_LIST), wxNullFont)),
-    m_attr3(new wxListItemAttr(mmThemeMetaColour(meta::COLOR_LISTFUTURE), m_cp->m_allAccounts ? mmThemeMetaColour(meta::COLOR_LISTALT0A) : mmThemeMetaColour(meta::COLOR_LISTALT0), wxNullFont)),
+    m_attr3(new wxListItemAttr(mmThemeMetaColour(meta::COLOR_LISTFUTURE), m_cp->isAllAccounts_ ? mmThemeMetaColour(meta::COLOR_LISTALT0A) : mmThemeMetaColour(meta::COLOR_LISTALT0), wxNullFont)),
     m_attr4(new wxListItemAttr(mmThemeMetaColour(meta::COLOR_LISTFUTURE), wxNullColour, wxNullFont)),
     m_attr11(new wxListItemAttr(*bestFontColour(mmColors::userDefColor1), mmColors::userDefColor1, wxNullFont)),
     m_attr12(new wxListItemAttr(*bestFontColour(mmColors::userDefColor2), mmColors::userDefColor2, wxNullFont)),
@@ -176,6 +240,7 @@ TransactionListCtrl::TransactionListCtrl(
     g_sortcol(COL_DEF_SORT),
     m_prevSortCol(COL_DEF_SORT),
     g_asc(true),
+    m_firstSort(true),
     m_topItemIndex(-1)
 {
     wxASSERT(m_cp);
@@ -205,13 +270,13 @@ TransactionListCtrl::TransactionListCtrl(
 
     m_columns.push_back(PANEL_COLUMN(" ", 25, wxLIST_FORMAT_CENTER));
     m_real_columns.push_back(COL_IMGSTATUS);
-    m_columns.push_back(PANEL_COLUMN(_("ID"), wxLIST_AUTOSIZE, wxLIST_FORMAT_LEFT));
+    m_columns.push_back(PANEL_COLUMN(_("ID"), wxLIST_AUTOSIZE, wxLIST_FORMAT_RIGHT));
     m_real_columns.push_back(COL_ID);
     m_columns.push_back(PANEL_COLUMN(_("Date"), 112, wxLIST_FORMAT_LEFT));
     m_real_columns.push_back(COL_DATE);
     m_columns.push_back(PANEL_COLUMN(_("Number"), 70, wxLIST_FORMAT_LEFT));
     m_real_columns.push_back(COL_NUMBER);
-    if (m_cp->m_allAccounts)
+    if (m_cp->isAllAccounts_)
     {
         m_columns.push_back(PANEL_COLUMN(_("Account"), 100, wxLIST_FORMAT_LEFT));
         m_real_columns.push_back(COL_ACCOUNT);
@@ -226,7 +291,7 @@ TransactionListCtrl::TransactionListCtrl(
     m_real_columns.push_back(COL_WITHDRAWAL);
     m_columns.push_back(PANEL_COLUMN(_("Deposit"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_RIGHT));
     m_real_columns.push_back(COL_DEPOSIT);
-    if (!m_cp->m_allAccounts)
+    if (!m_cp->isAllAccounts_)
     {
         m_columns.push_back(PANEL_COLUMN(_("Balance"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_RIGHT));
         m_real_columns.push_back(COL_BALANCE);
@@ -246,9 +311,17 @@ TransactionListCtrl::TransactionListCtrl(
     {
         if (udfc_entry.empty()) continue;
         const auto& name = Model_CustomField::getUDFCName(ref_type, udfc_entry);
-        if (name != udfc_entry)
+        if (!name.IsEmpty() && name != udfc_entry)
         {
-            m_columns.push_back(PANEL_COLUMN(name, 100, wxLIST_FORMAT_LEFT));
+            const auto& type = Model_CustomField::getUDFCType(ref_type, udfc_entry);
+            int align;
+            if (type == Model_CustomField::FIELDTYPE::DECIMAL || type == Model_CustomField::FIELDTYPE::INTEGER)
+                align = wxLIST_FORMAT_RIGHT;
+            else if (type == Model_CustomField::FIELDTYPE::BOOLEAN)
+                align = wxLIST_FORMAT_CENTER; 
+            else
+                align = wxLIST_FORMAT_LEFT; 
+            m_columns.push_back(PANEL_COLUMN(name, 100, align));
             m_real_columns.push_back(static_cast<EColumn>(i));
         }
         i++;
@@ -256,7 +329,7 @@ TransactionListCtrl::TransactionListCtrl(
 
     // V2 used as now maps to real column names and this resets everything to default
     // to avoid strange column widths when this code version is first
-    m_col_width = m_cp->m_allAccounts ? "ALLTRANS_COLV2%d_WIDTH" : "CHECK2_COLV2%d_WIDTH";
+    m_col_width = m_cp->isAllAccounts_ ? "ALLTRANS_COLV2%d_WIDTH" : "CHECK2_COLV2%d_WIDTH";
 
     m_default_sort_column = COL_DEF_SORT;
     m_today = wxDateTime::Today().FormatISODate();
@@ -356,17 +429,17 @@ void TransactionListCtrl::OnMouseRightClick(wxMouseEvent& event)
         }
     }
     wxMenu menu;
-    menu.Append(MENU_TREEPOPUP_NEW_WITHDRAWAL, _("&New Withdrawal"));
-    menu.Append(MENU_TREEPOPUP_NEW_DEPOSIT, _("&New Deposit"));
+    menu.Append(MENU_TREEPOPUP_NEW_WITHDRAWAL, __(wxTRANSLATE("&New Withdrawal")));
+    menu.Append(MENU_TREEPOPUP_NEW_DEPOSIT, __(wxTRANSLATE("&New Deposit")));
     if (Model_Account::instance().all_checking_account_names(true).size() > 1)
-        menu.Append(MENU_TREEPOPUP_NEW_TRANSFER, _("&New Transfer"));
+        menu.Append(MENU_TREEPOPUP_NEW_TRANSFER, __(wxTRANSLATE("&New Transfer")));
 
     menu.AppendSeparator();
 
-    menu.Append(MENU_TREEPOPUP_EDIT2, wxPLURAL("&Edit Transaction", "&Edit Transactions", selected));
+    menu.Append(MENU_TREEPOPUP_EDIT2, wxPLURAL("&Edit Transaction...", "&Edit Transactions...", selected));
     if (is_nothing_selected) menu.Enable(MENU_TREEPOPUP_EDIT2, false);
 
-    if (!m_cp->m_allAccounts)     // Copy/Paste not suitable if all accounts visible
+    if (!m_cp->isAllAccounts_)     // Copy/Paste not suitable if all accounts visible
     {
         menu.Append(MENU_ON_COPY_TRANSACTION, wxPLURAL("&Copy Transaction", "&Copy Transactions", selected));
         if (is_nothing_selected) menu.Enable(MENU_ON_COPY_TRANSACTION, false);
@@ -378,28 +451,28 @@ void TransactionListCtrl::OnMouseRightClick(wxMouseEvent& event)
         if (toPaste < 1) menu.Enable(MENU_ON_PASTE_TRANSACTION, false);
     }
 
-    menu.Append(MENU_ON_DUPLICATE_TRANSACTION, _("D&uplicate Transaction"));
+    menu.Append(MENU_ON_DUPLICATE_TRANSACTION, __(wxTRANSLATE("D&uplicate Transaction")));
     if (is_nothing_selected || multiselect) menu.Enable(MENU_ON_DUPLICATE_TRANSACTION, false);
 
-    menu.Append(MENU_TREEPOPUP_MOVE2, wxPLURAL("&Move Transaction", "&Move Transactions", selected));
+    menu.Append(MENU_TREEPOPUP_MOVE2, wxPLURAL("&Move Transaction...", "&Move Transactions...", selected));
     if (is_nothing_selected || type_transfer || (Model_Account::money_accounts_num() < 2) || is_foreign)
         menu.Enable(MENU_TREEPOPUP_MOVE2, false);
 
     menu.AppendSeparator();
 
     menu.Append(MENU_TREEPOPUP_VIEW_OTHER_ACCOUNT, _("&View In Other Account"));
-    if (m_cp->m_allAccounts || is_nothing_selected || multiselect || is_foreign || !type_transfer)
+    if (m_cp->isAllAccounts_ || is_nothing_selected || multiselect || is_foreign || !type_transfer)
         menu.Enable(MENU_TREEPOPUP_VIEW_OTHER_ACCOUNT, false);
 
     menu.Append(MENU_TREEPOPUP_VIEW_SPLIT_CATEGORIES, _("&View Split Categories"));
     if (is_nothing_selected || multiselect || have_category)
         menu.Enable(MENU_TREEPOPUP_VIEW_SPLIT_CATEGORIES, false);
 
-    menu.Append(MENU_TREEPOPUP_ORGANIZE_ATTACHMENTS, _("&Organize Attachments"));
+    menu.Append(MENU_TREEPOPUP_ORGANIZE_ATTACHMENTS, __(wxTRANSLATE("&Organize Attachments")));
     if (is_nothing_selected || multiselect)
         menu.Enable(MENU_TREEPOPUP_ORGANIZE_ATTACHMENTS, false);
 
-    menu.Append(MENU_TREEPOPUP_CREATE_REOCCURANCE, _("Create Recurring T&ransaction"));
+    menu.Append(MENU_TREEPOPUP_CREATE_REOCCURANCE, __(wxTRANSLATE("Create Recurring T&ransaction")));
     if (is_nothing_selected || multiselect) menu.Enable(MENU_TREEPOPUP_CREATE_REOCCURANCE, false);
 
     // menu.AppendSeparator();
@@ -496,6 +569,8 @@ void TransactionListCtrl::OnColClick(wxListEvent& event)
     /* Clear previous column image */
     if (m_sortCol != ColumnNr) {
         setColumnImage(m_sortCol, -1);
+        Model_Setting::instance().Set(wxString::Format("%s_ASC2", m_cp->m_sortSaveTitle), (g_asc ? 1 : 0));
+        Model_Setting::instance().Set(wxString::Format("%s_SORT_COL2", m_cp->m_sortSaveTitle), g_sortcol);
     }
 
     if (g_sortcol == ColumnNr && event.GetId() != MENU_HEADER_SORT) {
@@ -572,18 +647,18 @@ wxListItemAttr* TransactionListCtrl::OnGetItemAttr(long item) const
     bool in_the_future = (tran.TRANSDATE > m_today);
 
     // apply alternating background pattern
-    int user_colour_id = tran.FOLLOWUPID;
-    if (user_colour_id < 0) user_colour_id = 0;
-    else if (user_colour_id > 7) user_colour_id = 0;
+    int user_color_id = tran.FOLLOWUPID;
+    if (user_color_id < 0) user_color_id = 0;
+    else if (user_color_id > 7) user_color_id = 0;
 
-    if (user_colour_id == 0) {
+    if (user_color_id == 0) {
         if (in_the_future) {
             return (item % 2 ? m_attr3.get() : m_attr4.get());
         }
         return (item % 2 ? m_attr1.get() : m_attr2.get());
     }
 
-    switch (user_colour_id)
+    switch (user_color_id)
     {
     case 1:
         return m_attr11.get();
@@ -656,7 +731,7 @@ void TransactionListCtrl::OnSelectAll(wxCommandEvent& WXUNUSED(event))
 void TransactionListCtrl::OnCopy(wxCommandEvent& WXUNUSED(event))
 {
     // we can't copy with multiple accounts open or there is nothing to copy
-    if (m_cp->m_allAccounts || GetSelectedItemCount() < 1) return;
+    if (m_cp->isAllAccounts_ || GetSelectedItemCount() < 1) return;
 
     // collect the selected transactions for copy
     FindSelectedTransactions();
@@ -707,7 +782,7 @@ void TransactionListCtrl::OnDuplicateTransaction(wxCommandEvent& WXUNUSED(event)
 void TransactionListCtrl::OnPaste(wxCommandEvent& WXUNUSED(event))
 {
     // we can't paste with multiple accounts open or there is nothing to paste
-    if (m_cp->m_allAccounts || m_selectedForCopy.size() < 1) return;
+    if (m_cp->isAllAccounts_ || m_selectedForCopy.size() < 1) return;
     
     FindSelectedTransactions();
     Model_Checking::instance().Savepoint();
@@ -723,7 +798,7 @@ void TransactionListCtrl::OnPaste(wxCommandEvent& WXUNUSED(event))
 
 int TransactionListCtrl::OnPaste(Model_Checking::Data* tran)
 {
-    wxASSERT(!m_cp->m_allAccounts);
+    wxASSERT(!m_cp->isAllAccounts_);
 
     bool useOriginalDate = Model_Setting::instance().GetBoolSetting(INIDB_USE_ORG_DATE_COPYPASTE, false);
 
@@ -1026,8 +1101,7 @@ void TransactionListCtrl::OnEditTransaction(wxCommandEvent& /*event*/)
     {
         if (!CheckForClosedAccounts()) return;
         transactionsUpdateDialog dlg(this, m_selected_id);
-        if (dlg.ShowModal() == wxID_OK)
-        {
+        if (dlg.ShowModal() == wxID_OK) {
             refreshVisualList();
         }
         return;
@@ -1110,9 +1184,9 @@ void TransactionListCtrl::OnNewTransferTransaction(wxCommandEvent& /*event*/)
 void TransactionListCtrl::OnSetUserColour(wxCommandEvent& event)
 {
     FindSelectedTransactions();
-    int user_colour_id = event.GetId();
-    user_colour_id -= MENU_ON_SET_UDC0;
-    wxLogDebug("id: %i", user_colour_id);
+    int user_color_id = event.GetId();
+    user_color_id -= MENU_ON_SET_UDC0;
+    wxLogDebug("id: %i", user_color_id);
 
     Model_Checking::instance().Savepoint();
     for (const auto i : m_selected_id)
@@ -1120,7 +1194,7 @@ void TransactionListCtrl::OnSetUserColour(wxCommandEvent& event)
         Model_Checking::Data* transaction = Model_Checking::instance().get(i);
         if (transaction)
         {
-            transaction->FOLLOWUPID = user_colour_id;
+            transaction->FOLLOWUPID = user_color_id;
             Model_Checking::instance().save(transaction);
         }
     }
@@ -1454,12 +1528,29 @@ void TransactionListCtrl::doSearchText(const wxString& value)
     EnsureVisible(selectedItem);
 }
 
+wxString UDFCFormatHelper(Model_CustomField::FIELDTYPE type, wxString data)
+{
+    wxString formattedData = data;
+    if (!data.empty())
+    {
+        switch (type) {
+        case Model_CustomField::FIELDTYPE::DATE:
+            formattedData = mmGetDateForDisplay(data);
+            break;
+        case Model_CustomField::FIELDTYPE::BOOLEAN:
+            bool v = wxString("TRUE|true|1").Contains(data);
+            formattedData = (v) ? L"\u2713" : L"\u2717";
+            break;
+        }
+    }
+    return formattedData;
+}
+
 const wxString TransactionListCtrl::getItem(long item, long column, bool realenum) const
 {
     if (item < 0 || item >= static_cast<int>(m_trans.size())) return "";
 
     const Model_Checking::Full_Data& tran = m_trans.at(item);
-    int d = static_cast<int>(Model_CustomField::DATE);
 
     wxString value = wxEmptyString;
     switch (realenum ? column : m_real_columns[column])
@@ -1485,24 +1576,24 @@ const wxString TransactionListCtrl::getItem(long item, long column, bool realenu
             value.Prepend(mmAttachmentManage::GetAttachmentNoteSign());
         return value;
     case TransactionListCtrl::COL_UDFC01:
-        return tran.UDFC01_Type == d && !tran.UDFC01.empty() ? mmGetDateForDisplay(tran.UDFC01) : tran.UDFC01;
+        return UDFCFormatHelper(tran.UDFC01_Type, tran.UDFC01);
     case TransactionListCtrl::COL_UDFC02:
-        return tran.UDFC02_Type == d && !tran.UDFC02.empty() ? mmGetDateForDisplay(tran.UDFC02) : tran.UDFC02;
+        return UDFCFormatHelper(tran.UDFC02_Type, tran.UDFC02);
     case TransactionListCtrl::COL_UDFC03:
-        return tran.UDFC03_Type == d && !tran.UDFC03.empty() ? mmGetDateForDisplay(tran.UDFC03) : tran.UDFC03;
+        return UDFCFormatHelper(tran.UDFC03_Type, tran.UDFC03);
     case TransactionListCtrl::COL_UDFC04:
-        return tran.UDFC04_Type == d && !tran.UDFC04.empty() ? mmGetDateForDisplay(tran.UDFC04) : tran.UDFC04;
+        return UDFCFormatHelper(tran.UDFC04_Type, tran.UDFC04);
     case TransactionListCtrl::COL_UDFC05:
-        return tran.UDFC05_Type == d && !tran.UDFC05.empty() ? mmGetDateForDisplay(tran.UDFC05) : tran.UDFC05;
+        return UDFCFormatHelper(tran.UDFC05_Type, tran.UDFC05);
     }
 
     bool is_transfer = Model_Checking::is_transfer(tran.TRANSCODE)
         && m_cp->m_AccountID != tran.ACCOUNTID;
-    Model_Account::Data* account = Model_Account::instance().get(is_transfer && !m_cp->m_allAccounts ? tran.TOACCOUNTID : tran.ACCOUNTID);
+    Model_Account::Data* account = Model_Account::instance().get(is_transfer && !m_cp->isAllAccounts_ ? tran.TOACCOUNTID : tran.ACCOUNTID);
     Model_Currency::Data* currency = account
         ? Model_Currency::instance().get(account->CURRENCYID)
         : Model_Currency::GetBaseCurrency();
-    double balance = m_cp->m_allAccounts
+    double balance = m_cp->isAllAccounts_
         ? Model_Checking::balance(tran, tran.ACCOUNTID)
         : tran.AMOUNT;
 
@@ -1510,14 +1601,14 @@ const wxString TransactionListCtrl::getItem(long item, long column, bool realenu
     {
     case TransactionListCtrl::COL_WITHDRAWAL:
         if (balance <= 0.0) {
-            return m_cp->m_allAccounts
+            return m_cp->isAllAccounts_
                 ? Model_Currency::toCurrency(-balance, currency)
                 : Model_Currency::toString(-balance, currency);
         }
         return "";
     case TransactionListCtrl::COL_DEPOSIT:
         if (balance > 0.0) {
-            return m_cp->m_allAccounts
+            return m_cp->isAllAccounts_
                 ? Model_Currency::toCurrency(balance, currency)
                 : Model_Currency::toString(balance, currency);
         }

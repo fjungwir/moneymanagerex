@@ -1,4 +1,6 @@
 /*******************************************************
+ Copyright (C) 2013 - 2016, 2020, 2022 Nikolay Akimov
+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
@@ -20,7 +22,7 @@
 #include "model/Model_Currency.h"
 #include "model/Model_Translink.h"
 
-class wxDatePickerCtrl;
+class mmDatePickerCtrl;
 class mmTextCtrl;
 class UserTransactionPanel;
 class mmGUIFrame;
@@ -43,16 +45,15 @@ private:
     bool Create(wxWindow* parent
         , wxWindowID id
         , const wxString& caption
-        , const wxPoint& pos
-        , const wxSize& size
-        , long style);
+        , const wxPoint& pos = wxDefaultPosition
+        , const wxSize& size = wxDefaultSize
+        , long style = wxCAPTION | wxSYSTEM_MENU | wxCLOSE_BOX);
     void CreateControls();
     void OnOk(wxCommandEvent& event);
     void OnCancel(wxCommandEvent& event);
     void OnAttachments(wxCommandEvent& event);
     void OnChangeAppreciationType(wxCommandEvent& event);
     void enableDisableRate(bool en);
-    void onTextEntered(wxCommandEvent& event);
     void dataToControls();
     void changeFocus(wxChildFocusEvent& event);
     void OnQuit(wxCloseEvent& event);
@@ -61,9 +62,9 @@ private:
 private:
     mmGUIFrame* m_gui_frame;
     wxChoice*  m_assetType;
-    mmTextCtrl* m_assetName;
-    wxDatePickerCtrl* m_dpc;
-    mmTextCtrl* m_notes;
+    wxTextCtrl* m_assetName;
+    mmDatePickerCtrl* m_dpc;
+    wxTextCtrl* m_notes;
     mmTextCtrl* m_value;
     mmTextCtrl* m_valueChangeRate;
     wxChoice*  m_valueChange;

@@ -1,5 +1,6 @@
 /*******************************************************
  Copyright (C) 2013,2014 Guan Lisheng (guanlisheng@gmail.com)
+ Copyright (C) 2014, 2020 - 2022 Nikolay Akimov
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -81,6 +82,22 @@ wxArrayString Model_Account::all_checking_account_names(bool skip_closed)
         if (account.ACCOUNTNAME.empty())
             continue;
         accounts.Add(account.ACCOUNTNAME);
+    }
+    return accounts;
+}
+
+const std::map<wxString, int> Model_Account::all_accounts(bool skip_closed)
+{
+    std::map<wxString, int> accounts;
+    for (const auto& account : this->all(COL_ACCOUNTNAME))
+    {
+        if (skip_closed && status(account) == CLOSED)
+            continue;
+        if (type(account) == INVESTMENT)
+            continue;
+        if (account.ACCOUNTNAME.empty())
+            continue;
+        accounts[account.ACCOUNTNAME] = account.ACCOUNTID;
     }
     return accounts;
 }
@@ -315,7 +332,9 @@ int Model_Account::money_accounts_num()
         + Model_Account::instance().find(ACCOUNTTYPE(all_type()[CHECKING])).size()
         + Model_Account::instance().find(ACCOUNTTYPE(all_type()[CREDIT_CARD])).size()
         + Model_Account::instance().find(ACCOUNTTYPE(all_type()[LOAN])).size()
-        + Model_Account::instance().find(ACCOUNTTYPE(all_type()[TERM])).size();
+        + Model_Account::instance().find(ACCOUNTTYPE(all_type()[TERM])).size()
+        + Model_Account::instance().find(ACCOUNTTYPE(all_type()[ASSET])).size()
+        + Model_Account::instance().find(ACCOUNTTYPE(all_type()[SHARES])).size();
 }
 
 bool Model_Account::Exist(const wxString& account_name)

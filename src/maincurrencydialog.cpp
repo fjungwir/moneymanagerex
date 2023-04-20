@@ -54,7 +54,12 @@ wxBEGIN_EVENT_TABLE(mmMainCurrencyDialog, wxDialog)
     EVT_BUTTON(HISTORY_DELUNUSED, mmMainCurrencyDialog::OnHistoryDeleteUnused)
     EVT_LIST_ITEM_SELECTED(wxID_ANY, mmMainCurrencyDialog::OnHistorySelected)
     EVT_LIST_ITEM_DESELECTED(wxID_ANY, mmMainCurrencyDialog::OnHistoryDeselected)
-wxEND_EVENT_TABLE()
+    wxEND_EVENT_TABLE()
+
+mmMainCurrencyDialog::~mmMainCurrencyDialog()
+{
+    Model_Infotable::instance().Set("CURRENCY_DIALOG_SIZE", GetSize());
+}
 
 mmMainCurrencyDialog::mmMainCurrencyDialog(
     wxWindow* parent
@@ -76,20 +81,23 @@ mmMainCurrencyDialog::mmMainCurrencyDialog(
     ColName_[BASE_RATE]   = bHistoryEnabled_ ? _("Last Rate") : _("Fixed Rate");
 
     m_currency_id = currencyID == -1 ? Option::instance().getBaseCurrencyID() : currencyID;
+    this->SetFont(parent->GetFont());
     Create(parent);
-    bEnableSelect_ ? SetMinSize(wxSize(400, 550)) : SetMinSize(wxSize(700, 550));
-    Fit();
+    bEnableSelect_ ? SetMinSize(wxSize(200, 350)) : SetMinSize(wxSize(500, 350));
+    mmSetSize(this);
+    Centre();
 }
 
 bool mmMainCurrencyDialog::Create(wxWindow* parent
     , wxWindowID id
     , const wxString& caption
+    , const wxString& name
     , const wxPoint& pos
     , const wxSize& size
     , long style)
 {
     SetExtraStyle(GetExtraStyle()|wxWS_EX_BLOCK_EVENTS);
-    wxDialog::Create(parent, id, wxGetTranslation(caption), pos, size, style);
+    wxDialog::Create(parent, id, wxGetTranslation(caption), pos, size, style, name);
 
     CreateControls();
     SetIcon(mmex::getProgramIcon());
@@ -262,7 +270,7 @@ void mmMainCurrencyDialog::CreateControls()
     wxStaticText* datePickerLabel = new wxStaticText(values_panel, wxID_STATIC, _("Date"));
     values_sizer->Add(datePickerLabel, g_flagsH);
 
-    valueDatePicker_ = new wxDatePickerCtrl(values_panel, wxID_ANY, wxDefaultDateTime, wxDefaultPosition, wxDefaultSize, wxDP_DROPDOWN | wxDP_SHOWCENTURY);
+    valueDatePicker_ = new mmDatePickerCtrl(values_panel, wxID_ANY, wxDefaultDateTime, wxDefaultPosition, wxDefaultSize, wxDP_DROPDOWN | wxDP_SHOWCENTURY);
     valueDatePicker_->SetMinSize(wxSize(120, -1));
     values_sizer->Add(valueDatePicker_, g_flagsH);
     mmToolTip(valueDatePicker_, _("Specify the date of currency value"));
@@ -272,6 +280,7 @@ void mmMainCurrencyDialog::CreateControls()
     values_sizer->Add(textBoxLabel, g_flagsH);
 
     valueTextBox_ = new mmTextCtrl(values_panel, wxID_ANY, wxGetEmptyString(), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT | wxTE_PROCESS_ENTER, mmCalcValidator());
+    valueTextBox_->SetAltPrecision(6);
     valueTextBox_->SetMinSize(wxSize(120, -1));
     mmToolTip(valueTextBox_, _("Enter the currency value"));
     values_sizer->Add(valueTextBox_, g_flagsH);

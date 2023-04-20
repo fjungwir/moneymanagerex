@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Model_Checking.h"
 #include "mmSimpleDialogs.h"
 
-class wxDatePickerCtrl;
+class mmDatePickerCtrl;
 class wxDataViewListCtrl;
 class mmQIFImport;
 class wxButton;
@@ -55,12 +55,15 @@ private:
     void fillControls();
     void OnFileSearch(wxCommandEvent& event);
     void OnCheckboxClick(wxCommandEvent& WXUNUSED(event));
-    void OnAccountChanged(wxCommandEvent& WXUNUSED(event));
+    void OnAccountChanged(wxCommandEvent& event);
     void OnDateMaskChange(wxCommandEvent& event);
     void OnQuit(wxCloseEvent& event);
     void OnCancel(wxCommandEvent& WXUNUSED(event));
     void OnOk(wxCommandEvent& WXUNUSED(event));
     void OnDecimalChange(wxCommandEvent& event);
+    void OnFileNameChanged(wxCommandEvent& event);
+    void OnMenuSelected(wxCommandEvent& event);
+    void save_file_name();
     bool mmReadQIFFile();
     int getOrCreateAccounts();
     void getOrCreatePayees();
@@ -97,13 +100,13 @@ private:
     wxDataViewListCtrl* payeeListBox_;
     wxDataViewListCtrl* categoryListBox_;
     wxButton* button_search_;
-    wxTextCtrl* file_name_ctrl_;
+    wxComboBox* file_name_ctrl_;
     wxChoice* m_choiceEncoding;
     wxTextCtrl* log_field_;
     wxCheckBox* dateFromCheckBox_;
     wxCheckBox* dateToCheckBox_;
-    wxDatePickerCtrl* fromDateCtrl_;
-    wxDatePickerCtrl* toDateCtrl_;
+    mmDatePickerCtrl* fromDateCtrl_;
+    mmDatePickerCtrl* toDateCtrl_;
     wxComboBox* choiceDateFormat_;
     wxCheckBox* accountCheckBox_;
     wxChoice* accountDropDown_;
@@ -111,6 +114,8 @@ private:
     wxCheckBox* payeeIsNotesCheckBox_;
     wxButton* btnOK_;
     mmChoiceAmountMask* m_choiceDecimalSeparator;
+    wxCheckBox* colorCheckBox_;
+    mmColorButton* mmColorBtn_;
 
     bool payeeIsNotes_; //Include payee field in notes
 
@@ -126,6 +131,9 @@ private:
         COL_VALUE,
         COL_NOTES,
         COL_MAX, // number of columns
+    };
+    enum {
+        ID_ACCOUNT = wxID_HIGHEST + 1
     };
     std::map<int, wxString> ColName_;
 };

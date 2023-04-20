@@ -1,5 +1,5 @@
 /*******************************************************
-Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
+Copyright (C) 2021-2022 Mark Whalley (mark@ipx.co.uk)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ void mmFilterTransactions::setDateRange(wxDateTime startDate, wxDateTime endDate
     _endDate = endDate.FormatISODate();
 }
 
-void mmFilterTransactions::setAccountList(const wxArrayString* accountList)
+void mmFilterTransactions::setAccountList(wxSharedPtr<wxArrayString> accountList)
 {
     if (accountList)
     {
@@ -98,7 +98,7 @@ bool mmFilterTransactions::checkCategory(const DATA& tran, const std::map<int, t
     return false;
 }
 
-bool mmFilterTransactions::checkAll(const Model_Checking::Data &tran
+bool mmFilterTransactions::mmIsRecordMatches(const Model_Checking::Data &tran
     , const std::map<int, Model_Splittransaction::Data_Set>& split)
 {
     bool ok = true;
@@ -122,7 +122,7 @@ wxString mmFilterTransactions::getHTML()
     const auto splits = Model_Splittransaction::instance().get_all();
     for (const auto& tran : Model_Checking::instance().all()) //TODO: find should be faster
     {
-        if (!checkAll(tran, splits)) continue;
+        if (!mmIsRecordMatches(tran, splits)) continue;
         Model_Checking::Full_Data full_tran(tran, splits);
 
         full_tran.PAYEENAME = full_tran.real_payee_name(full_tran.ACCOUNTID);
@@ -186,13 +186,13 @@ table {
         hb.startSortTable();
             hb.startThead();
                 hb.startTableRow();
-                    hb.addTableHeaderCell(_("ID"), "ID");
-                    hb.addTableHeaderCell(_("Color"), "Color");
+                    hb.addTableHeaderCell(_("ID"), "ID text-right");
+                    hb.addTableHeaderCell(_("Color"), "Color text-center");
                     hb.addTableHeaderCell(_("Date"), "Date");
                     hb.addTableHeaderCell(_("Number"), "Number");
                     hb.addTableHeaderCell(_("Account"), "Account");
                     hb.addTableHeaderCell(_("Payee"), "Payee");
-                    hb.addTableHeaderCell(_("Status"), "Status");
+                    hb.addTableHeaderCell(_("Status"), "Status text-center");
                     hb.addTableHeaderCell(_("Category"), "Category");
                     hb.addTableHeaderCell(_("Type"), "Type");
                     hb.addTableHeaderCell(_("Amount"), "Amount text-right");
@@ -205,14 +205,14 @@ table {
     {
         hb.startTableRow();
         hb.addTableCellLink(wxString::Format("trx:%d", transaction.TRANSID)
-                , wxString::Format("%i", transaction.TRANSID));
-        hb.addColorMarker(getUDColour(transaction.FOLLOWUPID).GetAsString());
+                , wxString::Format("%i", transaction.TRANSID), true);
+        hb.addColorMarker(getUDColour(transaction.FOLLOWUPID).GetAsString(), true);
         hb.addTableCellDate(transaction.TRANSDATE);
         hb.addTableCell(transaction.TRANSACTIONNUMBER);
         hb.addTableCellLink(wxString::Format("trxid:%d", transaction.TRANSID)
                 , transaction.ACCOUNTNAME);
         hb.addTableCell(transaction.PAYEENAME);
-        hb.addTableCell(transaction.STATUS);
+        hb.addTableCell(transaction.STATUS, false, true);
         hb.addTableCell(transaction.CATEGNAME);
         if (Model_Checking::foreignTransactionAsTransfer(transaction))
                 hb.addTableCell("< " + wxGetTranslation(transaction.TRANSCODE));

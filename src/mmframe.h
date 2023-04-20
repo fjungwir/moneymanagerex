@@ -1,10 +1,11 @@
 /*******************************************************
 Copyright (C) 2006 Madhan Kanagavel
 Copyright (C) 2012 Stefano Giorgio
-Copyright (C) 2013, 2021 Nikolay Akimov
+Copyright (C) 2013, 2022 Nikolay Akimov
 Copyright (C) 2014 James Higley
 Copyright (C) 2014 Guan Lisheng (guanlisheng@gmail.com)
-Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
+Copyright (C) 2021, 2022 Mark Whalley (mark@ipx.co.uk)
+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
@@ -109,7 +110,7 @@ private:
     wxPanel* homePanel_;
     wxTreeCtrl* m_nav_tree_ctrl;
     wxMenuBar *menuBar_;
-    wxToolBar* toolBar_;
+    wxAuiToolBar* toolBar_;
 private:
     mmTreeItemData* selectedItemData_;
 
@@ -123,7 +124,7 @@ private:
     wxAuiManager m_mgr;
 
     /* Homepage panel logic */
-    bool creditDisplayed;
+    bool creditDisplayed_;
 
     void cleanup();
     void resetNavTreeControl();
@@ -135,7 +136,7 @@ private:
     void createMenu();
     void CreateToolBar();
     void createReportsPage(mmPrintableBase* rb, bool cleanup);
-    void createHelpPage();
+    void createHelpPage(int index = mmex::HTML_INDEX);
     void refreshPanelData();
 
     void createHomePage();
@@ -153,9 +154,13 @@ private:
     /*save Settings LASTFILENAME AUIPERSPECTIVE SIZES*/
     void saveSettings();
     void menuEnableItems(bool enable);
-    void updateNavTreeControl();
-    void updateReportNavigation(wxTreeItemId& reports);
+    void DoRecreateNavTreeControl();
+    void DoUpdateReportNavigation(wxTreeItemId& parent_item);
+    void DoUpdateGRMNavigation(wxTreeItemId& parent_item);
+    void DoUpdateFilterNavigation(wxTreeItemId& parent_item);
+    void DoUpdateBudgetNavigation(wxTreeItemId& parent_item);
     void showTreePopupMenu(const wxTreeItemId& id, const wxPoint& pt);
+    void AppendImportMenu(wxMenu& menu);
     void showBeginAppDialog(bool fromScratch = false);
     void SetDataBaseParameters(const wxString& fileName);
     void OnLaunchAccountWebsite(wxCommandEvent& event);
@@ -185,7 +190,6 @@ private:
     void OnGotoAccount(wxCommandEvent& WXUNUSED(event));
     void OnGotoStocksAccount(wxCommandEvent& WXUNUSED(event));
 private:
-    bool m_hide_share_accounts;
     void OnHideShareAccounts(wxCommandEvent &event);
     void OnChangeGUILanguage(wxCommandEvent &event);
     void OnKeyDown(wxTreeEvent& event);
@@ -206,6 +210,11 @@ private:
     void OnEditAccount(wxCommandEvent& event);
     void OnDeleteAccount(wxCommandEvent& event);
     void OnReallocateAccount(wxCommandEvent& event);
+
+    void OnPopupEditFilter(wxCommandEvent& event);
+    void OnPopupRenameFilter(wxCommandEvent& event);
+    void OnPopupDeleteFilter(wxCommandEvent& event);   
+
 private:
     void OnOrgCategories(wxCommandEvent& event);
     void OnOrgPayees(wxCommandEvent& event);
@@ -243,11 +252,13 @@ private:
     void OnViewAccountsTemporaryChange(wxCommandEvent& event);
 
     void OnTreeItemExpanded(wxTreeEvent& event);
+    void OnTreeItemCollapsing(wxTreeEvent& event);
     void OnTreeItemCollapsed(wxTreeEvent& event);
-    void navTreeStateToJson();
 
+    void navTreeStateToJson();
     void processPendingEvents();
     void ReallocateAccount(int accountID);
+    void mmDoHideReportsDialog();
 private:
     /* Recent Files */
     wxSharedPtr<mmFileHistory> m_recentFiles;
@@ -269,7 +280,7 @@ private:
     enum
     {
         /* Main Menu  */
-        MENU_NEW = ID_MMEX_MAX + 1,
+        MENU_NEW = mmID_MAX + 1,
         MENU_OPEN,
         MENU_SAVE,
         MENU_SAVE_AS,
@@ -345,6 +356,11 @@ private:
         MENU_TREEPOPUP_MOVE,
         MENU_TREEPOPUP_DELETE,
         MENU_TREEPOPUP_REALLOCATE,
+
+        // Transaction Report Filter
+        MENU_TREEPOPUP_FILTER_EDIT,
+        MENU_TREEPOPUP_FILTER_RENAME,
+        MENU_TREEPOPUP_FILTER_DELETE,
 
         //
         MENU_TREEPOPUP_ACCOUNT_NEW,

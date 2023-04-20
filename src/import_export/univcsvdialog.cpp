@@ -62,6 +62,8 @@ EVT_BUTTON(wxID_STANDARD, mmUnivCSVDialog::OnStandard)
 EVT_BUTTON(wxID_BROWSE, mmUnivCSVDialog::OnFileBrowse)
 EVT_LISTBOX_DCLICK(wxID_ANY, mmUnivCSVDialog::OnListBox)
 EVT_CHOICE(wxID_ANY, mmUnivCSVDialog::OnChoiceChanged)
+EVT_CHECKBOX(wxID_ANY, mmUnivCSVDialog::OnCheckboxClick)
+EVT_MENU(wxID_HIGHEST, mmUnivCSVDialog::OnMenuSelected)
 wxEND_EVENT_TABLE()
 
 //----------------------------------------------------------------------------
@@ -90,7 +92,6 @@ mmUnivCSVDialog::mmUnivCSVDialog(
     m_setting_name_ctrl_(nullptr),
     log_field_(nullptr),
     m_textDelimiter(nullptr),
-    m_rowSelectionStaticBox_(nullptr),
     m_spinIgnoreFirstRows_(nullptr),
     m_spinIgnoreLastRows_(nullptr),
     choiceDateFormat_(nullptr),
@@ -364,12 +365,16 @@ void mmUnivCSVDialog::CreateControls()
         m_choiceDecimalSeparator->Connect(ID_UD_DECIMAL, wxEVT_COMMAND_CHOICE_SELECTED
             , wxCommandEventHandler(mmUnivCSVDialog::OnDecimalChange), nullptr, this);
 
+
+        wxBoxSizer* itemBoxSizer111 = new wxBoxSizer(wxHORIZONTAL);
+        itemBoxSizer2->Add(itemBoxSizer111);
+
         // Select rows to import (not relevant for export)
         // Container.
-        m_rowSelectionStaticBox_ = new wxStaticBox(this, wxID_ANY, _("Rows to ignore"));
-        m_rowSelectionStaticBox_->SetFont(staticBoxFontSetting);
-        wxStaticBoxSizer* rowSelectionStaticBoxSizer = new wxStaticBoxSizer(m_rowSelectionStaticBox_, wxHORIZONTAL);
-        itemBoxSizer2->Add(rowSelectionStaticBoxSizer, 0, wxALL | wxEXPAND, 5);
+        wxStaticBox* rowSelectionStaticBox = new wxStaticBox(this, wxID_ANY, _("Rows to ignore"));
+        rowSelectionStaticBox->SetFont(staticBoxFontSetting);
+        wxStaticBoxSizer* rowSelectionStaticBoxSizer = new wxStaticBoxSizer(rowSelectionStaticBox, wxHORIZONTAL);
+        itemBoxSizer111->Add(rowSelectionStaticBoxSizer, 0, wxALL | wxEXPAND, 5);
 
         // "Ignore first" title, spin and event handler.
         wxStaticText* itemStaticText7 = new wxStaticText(rowSelectionStaticBoxSizer->GetStaticBox()
@@ -383,6 +388,15 @@ void mmUnivCSVDialog::CreateControls()
             , wxSpinEventHandler(mmUnivCSVDialog::OnSpinCtrlIgnoreRows), nullptr, this);
 
         rowSelectionStaticBoxSizer->AddSpacer(30);
+
+        // Colour
+        colorCheckBox_ = new wxCheckBox(this, mmID_COLOR, _("Color")
+            , wxDefaultPosition, wxDefaultSize, wxCHK_2STATE);
+        itemBoxSizer111->Add(colorCheckBox_, g_flagsH);
+        colorButton_ = new mmColorButton(this, wxID_HIGHEST, wxSize(itemButton_Save->GetSize().GetY(), itemButton_Save->GetSize().GetY()));
+        itemBoxSizer111->Add(colorButton_, g_flagsH);
+        colorButton_->Enable(false);
+
 
         // "Ignore last" title, spin and event handler.
         wxStaticText* itemStaticText8 = new wxStaticText(rowSelectionStaticBoxSizer->GetStaticBox()
@@ -407,7 +421,7 @@ void mmUnivCSVDialog::CreateControls()
     //Import File button
     wxPanel* itemPanel5 = new wxPanel(this, ID_PANEL10
         , wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
-    itemBoxSizer0->Add(itemPanel5, 0, wxALIGN_RIGHT | wxALL, 1);
+    itemBoxSizer0->Add(itemPanel5, 0, wxALIGN_CENTER | wxALL, 1);
 
     wxBoxSizer* itemBoxSizer6 = new wxBoxSizer(wxHORIZONTAL);
     itemPanel5->SetSizer(itemBoxSizer6);
@@ -482,7 +496,7 @@ void mmUnivCSVDialog::OnSettingsSelected(wxCommandEvent& event)
 const wxString mmUnivCSVDialog::GetStoredSettings(int id) const
 {
     if (id < 0) id = 0;
-    const wxString& setting_id = wxString::Format(GetSettingsPrfix() + "%d", id);
+    const wxString& setting_id = wxString::Format(GetSettingsPrfix(), id);
     const wxString& settings_string = Model_Setting::instance().GetStringSetting(setting_id, "");
     wxLogDebug("%s \n %s", setting_id, settings_string);
     return settings_string;
@@ -782,8 +796,7 @@ void mmUnivCSVDialog::OnSettingsSave(wxCommandEvent& WXUNUSED(event))
 
     wxRadioBox* c = static_cast<wxRadioBox*>(FindWindow(wxID_APPLY));
     int id = c->GetSelection();
-    const wxString& settingsPrefix = GetSettingsPrfix();
-    const wxString& setting_id = wxString::Format(settingsPrefix + "%d", id);
+    const wxString& setting_id = wxString::Format(GetSettingsPrfix(), id);
 
     const auto fileName = m_text_ctrl_->GetValue();
     if (!fileName.empty())
@@ -968,6 +981,10 @@ void mmUnivCSVDialog::OnImport(wxCommandEvent& WXUNUSED(event))
     long lastRow = totalLines - m_spinIgnoreLastRows_->GetValue();
     const long linesToImport = lastRow - firstRow;
     long countEmptyLines = 0;
+    int color_id = colorCheckBox_->IsChecked() ? colorButton_->GetColorId() : -1;
+    if (colorCheckBox_->IsChecked() && color_id < 0 || color_id > 7) {
+        return mmErrorDialogs::ToolTip4Object(colorButton_, _("Color"), _("Invalid value"), wxICON_ERROR);
+    }
 
     Model_Checking::instance().Begin();
     Model_Checking::instance().Savepoint("IMP");
@@ -1033,6 +1050,7 @@ void mmUnivCSVDialog::OnImport(wxCommandEvent& WXUNUSED(event))
         pTransaction->STATUS = holder.Status;
         pTransaction->TRANSACTIONNUMBER = holder.Number;
         pTransaction->NOTES = holder.Notes;
+        pTransaction->FOLLOWUPID = color_id;
 
         Model_Checking::instance().save(pTransaction);
 
@@ -1058,11 +1076,11 @@ void mmUnivCSVDialog::OnImport(wxCommandEvent& WXUNUSED(event))
     msg << wxString::Format(_("Log file written to: %s"), logFile.GetFullPath());
 
     if (!is_canceled && wxMessageBox(
-        msg + (nImportedLines > 0 ? "\n\n" + _("Please confirm saving...") : "")
+        msg + (nImportedLines > 0 ? "\n\n" + _("Please confirm saving") : "")
         , _("Import")
         , wxOK | (nImportedLines > 0 ? wxCANCEL : 0)
         | (nImportedLines == 0 ? wxICON_ERROR :
-            nImportedLines < linesToImport - countEmptyLines
+            nImportedLines < linesToImport - countEmptyLines - m_spinIgnoreFirstRows_->GetValue() - m_spinIgnoreLastRows_->GetValue()
             ? wxICON_EXCLAMATION
             : wxICON_INFORMATION
             )
@@ -1243,7 +1261,7 @@ void mmUnivCSVDialog::OnExport(wxCommandEvent& WXUNUSED(event))
                     itemType = ITransactionsFile::TYPE_NUMBER;
                     break;
                 case UNIV_CSV_TYPE:
-                    entry = depositType_;
+                    entry = Model_Checking::all_type()[Model_Checking::type(pBankTransaction)];
                     break;
                 case UNIV_CSV_ID:
                     entry = wxString::Format("%i", tran.TRANSID);
@@ -1474,12 +1492,7 @@ void mmUnivCSVDialog::update_preview()
                         if (col >= m_list_ctrl_->GetColumnCount())
                             break;
 
-                        if (col++ == date_col)
-                        {
-                            wxDateTime dtdt;
-                            mmParseDisplayStringToDate(dtdt, text, date_format_);
-                            text = dtdt.Format(date_format_);
-                        }
+                        col++;
                         m_list_ctrl_->SetItem(itemIndex, col, text);
                     }
                 }
@@ -1533,7 +1546,7 @@ void mmUnivCSVDialog::OnStandard(wxCommandEvent& WXUNUSED(event))
     csvListBox_->Clear();
     csvFieldOrder_.clear();
     int standard[] = { UNIV_CSV_ID, UNIV_CSV_DATE, UNIV_CSV_STATUS, UNIV_CSV_TYPE, UNIV_CSV_ACCOUNT, UNIV_CSV_PAYEE
-                     , UNIV_CSV_CATEGORY, UNIV_CSV_AMOUNT, UNIV_CSV_CURRENCY, UNIV_CSV_TRANSNUM, UNIV_CSV_NOTES };
+                     , UNIV_CSV_CATEGORY, UNIV_CSV_SUBCATEGORY, UNIV_CSV_AMOUNT, UNIV_CSV_CURRENCY, UNIV_CSV_TRANSNUM, UNIV_CSV_NOTES };
     for (const auto i : standard)
     {
         csvListBox_->Append(wxGetTranslation(CSVFieldName_[i]), new mmListBoxItem(i, CSVFieldName_[i]));
@@ -1777,11 +1790,13 @@ void mmUnivCSVDialog::parseToken(int index, const wxString& orig_token, tran_hol
     // A number of type options are supported to make amount positive 
     // ('debit' seems odd but is there for backwards compatability!)
     case UNIV_CSV_TYPE:
-        if ( wxString("Debit|debit|Deposit|deposit|+").Contains(token)) {
-            holder.Type = Model_Checking::all_type()[Model_Checking::DEPOSIT];
+        for (const wxString& entry : { "debit", "deposit", "+" }) {
+            if (entry.CmpNoCase(token) == 0) {
+                holder.Type = Model_Checking::all_type()[Model_Checking::DEPOSIT];
+                break;
+            }
         }
         break;
-
     default:
         break;
     }
@@ -1831,7 +1846,7 @@ void mmUnivCSVDialog::OnChoiceChanged(wxCommandEvent& event)
     int i = event.GetId();
     if (i == ID_DATE_FORMAT)
     {
-        wxStringClientData* data = static_cast<wxStringClientData*>(choiceDateFormat_->GetClientObject(choiceDateFormat_->GetSelection()));
+        wxStringClientData* data = static_cast<wxStringClientData*>(event.GetClientObject());
         if (data) date_format_ = data->GetData();
         *log_field_ << date_format_ << "\n";
     }
@@ -1907,4 +1922,18 @@ ITransactionsFile *mmUnivCSVDialog::CreateFileHandler()
 
     // CSV
     return new FileCSV(this, g_encoding.at(m_choiceEncoding->GetSelection()).first, delimit_);
+}
+
+void mmUnivCSVDialog::OnCheckboxClick(wxCommandEvent& event)
+{
+    auto id = event.GetId();
+    if (IsImporter() && id == mmID_COLOR && colorButton_) {
+        colorButton_->Enable(colorCheckBox_->IsChecked());
+    }
+}
+
+void mmUnivCSVDialog::OnMenuSelected(wxCommandEvent& event)
+{
+    colorButton_->Enable(false);
+    colorCheckBox_->SetValue(false);
 }

@@ -22,14 +22,12 @@
 #ifndef MM_EX_BDDIALOG_H_
 #define MM_EX_BDDIALOG_H_
 
+#include "mmSimpleDialogs.h"
 #include <wx/dialog.h>
 #include "model/Model_Billsdeposits.h"
 #include "model/Model_Checking.h"
 #include "mmcustomdata.h"
 
-class wxDatePickerCtrl;
-class wxSpinButton;
-class wxSpinEvent;
 class wxStaticText;
 class mmTextCtrl;
 class wxCalendarCtrl;
@@ -69,31 +67,25 @@ private:
     void OnCancel(wxCommandEvent& event);
     void OnCategs(wxCommandEvent& event);
     void OnPayee(wxCommandEvent& event);
-    void OnTo(wxCommandEvent& event);
     void OnTypeChanged(wxCommandEvent& event);
     void OnAttachments(wxCommandEvent& event);
-    void OnColourButton(wxCommandEvent& event);
-    void OnColourSelected(wxCommandEvent& event);
+    void OnComboKey(wxKeyEvent& event);
 private:
     void dataToControls();
     void updateControlsForTransType();
-    //void addPayee(wxString payee, int categID, int subcategID );
-    void OnAccountName(wxCommandEvent& event);
-    void OnSplitChecked(wxCommandEvent& event);
+    void OnAccountUpdated(wxCommandEvent& event);
     void OnAutoExecutionUserAckChecked(wxCommandEvent& event);
     void OnAutoExecutionSilentChecked(wxCommandEvent& event);
-    void OnTextEntered(wxCommandEvent& event);
+    void OnFocusChange(wxChildFocusEvent& event);
+    void SetAmountCurrencies(int accountID, int toAccountID);
     int m_trans_id;
 
-    bool payeeUnknown_;
     bool m_new_bill;
     bool m_dup_bill;
     bool m_enter_occur;
     bool autoExecuteUserAck_;
     bool autoExecuteSilent_;
     bool m_advanced;
-    bool categUpdated_;
-    int prevType_;
 private:
     wxTextCtrl* textNumber_;
     mmTextCtrl* textAmount_;
@@ -101,19 +93,19 @@ private:
     wxTextCtrl* textNotes_;
     wxTextCtrl* textCategory_;
     wxTextCtrl* textNumRepeats_;
-    wxButton* bCategory_;
-    wxButton* bPayee_;
-    wxButton* bAccount_;
+    mmComboBoxCategory* cbCategory_;
+    wxBitmapButton* bSplit_;
+    mmComboBoxPayee* cbPayee_;
+    mmComboBoxAccount* cbAccount_;
+    mmComboBoxAccount* cbToAccount_;
     wxButton* bAttachments_;
-    wxButton* bColours_;
-    wxCheckBox* cSplit_;
+    wxButton* m_button_cancel;
+    mmColorButton* bColours_;
     wxCheckBox* cAdvanced_;
     wxChoice* m_choice_status;
     wxChoice* m_choice_transaction_type;
-    wxDatePickerCtrl* m_date_paid;      // Stored in ::TRANSDATE
-    wxStaticText* itemStaticTextWeekDue_;
-    wxDatePickerCtrl* m_date_due;       // Stored in ::NEXTOCCURRENCEDATE
-    wxStaticText* itemStaticTextWeekPaid_;
+    mmDatePickerCtrl* m_date_paid;      // Stored in ::TRANSDATE
+    mmDatePickerCtrl* m_date_due;       // Stored in ::NEXTOCCURRENCEDATE
     wxChoice* m_choice_repeat;
     wxCheckBox* itemCheckBoxAutoExeUserAck_;
     wxCheckBox* itemCheckBoxAutoExeSilent_;
@@ -123,6 +115,7 @@ private:
     wxBitmapButton* m_btn_due_date;
 
     bool m_transfer;
+    int object_in_focus_;
     Model_Billsdeposits::Bill_Data m_bill_data;
 
     std::vector<wxString> frequentNotes_;
@@ -133,17 +126,12 @@ private:
     const wxString amountNormalTip_ = _("Specify the amount for this transaction");
     const wxString amountTransferTip_ = _("Specify the amount to be transferred");
 private:
-    void resetPayeeString();
     void setTooltips();
     void setCategoryLabel();
-    void OnPaidDateChanged(wxDateEvent& event);
-    void OnDueDateChanged(wxDateEvent& event);
     void OnAdvanceChecked(wxCommandEvent& event);
     void SetTransferControls(bool transfers = false);
     void SetAdvancedTransferControls(bool advanced = false);
     void SetSplitControls(bool split = false);
-    void OnSpinEventPaid(wxSpinEvent& event);
-    void OnSpinEventDue(wxSpinEvent& event);
     void OnFrequentUsedNotes(wxCommandEvent& event);
     void OnNoteSelected(wxCommandEvent& event);
 
@@ -160,15 +148,19 @@ private:
     enum
     {
         ID_DIALOG_TRANS_TYPE = wxID_HIGHEST + 200,
-        ID_DIALOG_TRANS_BUTTONCATEGS,
+        mmID_CATEGORY,
+        ID_DIALOG_TRANS_BUTTONSPLIT,
+        ID_DIALOG_TRANS_CATEGLABEL,
         ID_DIALOG_TRANS_STATIC_ACCOUNT,
+        ID_DIALOG_TRANS_STATIC_TOACCOUNT,
+        mmID_TOACCOUNTNAME,
         ID_DIALOG_TRANS_TEXTNUMBER,
         ID_DIALOG_TRANS_BUTTON_PAYDATE,
         ID_DIALOG_TRANS_TEXTNOTES,
         ID_DIALOG_TRANS_TEXTAMOUNT,
         ID_DIALOG_TRANS_TOTEXTAMOUNT,
         ID_DIALOG_TRANS_STATIC_PAYEE,
-        ID_DIALOG_TRANS_BUTTONPAYEE,
+        mmID_PAYEE,
         ID_DIALOG_TRANS_BUTTONTO,
         ID_DIALOG_TRANS_STATUS,
         ID_DIALOG_TRANS_ADVANCED_CHECKBOX,
@@ -179,16 +171,14 @@ private:
         ID_DIALOG_TRANS_BUTTONTRANSNUM,
         ID_DIALOG_TRANS_PAYEECOMBO,
         ID_DIALOG_TRANS_BUTTON_FREQENTNOTES,
-        ID_DIALOG_TRANS_DATE_SPINNER,
         ID_DIALOG_BD,
-        ID_DIALOG_BD_COMBOBOX_ACCOUNTNAME,
+        mmID_ACCOUNTNAME,
         ID_DIALOG_BD_COMBOBOX_REPEATS,
         ID_DIALOG_BD_TEXTCTRL_NUM_TIMES,
         ID_DIALOG_BD_CHECKBOX_AUTO_EXECUTE_USERACK,
         ID_DIALOG_BD_CHECKBOX_AUTO_EXECUTE_SILENT,
         ID_DIALOG_BD_CALENDAR,
         ID_DIALOG_BD_DUE_DATE,
-        ID_DIALOG_BD_REPEAT_DATE_SPINNER,
         ID_PANEL_REPORTS_HTMLWINDOW,
         ID_PANEL_REPORTS_HEADER_PANEL,
         ID_PANEL_REPORTS_STATIC_HEADER,

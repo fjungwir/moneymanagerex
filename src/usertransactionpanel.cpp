@@ -33,8 +33,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /*******************************************************/
 wxBEGIN_EVENT_TABLE(UserTransactionPanel, wxPanel)
-    EVT_SPIN_UP(ID_TRANS_DATE_CONTROLLER, UserTransactionPanel::OnDateSelectorForward)
-    EVT_SPIN_DOWN(ID_TRANS_DATE_CONTROLLER, UserTransactionPanel::OnDateSelectorBackward)
     EVT_BUTTON(ID_TRANS_ACCOUNT_BUTTON, UserTransactionPanel::OnTransAccountButton)
     EVT_BUTTON(ID_TRANS_PAYEE_BUTTON, UserTransactionPanel::OnTransPayeeButton)
     EVT_BUTTON(ID_TRANS_CATEGORY_BUTTON, UserTransactionPanel::OnTransCategoryButton)
@@ -91,19 +89,11 @@ void UserTransactionPanel::Create()
     main_panel_sizer->Add(transPanelSizer);
 
     // Trans Date --------------------------------------------
-    m_date_selector = new wxDatePickerCtrl(this, ID_TRANS_DATE_SELECTOR, wxDefaultDateTime
-        , wxDefaultPosition, std_half_size, wxDP_DROPDOWN | wxDP_SHOWCENTURY);
+    m_date_selector = new mmDatePickerCtrl(this, ID_TRANS_DATE_SELECTOR);
     mmToolTip(m_date_selector, _("Specify the date of the transaction"));
 
     wxBoxSizer* date_sizer = new wxBoxSizer(wxHORIZONTAL);
-    date_sizer->Add(m_date_selector, g_flagsH);
-
-#ifdef __WXMSW__
-    wxSpinButton* date_controller = new wxSpinButton(this, ID_TRANS_DATE_CONTROLLER
-        , wxDefaultPosition, spinCtrlSize, wxSP_VERTICAL | wxSP_ARROW_KEYS | wxSP_WRAP);
-    mmToolTip(date_controller, _("Retard or advance the date of the transaction"));
-    date_sizer->Add(date_controller, 0, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxLEFT, interval);
-#endif
+    date_sizer->Add(m_date_selector->mmGetLayout());
 
     transPanelSizer->Add(new wxStaticText(this, wxID_STATIC, _("Date")), g_flagsH);
     transPanelSizer->Add(date_sizer);
@@ -144,8 +134,6 @@ void UserTransactionPanel::Create()
         , wxDefaultPosition, std_half_size, wxALIGN_RIGHT | wxTE_PROCESS_ENTER
         , mmCalcValidator());
     mmToolTip(m_entered_amount, _("Specify the amount for this transaction"));
-    m_entered_amount->Connect(ID_TRANS_ENTERED_AMOUNT
-        , wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler(UserTransactionPanel::OnEnteredText), nullptr, this);
 
     Model_Currency::Data* currency = Model_Currency::GetBaseCurrency();
     if (m_account_id > 0)
@@ -161,7 +149,7 @@ void UserTransactionPanel::Create()
     entered_amount_sizer->Add(m_trans_currency, g_flagsH);
 
     transPanelSizer->Add(entered_amount_text, g_flagsH);
-    transPanelSizer->Add(entered_amount_sizer);
+    transPanelSizer->Add(entered_amount_sizer, wxSizerFlags(g_flagsExpand).Border(0));
 
     // Status --------------------------------------------
     m_status_selector = new wxChoice(this, ID_TRANS_STATUS_SELECTOR
@@ -242,6 +230,13 @@ void UserTransactionPanel::DataToControls()
     m_account->SetLabelText(Model_Account::get_account_name(m_account_id));
     m_type_selector->SetSelection(Model_Checking::type(m_checking_entry->TRANSCODE));
 
+    if (m_account_id > 0)
+    {
+        Model_Currency::Data* currency = Model_Account::currency(Model_Account::instance().get(m_account_id));
+        m_trans_currency->SetLabelText(currency->CURRENCY_SYMBOL);
+        m_entered_amount->SetCurrency(currency);
+    }
+
     SetTransactionValue(m_checking_entry->TRANSAMOUNT);
     m_status_selector->SetSelection(Model_Checking::status(m_checking_entry->STATUS));
 
@@ -254,12 +249,6 @@ void UserTransactionPanel::DataToControls()
 
     m_entered_number->SetValue(m_checking_entry->TRANSACTIONNUMBER);
     m_entered_notes->SetValue(m_checking_entry->NOTES);
-
-    if (m_account_id > 0)
-    {
-        Model_Currency::Data* currency = Model_Account::currency(Model_Account::instance().get(m_account_id));
-        m_trans_currency->SetLabelText(currency->CURRENCY_SYMBOL);
-    }
 }
 
 void UserTransactionPanel::SetLastPayeeAndCategory(const int account_id)
@@ -274,7 +263,7 @@ void UserTransactionPanel::SetLastPayeeAndCategory(const int account_id)
             Model_Payee::Data* last_payee = Model_Payee::instance().get(trans_list.at(last_trans_pos).PAYEEID);
             m_payee->SetLabelText(last_payee->PAYEENAME);
 
-            if (Option::instance().TransCategorySelection() == Option::LASTUSED)
+            if (Option::instance().TransCategorySelectionNonTransfer() == Option::LASTUSED)
             {
                 m_payee_id = last_payee->PAYEEID;
                 m_category_id = last_payee->CATEGID;
@@ -310,7 +299,7 @@ void UserTransactionPanel::OnTransPayeeButton(wxCommandEvent& WXUNUSED(event))
             m_payee->SetLabelText(payee->PAYEENAME);
 
             // Only for new transactions: if user want to autofill last category used for payee and category has not been set.
-            if ((Option::instance().TransCategorySelection() == Option::LASTUSED) && (m_category_id < 0) && (m_subcategory_id < 0))
+            if ((Option::instance().TransCategorySelectionNonTransfer() == Option::LASTUSED) && (m_category_id < 0) && (m_subcategory_id < 0))
             {
                 if (payee->CATEGID > 0)
                 {
@@ -334,38 +323,6 @@ void UserTransactionPanel::OnTransCategoryButton(wxCommandEvent& WXUNUSED(event)
         m_category_id = dlg.getCategId();
         m_subcategory_id = dlg.getSubCategId();
         m_category->SetLabelText(Model_Category::full_name(m_category_id, m_subcategory_id));
-    }
-}
-
-void UserTransactionPanel::OnDateSelectorForward(wxSpinEvent& WXUNUSED(event))
-{
-    SetNewDate(m_date_selector);
-}
-
-void UserTransactionPanel::OnDateSelectorBackward(wxSpinEvent& WXUNUSED(event))
-{
-    SetNewDate(m_date_selector, false);
-}
-
-void UserTransactionPanel::SetNewDate(wxDatePickerCtrl* dpc, bool forward)
-{
-    int day = -1;
-    if (forward) day = 1;
-    m_date_selector->SetValue(dpc->GetValue().Add(wxDateSpan::Days(day)));
-}
-
-void UserTransactionPanel::OnEnteredText(wxCommandEvent& event)
-{
-    Model_Currency::Data *currency = Model_Currency::GetBaseCurrency();
-    int currency_precision = Model_Currency::precision(currency);
-
-    Model_Account::Data *account = Model_Account::instance().get(m_account_id);
-    if (account) {
-        currency = Model_Account::currency(account);
-    }
-
-    if (event.GetId() == m_entered_amount->GetId()) {
-        m_entered_amount->Calculate(currency_precision);
     }
 }
 
@@ -420,7 +377,7 @@ void UserTransactionPanel::TransactionDate(const wxDateTime& trans_date)
 
 void UserTransactionPanel::SetTransactionValue(const double& trans_value, bool fixed_value)
 {
-    m_entered_amount->SetValue(trans_value, 2);
+    m_entered_amount->SetValue(trans_value);
     if (fixed_value) {
         m_entered_amount->Enable(false);
     }
@@ -440,6 +397,7 @@ void UserTransactionPanel::SetTransactionAccount(const wxString& trans_account)
         m_account_id = account->ACCOUNTID;
         SetLastPayeeAndCategory(m_account_id);
         Model_Currency::Data* currency = Model_Currency::instance().get(account->CURRENCYID);
+        m_entered_amount->SetCurrency(currency);
         m_trans_currency->SetLabelText(currency->CURRENCY_SYMBOL);
     }
 }

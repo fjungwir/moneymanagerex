@@ -1,5 +1,5 @@
 /*******************************************************
-Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
+Copyright (C) 2021-2022 Mark Whalley (mark@ipx.co.uk)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -32,14 +32,14 @@ public:
 
     // Filter setup methods
     void setDateRange(wxDateTime startDate, wxDateTime endDate);
-    void setAccountList(const wxArrayString* accountList);
+    void setAccountList(wxSharedPtr<wxArrayString> accountList);
     void setPayeeList(const wxArrayInt payeeList);
     void setCategoryList(const std::vector<std::pair<int, int>> &categoryList);
  
     // Apply Filter methods
     template<class MODEL, class DATA = typename MODEL::Data>
     bool checkCategory(const DATA& tran, const std::map<int, typename MODEL::Split_Data_Set> & splits);
-    bool checkAll(const Model_Checking::Data &tran
+    bool mmIsRecordMatches(const Model_Checking::Data &tran
         , const std::map<int, Model_Splittransaction::Data_Set>& split);
 
     wxString getHTML();

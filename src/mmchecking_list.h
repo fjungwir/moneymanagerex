@@ -141,14 +141,14 @@ private:
         MENU_ON_NEW_TRANSACTION,
         MENU_ON_DUPLICATE_TRANSACTION,
 
-        MENU_ON_SET_UDC0, //Default colour
-        MENU_ON_SET_UDC1, //User defined colour 1
-        MENU_ON_SET_UDC2, //User defined colour 2
-        MENU_ON_SET_UDC3, //User defined colour 3
-        MENU_ON_SET_UDC4, //User defined colour 4
-        MENU_ON_SET_UDC5, //User defined colour 5
-        MENU_ON_SET_UDC6, //User defined colour 6
-        MENU_ON_SET_UDC7, //User defined colour 7
+        MENU_ON_SET_UDC0, //Default color
+        MENU_ON_SET_UDC1, //User defined color 1
+        MENU_ON_SET_UDC2, //User defined color 2
+        MENU_ON_SET_UDC3, //User defined color 3
+        MENU_ON_SET_UDC4, //User defined color 4
+        MENU_ON_SET_UDC5, //User defined color 5
+        MENU_ON_SET_UDC6, //User defined color 6
+        MENU_ON_SET_UDC7, //User defined color 7
 
         MENU_TREEPOPUP_NEW_WITHDRAWAL,
         MENU_TREEPOPUP_NEW_DEPOSIT,
@@ -202,12 +202,14 @@ private:
     void FindSelectedTransactions();
     bool CheckForClosedAccounts();
     void setExtraTransactionData(bool single);
+    void SortTransactions(int sortcol, bool ascend);
 private:
     /* The topmost visible item - this will be used to set
     where to display the list again after refresh */
     long m_topItemIndex;
     EColumn m_sortCol;
     wxString m_today;
+    bool m_firstSort;
 };
 
 //----------------------------------------------------------------------------
@@ -226,3 +228,9 @@ inline static bool SorterByUDFC02(const Model_Checking::Full_Data& i, const Mode
 inline static bool SorterByUDFC03(const Model_Checking::Full_Data& i, const Model_Checking::Full_Data& j) { return (i.UDFC03 < j.UDFC03); }
 inline static bool SorterByUDFC04(const Model_Checking::Full_Data& i, const Model_Checking::Full_Data& j) { return (i.UDFC04 < j.UDFC04); }
 inline static bool SorterByUDFC05(const Model_Checking::Full_Data& i, const Model_Checking::Full_Data& j) { return (i.UDFC05 < j.UDFC05); }
+
+inline static bool SorterByUDFC01_val(const Model_Checking::Full_Data& i, const Model_Checking::Full_Data& j) { return (i.UDFC01_val < j.UDFC01_val); }
+inline static bool SorterByUDFC02_val(const Model_Checking::Full_Data& i, const Model_Checking::Full_Data& j) { return (i.UDFC02_val < j.UDFC02_val); }
+inline static bool SorterByUDFC03_val(const Model_Checking::Full_Data& i, const Model_Checking::Full_Data& j) { return (i.UDFC03_val < j.UDFC03_val); }
+inline static bool SorterByUDFC04_val(const Model_Checking::Full_Data& i, const Model_Checking::Full_Data& j) { return (i.UDFC04_val < j.UDFC04_val); }
+inline static bool SorterByUDFC05_val(const Model_Checking::Full_Data& i, const Model_Checking::Full_Data& j) { return (i.UDFC05_val < j.UDFC05_val); }
