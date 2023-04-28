@@ -57,7 +57,8 @@ void mmReportBudget::SetBudgetMonth(wxString budgetYear, wxDateTime& startDate, 
         wxString monthStr = pattern_month.GetMatch(budgetYear, 2);
         int month = wxAtoi(monthStr) - 1;
         startDate.Add(wxDateSpan::Months(month));
-        endDate.Add(wxDateSpan::Months(month));
+        endDate = startDate;
+        endDate.Add(wxDateSpan::Months(1).Subtract(wxDateSpan::Day()));
     }
 }
 
@@ -70,9 +71,9 @@ void mmReportBudget::GetFinancialYearValues(int& day, wxDateTime::Month& month) 
         day = 28;
     }
     else if ( ((day > 30) && (month == wxDateTime::Sep)) ||
-              ((day > 30) && (month == wxDateTime::Apr)) ||
-              ((day > 30) && (month == wxDateTime::Jun)) ||
-              ((day > 30) && (month == wxDateTime::Nov)) )
+        ((day > 30) && (month == wxDateTime::Apr)) ||
+        ((day > 30) && (month == wxDateTime::Jun)) ||
+        ((day > 30) && (month == wxDateTime::Nov)) )
     {
         day = 30;
     }

@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
 # ---------------------------------------------------------------------------
 # MMEX uses semantic versioning Ref: http://semver.org
@@ -17,7 +17,7 @@
 # ./resources/mmex.rc
 # ---------------------------------------------------------------------------
 
-set(MMEX_VERSION 1.5.21)
+set(MMEX_VERSION 1.6.2)
 SET(MMEX_VERSION_ALPHA -1)
 SET(MMEX_VERSION_BETA -1)
 SET(MMEX_VERSION_RC -1)
@@ -614,6 +614,7 @@ install(FILES
     resources/home_page.htt
     resources/kaching.wav
     resources/mmex.png
+    resources/mmex.svg
     DESTINATION "${MMEX_RES_DIR}")
 
 #Themes & GRM

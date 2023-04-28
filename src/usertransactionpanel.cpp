@@ -1,6 +1,7 @@
 /*******************************************************
 Copyright (C) 2014 Nikolay Akimov
 Copyright (C) 2015 Stefano Giorgio
+Copyright (C) 2022  Mark Whalley (mark@ipx.co.uk)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -33,11 +34,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /*******************************************************/
 wxBEGIN_EVENT_TABLE(UserTransactionPanel, wxPanel)
-    EVT_BUTTON(ID_TRANS_ACCOUNT_BUTTON, UserTransactionPanel::OnTransAccountButton)
-    EVT_BUTTON(ID_TRANS_PAYEE_BUTTON, UserTransactionPanel::OnTransPayeeButton)
-    EVT_BUTTON(ID_TRANS_CATEGORY_BUTTON, UserTransactionPanel::OnTransCategoryButton)
-    EVT_MENU(wxID_ANY, UserTransactionPanel::onSelectedNote)
-    EVT_BUTTON(wxID_FILE, UserTransactionPanel::OnAttachments)
+EVT_BUTTON(ID_TRANS_ACCOUNT_BUTTON, UserTransactionPanel::OnTransAccountButton)
+EVT_BUTTON(ID_TRANS_PAYEE_BUTTON, UserTransactionPanel::OnTransPayeeButton)
+EVT_BUTTON(ID_TRANS_CATEGORY_BUTTON, UserTransactionPanel::OnTransCategoryButton)
+EVT_MENU(wxID_ANY, UserTransactionPanel::onSelectedNote)
+EVT_BUTTON(wxID_FILE, UserTransactionPanel::OnAttachments)
 wxEND_EVENT_TABLE()
 /*******************************************************/
 
@@ -194,13 +195,13 @@ void UserTransactionPanel::Create()
     transPanelSizer->Add(new wxStaticText(this, wxID_STATIC, _("Notes")), g_flagsH);
 
     // Attachment ---------------------------------------------
-    m_attachment = new wxBitmapButton(this, wxID_FILE, mmBitmap(png::CLIP, mmBitmapButtonSize));
+    m_attachment = new wxBitmapButton(this, wxID_FILE, mmBitmapBundle(png::CLIP, mmBitmapButtonSize));
     mmToolTip(m_attachment, _("Organize attachments of this transaction"));
     //TODO: m_attachment Enable/disable
     //m_attachment->Enable(false);
 
     // Frequent Notes ---------------------------------------------
-    wxButton* frequent_notes = new wxButton(this, ID_TRANS_FREQUENT_NOTES, "..."
+    frequent_notes = new wxButton(this, ID_TRANS_FREQUENT_NOTES, "..."
         , wxDefaultPosition, wxSize(m_attachment->GetSize().GetX(), -1));
     mmToolTip(frequent_notes, _("Select one of the frequently used notes"));
     frequent_notes->Connect(ID_TRANS_FREQUENT_NOTES
@@ -220,7 +221,7 @@ void UserTransactionPanel::Create()
 void UserTransactionPanel::DataToControls()
 {
     if (!m_checking_entry) return;
-        
+
     wxDateTime trans_date;
     trans_date.ParseDate(m_checking_entry->TRANSDATE);
     TransactionDate(trans_date);
@@ -242,13 +243,29 @@ void UserTransactionPanel::DataToControls()
 
     m_payee_id = m_checking_entry->PAYEEID;
     m_payee->SetLabelText(Model_Payee::get_payee_name(m_payee_id));
-    
+
     m_category_id = m_checking_entry->CATEGID;
-    m_subcategory_id = m_checking_entry->SUBCATEGID;
-    m_category->SetLabelText(Model_Category::full_name(m_category_id, m_subcategory_id));
+    m_category->SetLabelText(Model_Category::full_name(m_category_id));
 
     m_entered_number->SetValue(m_checking_entry->TRANSACTIONNUMBER);
     m_entered_notes->SetValue(m_checking_entry->NOTES);
+
+    if (!m_checking_entry->DELETEDTIME.IsEmpty())
+    {
+        m_date_selector->Enable(false);
+        m_account->Enable(false);
+        m_type_selector->Enable(false);
+        m_status_selector->Enable(false);
+        m_transfer->Enable(false);
+        m_entered_amount->Enable(false);
+        m_trans_currency->Enable(false);
+        m_payee->Enable(false);
+        m_category->Enable(false);
+        m_entered_number->Enable(false);
+        m_attachment->Enable(false);
+        m_entered_notes->Enable(false);
+        frequent_notes->Enable(false);
+    }
 }
 
 void UserTransactionPanel::SetLastPayeeAndCategory(const int account_id)
@@ -263,11 +280,12 @@ void UserTransactionPanel::SetLastPayeeAndCategory(const int account_id)
             Model_Payee::Data* last_payee = Model_Payee::instance().get(trans_list.at(last_trans_pos).PAYEEID);
             m_payee->SetLabelText(last_payee->PAYEENAME);
 
-            if (Option::instance().TransCategorySelectionNonTransfer() == Option::LASTUSED)
+            if ((Option::instance().TransCategorySelectionNonTransfer() == Option::LASTUSED)
+                        && (!Model_Category::is_hidden(last_payee->CATEGID)))
             {
                 m_payee_id = last_payee->PAYEEID;
                 m_category_id = last_payee->CATEGID;
-                m_category->SetLabelText(Model_Category::full_name(last_payee->CATEGID, last_payee->SUBCATEGID));
+                m_category->SetLabelText(Model_Category::full_name(last_payee->CATEGID));
             }
         }
     }
@@ -299,16 +317,13 @@ void UserTransactionPanel::OnTransPayeeButton(wxCommandEvent& WXUNUSED(event))
             m_payee->SetLabelText(payee->PAYEENAME);
 
             // Only for new transactions: if user want to autofill last category used for payee and category has not been set.
-            if ((Option::instance().TransCategorySelectionNonTransfer() == Option::LASTUSED) && (m_category_id < 0) && (m_subcategory_id < 0))
+            if ((Option::instance().TransCategorySelectionNonTransfer() == Option::LASTUSED) && (m_category_id < 0) && (m_subcategory_id < 0)
+                        && (!Model_Category::is_hidden(payee->CATEGID)))
             {
                 if (payee->CATEGID > 0)
                 {
                     m_category_id = payee->CATEGID;
-                    if (payee->SUBCATEGID > 0)
-                    {
-                        m_subcategory_id = payee->SUBCATEGID;
-                    }
-                    m_category->SetLabelText(Model_Category::full_name(m_category_id, m_subcategory_id));
+                    m_category->SetLabelText(Model_Category::full_name(m_category_id));
                 }
             }
         }
@@ -317,12 +332,11 @@ void UserTransactionPanel::OnTransPayeeButton(wxCommandEvent& WXUNUSED(event))
 
 void UserTransactionPanel::OnTransCategoryButton(wxCommandEvent& WXUNUSED(event))
 {
-    mmCategDialog dlg(this, true, m_category_id, m_subcategory_id);
+    mmCategDialog dlg(this, true, m_category_id);
     if (dlg.ShowModal() == wxID_OK)
     {
         m_category_id = dlg.getCategId();
-        m_subcategory_id = dlg.getSubCategId();
-        m_category->SetLabelText(Model_Category::full_name(m_category_id, m_subcategory_id));
+        m_category->SetLabelText(Model_Category::full_name(m_category_id));
     }
 }
 
@@ -421,7 +435,16 @@ void UserTransactionPanel::CheckingType(Model_Translink::CHECKING_TYPE ct)
 int UserTransactionPanel::SaveChecking()
 {
     double initial_amount = 0;
+    wxString trxDate = m_date_selector->GetValue().FormatISODate();
+
     m_entered_amount->checkValue(initial_amount);
+    
+    const Model_Account::Data* account = Model_Account::instance().get(m_account_id);
+    if (trxDate < account->INITIALDATE)
+    {
+        mmErrorDialogs::ToolTip4Object(m_account, _("The opening date for the account is later than the date of this transaction"), _("Invalid Date"));
+        return -1;
+    }  
 
     if (!m_checking_entry) {
         m_checking_entry = Model_Checking::instance().create();
@@ -437,8 +460,7 @@ int UserTransactionPanel::SaveChecking()
     m_checking_entry->TRANSACTIONNUMBER = m_entered_number->GetValue();
     m_checking_entry->NOTES = m_entered_notes->GetValue();
     m_checking_entry->CATEGID = m_category_id;
-    m_checking_entry->SUBCATEGID = m_subcategory_id;
-    m_checking_entry->TRANSDATE = m_date_selector->GetValue().FormatISODate();
+    m_checking_entry->TRANSDATE = trxDate;
     m_checking_entry->FOLLOWUPID = 0;
     m_checking_entry->TOTRANSAMOUNT = m_checking_entry->TRANSAMOUNT;
 

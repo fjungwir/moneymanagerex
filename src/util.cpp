@@ -1,7 +1,7 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
  Copyright (C) 2013-2022 Nikolay Akimov
- Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
+ Copyright (C) 2021-2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -1307,7 +1307,6 @@ const wxString getProgramDescription(int type)
         << " (SQLite " << wxSQLite3Database::GetVersion() << ")" << eol
         << bull + "RapidJSON " << RAPIDJSON_VERSION_STRING << eol
         << bull + LUA_RELEASE << eol
-        << bull + "lunasvg v2.3.1" << eol
         << bull + curl_version() << eol
         << bull + GETTEXT_VERSION << eol
         << bull + "apexcharts.js" << eol
@@ -1655,7 +1654,7 @@ int pow10(int y)
 wxString HTMLEncode(wxString input)
 {
     wxString output;
-    for(int pos = 0; pos < input.Len(); ++pos) 
+    for(size_t pos = 0; pos < input.Len(); ++pos)
     {
         wxUniChar c = input.GetChar(pos);
         if (c.IsAscii())
@@ -1707,6 +1706,12 @@ void mmSetSize(wxWindow* w)
     }
     else if (name == "General Reports Manager") {
         my_size = Model_Infotable::instance().GetSizeSetting("GRM_DIALOG_SIZE");
+    } 
+    else if (name == "mmEditPayeeDialog") {
+        my_size = Model_Infotable::instance().GetSizeSetting("EDITPAYEE_DIALOG_SIZE"); 
+    }
+    else if (name == "mmEditSplitOther") {
+        my_size = Model_Infotable::instance().GetSizeSetting("EDITSPLITOTHER_DIALOG_SIZE"); 
     }
 
     wxSharedPtr<wxDisplay> display(new wxDisplay(w->GetParent()));
@@ -1729,4 +1734,14 @@ void mmFontSize(wxWindow* widget)
     {
         widget->SetFont(widget->GetFont().Larger());
     }
+}
+
+bool isValidURI(const wxString validate)
+{
+    wxString uri = validate.Lower().Trim();
+    wxRegEx pattern(R"(^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$)");
+    if (pattern.Matches(uri))
+        return true;
+
+    return false;
 }

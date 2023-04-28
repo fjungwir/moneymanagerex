@@ -1,5 +1,6 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
+ Copyright (C) 2022  Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -22,6 +23,8 @@
 #include "model/Model_Account.h"
 #include "mmSimpleDialogs.h"
 #include "mmTextCtrl.h"
+
+#include <memory>
 
 class mmNewAcctDialog : public wxDialog
 {
@@ -59,25 +62,27 @@ private:
 private:
     Model_Account::Data* m_account;
     wxNotebook* m_notebook;
-    wxTextCtrl* m_textAccountName;
-    wxTextCtrl* m_notesCtrl;
-    mmTextCtrl* m_initbalance_ctrl;
-    wxImageList* m_imageList;
-    wxBitmapButton* m_bitmapButtons;
-    wxBitmapButton* bAttachments_;
+    wxTextCtrl* m_textAccountName = nullptr;
+    wxTextCtrl* m_notesCtrl = nullptr;
+    mmTextCtrl* m_initbalance_ctrl = nullptr;
+    mmDatePickerCtrl* m_initdate_ctrl = nullptr;
+
+    wxVector<wxBitmapBundle> m_images;
+    wxBitmapButton* m_bitmapButtons = nullptr;
+    wxBitmapButton* bAttachments_ = nullptr;
     wxString m_accessInfo;
 
-    wxCheckBox* m_statement_lock_ctrl;
-    mmDatePickerCtrl* m_statement_date_ctrl;
-    mmTextCtrl* m_minimum_balance_ctrl;
+    wxCheckBox* m_statement_lock_ctrl = nullptr;
+    mmDatePickerCtrl* m_statement_date_ctrl = nullptr;
+    mmTextCtrl* m_minimum_balance_ctrl = nullptr;
 
-    mmTextCtrl* m_credit_limit_ctrl;
-    mmTextCtrl* m_interest_rate_ctrl;
-    mmDatePickerCtrl* m_payment_due_date_ctrl;
-    mmTextCtrl* m_minimum_payment_ctrl;
+    mmTextCtrl* m_credit_limit_ctrl = nullptr;
+    mmTextCtrl* m_interest_rate_ctrl = nullptr;
+    mmDatePickerCtrl* m_payment_due_date_ctrl = nullptr;
+    mmTextCtrl* m_minimum_payment_ctrl = nullptr;
 
-    int m_currencyID;
-    bool m_accessinfo_infocus;
+    int m_currencyID = 0;
+    bool m_accessinfo_infocus = false;
 };
 
 #endif

@@ -55,14 +55,14 @@ mmAssetsListCtrl::mmAssetsListCtrl(mmAssetsPanel* cp, wxWindow *parent, wxWindow
 {
     mmThemeMetaColour(this, meta::COLOR_LISTPANEL);
 
-    m_columns.push_back(PANEL_COLUMN(" ", 25, wxLIST_FORMAT_LEFT));
-    m_columns.push_back(PANEL_COLUMN(_("ID"), wxLIST_AUTOSIZE, wxLIST_FORMAT_RIGHT));
-    m_columns.push_back(PANEL_COLUMN(_("Name"), 150, wxLIST_FORMAT_LEFT));
-    m_columns.push_back(PANEL_COLUMN(_("Date"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_LEFT));
-    m_columns.push_back(PANEL_COLUMN(_("Type"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_LEFT));
-    m_columns.push_back(PANEL_COLUMN(_("Initial Value"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_RIGHT));
-    m_columns.push_back(PANEL_COLUMN(_("Current Value"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_RIGHT));
-    m_columns.push_back(PANEL_COLUMN(_("Notes"), 450, wxLIST_FORMAT_LEFT));
+    m_columns.push_back(PANEL_COLUMN(" ", 25, wxLIST_FORMAT_LEFT, false));
+    m_columns.push_back(PANEL_COLUMN(_("ID"), wxLIST_AUTOSIZE, wxLIST_FORMAT_RIGHT, true));
+    m_columns.push_back(PANEL_COLUMN(_("Name"), 150, wxLIST_FORMAT_LEFT, true));
+    m_columns.push_back(PANEL_COLUMN(_("Date"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_LEFT, true));
+    m_columns.push_back(PANEL_COLUMN(_("Type"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_LEFT, true));
+    m_columns.push_back(PANEL_COLUMN(_("Initial Value"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_RIGHT, true));
+    m_columns.push_back(PANEL_COLUMN(_("Current Value"), wxLIST_AUTOSIZE_USEHEADER, wxLIST_FORMAT_RIGHT, true));
+    m_columns.push_back(PANEL_COLUMN(_("Notes"), 450, wxLIST_FORMAT_LEFT, true));
 
     m_col_width = "ASSETS_COL%d_WIDTH";
     for (const auto& entry : m_columns)
@@ -426,7 +426,7 @@ void mmAssetsPanel::CreateControls()
     itemBoxSizerVHeader->Add(itemBoxSizerHHeader2);
 
     m_bitmapTransFilter = new wxButton(headerPanel, wxID_FILE2);
-    m_bitmapTransFilter->SetBitmap(mmBitmap(png::TRANSFILTER, mmBitmapButtonSize));
+    m_bitmapTransFilter->SetBitmap(mmBitmapBundle(png::TRANSFILTER, mmBitmapButtonSize));
     m_bitmapTransFilter->SetLabel(_("All"));
     m_bitmapTransFilter->SetMinSize(wxSize(150, -1));
     itemBoxSizerHHeader2->Add(m_bitmapTransFilter, g_flagsBorder1H);
@@ -441,18 +441,18 @@ void mmAssetsPanel::CreateControls()
 
     m_listCtrlAssets = new mmAssetsListCtrl(this, itemSplitterWindow10, wxID_ANY);
 
-    m_imageList.reset(createImageList());
-    m_imageList->Add(mmBitmap(png::PROPERTY));
-    m_imageList->Add(mmBitmap(png::CAR));
-    m_imageList->Add(mmBitmap(png::HOUSEHOLD_OBJ));
-    m_imageList->Add(mmBitmap(png::ART));
-    m_imageList->Add(mmBitmap(png::JEWELLERY));
-    m_imageList->Add(mmBitmap(png::CASH));
-    m_imageList->Add(mmBitmap(png::OTHER));
-    m_imageList->Add(mmBitmap(png::UPARROW));
-    m_imageList->Add(mmBitmap(png::DOWNARROW));
+    wxVector<wxBitmapBundle> images;
+    images.push_back(mmBitmapBundle(png::PROPERTY));
+    images.push_back(mmBitmapBundle(png::CAR));
+    images.push_back(mmBitmapBundle(png::HOUSEHOLD_OBJ));
+    images.push_back(mmBitmapBundle(png::ART));
+    images.push_back(mmBitmapBundle(png::JEWELLERY));
+    images.push_back(mmBitmapBundle(png::CASH));
+    images.push_back(mmBitmapBundle(png::OTHER));
+    images.push_back(mmBitmapBundle(png::UPARROW));
+    images.push_back(mmBitmapBundle(png::DOWNARROW));
 
-    m_listCtrlAssets->SetImageList(m_imageList.get(), wxIMAGE_LIST_SMALL);
+    m_listCtrlAssets->SetSmallImages(images);
 
     wxPanel* assets_panel = new wxPanel(itemSplitterWindow10, wxID_ANY
         , wxDefaultPosition, wxDefaultSize, wxNO_BORDER | wxTAB_TRAVERSAL);
@@ -494,7 +494,7 @@ void mmAssetsPanel::CreateControls()
     itemButton7->Enable(false);
 
     wxBitmapButton* attachment_button_ = new wxBitmapButton(assets_panel
-        , wxID_FILE, mmBitmap(png::CLIP, mmBitmapButtonSize), wxDefaultPosition,
+        , wxID_FILE, mmBitmapBundle(png::CLIP, mmBitmapButtonSize), wxDefaultPosition,
         wxSize(30, itemButton7->GetSize().GetY()));
     mmToolTip(attachment_button_, _("Open attachments"));
     itemBoxSizer5->Add(attachment_button_, 0, wxRIGHT, 5);
@@ -629,7 +629,7 @@ wxString mmAssetsPanel::getItem(long item, long column)
     switch (column)
     {
     case COL_ICON:
-        return " ";
+        return "";
     case COL_ID:
         return wxString::Format("%i", asset.ASSETID).Trim();
     case COL_NAME:
@@ -722,13 +722,13 @@ void mmAssetsPanel::OnViewPopupSelected(wxCommandEvent& event)
     if (evt == 0)
     {
         m_bitmapTransFilter->SetLabel(_("All"));
-        m_bitmapTransFilter->SetBitmap(mmBitmap(png::TRANSFILTER, mmBitmapButtonSize));
+        m_bitmapTransFilter->SetBitmap(mmBitmapBundle(png::TRANSFILTER, mmBitmapButtonSize));
         this->m_filter_type = Model_Asset::TYPE(-1);
     }
     else
     {
         this->m_filter_type = Model_Asset::TYPE(evt - 1);
-        m_bitmapTransFilter->SetBitmap(mmBitmap(png::TRANSFILTER_ACTIVE, mmBitmapButtonSize));
+        m_bitmapTransFilter->SetBitmap(mmBitmapBundle(png::TRANSFILTER_ACTIVE, mmBitmapButtonSize));
         m_bitmapTransFilter->SetLabel(wxGetTranslation(Model_Asset::all_type()[evt - 1]));
     }
 

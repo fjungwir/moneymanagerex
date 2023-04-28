@@ -3,6 +3,7 @@
  Copyright (c) 2013,2014 Guan Lisheng (guanlisheng@gmail.com)
  Copyright (C) 2015, 2019, 2021 Nikolay Akimov
  Copyright (C) 2015 Yosef
+ Copyright (C) 2022  Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -35,7 +36,6 @@
 #include "Model_Setting.h"
 #include "Model_Payee.h"
 #include "Model_Category.h"
-#include "Model_Subcategory.h"
 #include "Model_Infotable.h"
 
 #include <algorithm>
@@ -80,28 +80,8 @@ mmUnivCSVDialog::mmUnivCSVDialog(
     long style
 ) :
     dialogType_(dialogType),
-    delimit_(","),
-    bImport_(nullptr),
-    csvFieldCandicate_(nullptr),
-    csvListBox_(nullptr),
-    m_button_add_(nullptr),
-    m_button_remove_(nullptr),
-    m_choice_account_(nullptr),
-    m_list_ctrl_(nullptr),
-    m_text_ctrl_(nullptr),
-    m_setting_name_ctrl_(nullptr),
-    log_field_(nullptr),
-    m_textDelimiter(nullptr),
-    m_spinIgnoreFirstRows_(nullptr),
-    m_spinIgnoreLastRows_(nullptr),
-    choiceDateFormat_(nullptr),
-    m_choiceAmountFieldSign(nullptr),
-    m_choiceDecimalSeparator(nullptr),
-    importSuccessful_(false),
-    m_userDefinedDateMask(false),
-    m_reverce_sign(false),
-    depositType_(Model_Checking::all_type()[Model_Checking::DEPOSIT]),
-    decimal_(Model_Currency::GetBaseCurrency()->DECIMAL_POINT)
+    decimal_(Model_Currency::GetBaseCurrency()->DECIMAL_POINT),
+    depositType_(Model_Checking::all_type()[Model_Checking::DEPOSIT])
 {
     CSVFieldName_[UNIV_CSV_ID] = wxTRANSLATE("ID");
     CSVFieldName_[UNIV_CSV_DATE] = wxTRANSLATE("Date");
@@ -119,7 +99,7 @@ mmUnivCSVDialog::mmUnivCSVDialog(
     CSVFieldName_[UNIV_CSV_WITHDRAWAL] = wxTRANSLATE("Withdrawal");
     CSVFieldName_[UNIV_CSV_DEPOSIT] = wxTRANSLATE("Deposit");
     CSVFieldName_[UNIV_CSV_BALANCE] = wxTRANSLATE("Balance");
-    
+
     Create(parent, IsImporter() ? _("Import dialog") : _("Export dialog"), id, pos, size, style);
     this->Connect(wxID_ANY, wxEVT_CHILD_FOCUS, wxChildFocusEventHandler(mmUnivCSVDialog::changeFocus), nullptr, this);
 }
@@ -206,11 +186,11 @@ void mmUnivCSVDialog::CreateControls()
     itemBoxSizer76->Add(m_setting_name_ctrl_, wxSizerFlags(g_flagsH).Center().Proportion(1));
 
     wxBitmapButton* itemButton_Save = new wxBitmapButton(itemPanel67
-        , wxID_SAVEAS, mmBitmap(png::SAVE, mmBitmapButtonSize));
+        , wxID_SAVEAS, mmBitmapBundle(png::SAVE, mmBitmapButtonSize));
     itemBoxSizer76->Add(itemButton_Save, wxSizerFlags(g_flagsH).Center().Proportion(0));
 
     wxBitmapButton* itemButtonClear = new wxBitmapButton(itemPanel67
-        , wxID_CLEAR, mmBitmap(png::CLEAR, mmBitmapButtonSize));
+        , wxID_CLEAR, mmBitmapBundle(png::CLEAR, mmBitmapButtonSize));
     itemBoxSizer76->Add(itemButtonClear, wxSizerFlags(g_flagsH).Center().Proportion(0));
 
     //
@@ -293,7 +273,7 @@ void mmUnivCSVDialog::CreateControls()
         , Model_Account::instance().all_checking_account_names(), 0);
     m_choice_account_->SetMinSize(wxSize(210, -1));
     flex_sizer->Add(m_choice_account_, g_flagsH);
-
+    
     wxStaticLine*  m_staticline2 = new wxStaticLine(this
         , wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL);
     itemBoxSizer2->Add(m_staticline2, flagsExpand);
@@ -433,9 +413,9 @@ void mmUnivCSVDialog::CreateControls()
     }
     itemBoxSizer6->Add(bImport_, 0, wxALIGN_CENTER | wxALL, 5);
 
-    wxButton* itemCancelButton = new wxButton(itemPanel5, wxID_CANCEL, wxGetTranslation(g_CancelLabel));
-    itemBoxSizer6->Add(itemCancelButton, 0, wxALIGN_CENTER | wxALL, 5);
-    itemCancelButton->SetFocus();
+    wxButton* itemCloseButton = new wxButton(itemPanel5, wxID_CANCEL, wxGetTranslation(g_CloseLabel));
+    itemBoxSizer6->Add(itemCloseButton, 0, wxALIGN_CENTER | wxALL, 5);
+    itemCloseButton->SetFocus();
 
     //Log viewer
     wxBoxSizer* itemBoxSizer22 = new wxBoxSizer(wxVERTICAL);
@@ -896,8 +876,8 @@ bool mmUnivCSVDialog::validateData(tran_holder & holder)
         if (!u) {
             Model_Payee::Data *p = Model_Payee::instance().create();
             p->PAYEENAME = _("Unknown");
+            p->ACTIVE = 1;
             p->CATEGID = -1;
-            p->SUBCATEGID = -1;
             holder.PayeeID = Model_Payee::instance().save(p);
             const wxString& sMsg = wxString::Format(_("Added payee: %s"), p->PAYEENAME);
             log_field_->AppendText(wxString() << sMsg << "\n");
@@ -910,13 +890,12 @@ bool mmUnivCSVDialog::validateData(tran_holder & holder)
     {
         if (holder.CategoryID < 0) {
             holder.CategoryID = payee->CATEGID;
-            holder.SubCategoryID = payee->SUBCATEGID;
         }
     }
 
     if (holder.CategoryID == -1) //The category name is missing in SCV file and not assigned for the payee
     {
-        Model_Category::Data* categ = Model_Category::instance().get(_("Unknown"));
+        Model_Category::Data* categ = Model_Category::instance().get(_("Unknown"), -1);
         if (categ) {
             holder.CategoryID = categ->CATEGID;
         }
@@ -924,6 +903,8 @@ bool mmUnivCSVDialog::validateData(tran_holder & holder)
         {
             Model_Category::Data *c = Model_Category::instance().create();
             c->CATEGNAME = _("Unknown");
+            c->ACTIVE = 1;
+            c->PARENTID = -1;
             holder.CategoryID = Model_Category::instance().save(c);
         }
     }
@@ -1037,8 +1018,21 @@ void mmUnivCSVDialog::OnImport(wxCommandEvent& WXUNUSED(event))
             continue;
         }
 
+        wxString trxDate = holder.Date.FormatISODate();
+        account = Model_Account::instance().get(accountID_);
+        const Model_Account::Data* toAccount = Model_Account::instance().get(holder.ToAccountID);
+        if ((trxDate < account->INITIALDATE) ||
+               (toAccount && (trxDate < toAccount->INITIALDATE)))
+        {
+            wxString msg = wxString::Format(_("Line %ld: %s"), nLines + 1,
+                    _("The opening date for the account is later than the date of this transaction"));
+            log << msg << endl;
+            *log_field_ << msg << "\n";
+            continue;
+        }
+
         Model_Checking::Data *pTransaction = Model_Checking::instance().create();
-        pTransaction->TRANSDATE = holder.Date.FormatISODate();
+        pTransaction->TRANSDATE = trxDate;
         pTransaction->ACCOUNTID = accountID_;
         pTransaction->TOACCOUNTID = holder.ToAccountID;
         pTransaction->PAYEEID = holder.PayeeID;
@@ -1046,7 +1040,6 @@ void mmUnivCSVDialog::OnImport(wxCommandEvent& WXUNUSED(event))
         pTransaction->TRANSAMOUNT = holder.Amount;
         pTransaction->TOTRANSAMOUNT = holder.ToAmount;
         pTransaction->CATEGID = holder.CategoryID;
-        pTransaction->SUBCATEGID = holder.SubCategoryID;
         pTransaction->STATUS = holder.Status;
         pTransaction->TRANSACTIONNUMBER = holder.Number;
         pTransaction->NOTES = holder.Notes;
@@ -1180,7 +1173,7 @@ void mmUnivCSVDialog::OnExport(wxCommandEvent& WXUNUSED(event))
     for (const auto& pBankTransaction : Model_Checking::instance().find_or(Model_Checking::ACCOUNTID(fromAccountID)
         , Model_Checking::TOACCOUNTID(fromAccountID)))
     {
-        if (Model_Checking::status(pBankTransaction) == Model_Checking::VOID_)
+        if (Model_Checking::status(pBankTransaction) == Model_Checking::VOID_ || !pBankTransaction.DELETEDTIME.IsEmpty())
             continue;
 
         Model_Checking::Full_Data tran(pBankTransaction, split);
@@ -1193,7 +1186,6 @@ void mmUnivCSVDialog::OnExport(wxCommandEvent& WXUNUSED(event))
             Model_Splittransaction::Data *splt = Model_Splittransaction::instance().create();
             splt->TRANSID = tran.TRANSID;
             splt->CATEGID = tran.CATEGID;
-            splt->SUBCATEGID = tran.SUBCATEGID;
             splt->SPLITTRANSAMOUNT = value;
             tran.m_splits.push_back(*splt);
         }
@@ -1203,7 +1195,6 @@ void mmUnivCSVDialog::OnExport(wxCommandEvent& WXUNUSED(event))
             pTxFile->AddNewLine();
 
             Model_Category::Data* category = Model_Category::instance().get(splt.CATEGID);
-            Model_Subcategory::Data* sub_category = Model_Subcategory::instance().get(splt.SUBCATEGID);
 
             double amt = splt.SPLITTRANSAMOUNT;
             if (Model_Checking::type(pBankTransaction) == Model_Checking::WITHDRAWAL
@@ -1236,10 +1227,17 @@ void mmUnivCSVDialog::OnExport(wxCommandEvent& WXUNUSED(event))
                     entry = tran.get_currency_code(fromAccountID);
                     break;
                 case UNIV_CSV_CATEGORY:
-                    entry = category ? wxGetTranslation(category->CATEGNAME) : "";
+                    if (category)
+                    {
+                        if (isIndexPresent(UNIV_CSV_SUBCATEGORY) && category->PARENTID != -1)
+                            entry = wxGetTranslation(Model_Category::full_name(category->PARENTID), ":");
+                        else
+                            entry = wxGetTranslation(Model_Category::full_name(category->CATEGID), ":");
+                    }
                     break;
                 case UNIV_CSV_SUBCATEGORY:
-                    entry = sub_category ? wxGetTranslation(sub_category->SUBCATEGNAME) : "";
+                    if(category && category->PARENTID != -1)
+                        entry = wxGetTranslation(category->CATEGNAME);
                     break;
                 case UNIV_CSV_TRANSNUM:
                     entry = pBankTransaction.TRANSACTIONNUMBER;
@@ -1271,7 +1269,7 @@ void mmUnivCSVDialog::OnExport(wxCommandEvent& WXUNUSED(event))
                 }
                 pTxFile->AddNewItem(entry, itemType);
             }
-            
+
             ++numRecords;
         }
     }
@@ -1395,7 +1393,7 @@ void mmUnivCSVDialog::update_preview()
             for (const auto& pBankTransaction : Model_Checking::instance().find_or(Model_Checking::ACCOUNTID(fromAccountID)
                 , Model_Checking::TOACCOUNTID(fromAccountID)))
             {
-                if (Model_Checking::status(pBankTransaction) == Model_Checking::VOID_)
+                if (Model_Checking::status(pBankTransaction) == Model_Checking::VOID_ || !pBankTransaction.DELETEDTIME.IsEmpty())
                     continue;
 
                 Model_Checking::Full_Data tran(pBankTransaction, split);
@@ -1408,7 +1406,6 @@ void mmUnivCSVDialog::update_preview()
                     Model_Splittransaction::Data *splt = Model_Splittransaction::instance().create();
                     splt->TRANSID = tran.TRANSID;
                     splt->CATEGID = tran.CATEGID;
-                    splt->SUBCATEGID = tran.SUBCATEGID;
                     splt->SPLITTRANSAMOUNT = value;
                     tran.m_splits.push_back(*splt);
                 }
@@ -1424,7 +1421,6 @@ void mmUnivCSVDialog::update_preview()
                     m_list_ctrl_->SetItem(itemIndex, col, buf);
 
                     Model_Category::Data* category = Model_Category::instance().get(splt.CATEGID);
-                    Model_Subcategory::Data* sub_category = Model_Subcategory::instance().get(splt.SUBCATEGID);
 
                     Model_Currency::Data* currency = Model_Account::currency(from_account);
 
@@ -1460,10 +1456,19 @@ void mmUnivCSVDialog::update_preview()
                             text << inQuotes(amount, delimit);
                             break;
                         case UNIV_CSV_CATEGORY:
-                            text << inQuotes(category ? category->CATEGNAME : "", delimit);
+                            if (category)
+                            {
+                                if (isIndexPresent(UNIV_CSV_SUBCATEGORY) && category->PARENTID != -1)
+                                    text << inQuotes(Model_Category::full_name(category->PARENTID, ":"), delimit);
+                                else
+                                    text << inQuotes(Model_Category::full_name(category->CATEGID, ":"), delimit);
+                            }
+                            else text << inQuotes("", delimit);
                             break;
                         case UNIV_CSV_SUBCATEGORY:
-                            text << inQuotes(sub_category ? sub_category->SUBCATEGNAME : "", delimit);
+                            if (category && category->PARENTID != -1)
+                                text << inQuotes(category ? category->CATEGNAME : "", delimit);
+                            else text << inQuotes("", delimit);
                             break;
                         case UNIV_CSV_TRANSNUM:
                             text << inQuotes(pBankTransaction.TRANSACTIONNUMBER, delimit);
@@ -1675,8 +1680,9 @@ void mmUnivCSVDialog::parseToken(int index, const wxString& orig_token, tran_hol
 
     Model_Payee::Data* payee = nullptr;
     Model_Category::Data* category = nullptr;
-    Model_Subcategory::Data* sub_category = nullptr;
-
+    int parentID = -1;
+    wxStringTokenizer* categs;
+    wxString categname;
     wxDateTime dtdt;
     double amount;
 
@@ -1695,6 +1701,7 @@ void mmUnivCSVDialog::parseToken(int index, const wxString& orig_token, tran_hol
         {
             payee = Model_Payee::instance().create();
             payee->PAYEENAME = token;
+            payee->ACTIVE = 1;
             Model_Payee::instance().save(payee);
         }
 
@@ -1714,16 +1721,23 @@ void mmUnivCSVDialog::parseToken(int index, const wxString& orig_token, tran_hol
         break;
 
     case UNIV_CSV_CATEGORY:
+        categs = new wxStringTokenizer(token, ":");
         token.Replace(":", "|");
-        category = Model_Category::instance().get(token);
-        if (!category)
-        {
-            category = Model_Category::instance().create();
-            category->CATEGNAME = token;
-            Model_Category::instance().save(category);
+        while (categs->HasMoreTokens()) {
+            categname = categs->GetNextToken();
+            category = Model_Category::instance().get(categname, parentID);
+            if (!category)
+            {
+                category = Model_Category::instance().create();
+                category->CATEGNAME = categname;
+                category->PARENTID = parentID;
+                category->ACTIVE = 1;
+                Model_Category::instance().save(category);
+            }
+            parentID = category->CATEGID;
         }
 
-        holder.CategoryID = category->CATEGID;
+        if (category) holder.CategoryID = category->CATEGID;
         break;
 
     case UNIV_CSV_SUBCATEGORY:
@@ -1731,15 +1745,16 @@ void mmUnivCSVDialog::parseToken(int index, const wxString& orig_token, tran_hol
             return;
 
         token.Replace(":", "|");
-        sub_category = (!token.IsEmpty() ? Model_Subcategory::instance().get(token, holder.CategoryID) : nullptr);
-        if (!sub_category)
+        category = (!token.IsEmpty() ? Model_Category::instance().get(token, holder.CategoryID) : nullptr);
+        if (!category)
         {
-            sub_category = Model_Subcategory::instance().create();
-            sub_category->CATEGID = holder.CategoryID;
-            sub_category->SUBCATEGNAME = token;
-            Model_Subcategory::instance().save(sub_category);
+            category = Model_Category::instance().create();
+            category->PARENTID = holder.CategoryID;
+            category->CATEGNAME = token;
+            category->ACTIVE = 1;
+            Model_Category::instance().save(category);
         }
-        holder.SubCategoryID = sub_category->SUBCATEGID;
+        holder.CategoryID = category->CATEGID;
         break;
 
     case UNIV_CSV_TRANSNUM:
@@ -1787,8 +1802,8 @@ void mmUnivCSVDialog::parseToken(int index, const wxString& orig_token, tran_hol
         holder.Type = Model_Checking::all_type()[Model_Checking::DEPOSIT];
         break;
 
-    // A number of type options are supported to make amount positive 
-    // ('debit' seems odd but is there for backwards compatability!)
+        // A number of type options are supported to make amount positive 
+        // ('debit' seems odd but is there for backwards compatability!)
     case UNIV_CSV_TYPE:
         for (const wxString& entry : { "debit", "deposit", "+" }) {
             if (entry.CmpNoCase(token) == 0) {
