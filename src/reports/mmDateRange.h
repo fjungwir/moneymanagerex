@@ -1,5 +1,6 @@
 /*******************************************************
 Copyright (C) 2006-2012     Lisheng Guan (guanlisheng@gmail.com)
+Copyright (C) 2014 - 2022   Nikolay Akimov
 Copyright (C) 2021          Mark Whalley (mark@ipx.co.uk)
 
 This program is free software; you can redistribute it and/or modify
@@ -48,8 +49,8 @@ public:
     void set_end_date(wxDateTime v);
     void findEndOfMonth();
     void findBeginOfMonth();
-    const int startDay() const;
-    const bool isFutureIgnored() const;
+    int startDay() const;
+    bool isFutureIgnored() const;
 };
 
 class mmCurrentMonth: public mmDateRange
@@ -155,6 +156,37 @@ public:
     mmLast365Days();
 };
 
+class mmSinseToday : public mmDateRange
+{
+public:
+    mmSinseToday();
+};
+
+class mmSinse30days : public mmDateRange
+{
+public:
+    mmSinse30days();
+};
+
+class mmSinse90days : public mmDateRange
+{
+public:
+    mmSinse90days();
+};
+
+class mmSinseCurrentYear : public mmDateRange
+{
+public:
+    mmSinseCurrentYear();
+};
+
+class mmSinseCurrentFinancialYear : public mmCurrentFinancialYear
+{
+public:
+    mmSinseCurrentFinancialYear();
+};
+
+
 inline const wxDateTime mmDateRange::start_date() const { return this->start_date_; }
 inline const wxDateTime mmDateRange::end_date() const { return this->end_date_; }
 inline const wxDateTime mmDateRange::future_date() const { return this->future_; }
@@ -164,8 +196,8 @@ inline const wxString mmDateRange::title() const { return title_; }
 inline void mmDateRange::start_date(wxDateTime& start_date) { this->start_date_ = start_date; }
 inline void mmDateRange::end_date(wxDateTime& end_date) { this->end_date_ = end_date; }
 inline void mmDateRange::set_end_date(wxDateTime v) { end_date_ = v; }
-inline const int mmDateRange::startDay() const { return this->startDay_; }
-inline const bool mmDateRange::isFutureIgnored() const { return this->futureIgnored_; }
+inline int mmDateRange::startDay() const { return this->startDay_; }
+inline bool mmDateRange::isFutureIgnored() const { return this->futureIgnored_; }
 
 
 #endif // MM_EX_DATE_RANGE_H_

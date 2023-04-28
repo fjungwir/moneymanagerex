@@ -1,5 +1,6 @@
 /*******************************************************
  Copyright (C) 2013,2014 Guan Lisheng (guanlisheng@gmail.com)
+ COPYRIGHT (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -74,7 +75,6 @@ public:
         int TOACCOUNTID = -1;
         wxString TRANSCODE = Model_Billsdeposits::all_type()[Model_Billsdeposits::WITHDRAWAL];;
         int CATEGID = -1;
-        int SUBCATEGID = -1;
         double TRANSAMOUNT = 0;
         double TOTRANSAMOUNT = 0;
         int FOLLOWUPID = -1;
@@ -96,6 +96,7 @@ public:
         wxString PAYEENAME;
         wxString CATEGNAME;
         Model_Budgetsplittransaction::Data_Set m_bill_splits;
+        wxString real_payee_name() const;
     };
     typedef std::vector<Full_Data> Full_Data_Set;
 
@@ -167,8 +168,7 @@ public:
     static const Model_Budgetsplittransaction::Data_Set splittransaction(const Data& r);
 
     void completeBDInSeries(int bdID);
-    static const wxDateTime nextOccurDate(int type, int numRepeats, const wxDateTime& nextOccurDate);
-    static const wxDateTime previousOccurDate(int repeatsType, int numRepeats, const wxDateTime& nextOccurDate);
+    static const wxDateTime nextOccurDate(int type, int numRepeats, wxDateTime nextOccurDate, bool reverse = false);
 };
 
 #endif // 

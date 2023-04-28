@@ -41,7 +41,6 @@ public:
     Model_Checking::Full_Data_Set m_trans;
     void markSelectedTransaction();
     void DeleteTransactionsByStatus(const wxString& status);
-    void DeleteViewedTransactions();
 public:
     enum EColumn
     {
@@ -58,19 +57,23 @@ public:
         COL_BALANCE,
         COL_CREDIT,
         COL_NOTES,
+        COL_DELETEDTIME,
         COL_UDFC01,
         COL_UDFC02,
         COL_UDFC03,
         COL_UDFC04,
         COL_UDFC05,
+        COL_UPDATEDTIME,
         COL_MAX, // number of columns
-        COL_DEF_SORT = COL_DATE // don't omit any columns before this
+        COL_DEF_SORT = COL_DATE, // don't omit any columns before this
+        COL_DEF_SORT2 = COL_ID 
     };
-    EColumn toEColumn(long col);
+    EColumn toEColumn(const unsigned long col);
 public:
-    EColumn g_sortcol; // index of column to sort
-    EColumn m_prevSortCol;
-    bool g_asc; // asc\desc sorting
+    EColumn g_sortcol; // index of primary column to sort by
+    EColumn prev_g_sortcol; // index of secondary column to sort by
+    bool g_asc; // asc\desc sorting for primary sort column
+    bool prev_g_asc; // asc\desc sorting for secondary sort column
 
     bool getSortOrder() const;
     EColumn getSortColumn() const { return m_sortCol; }
@@ -82,9 +85,10 @@ public:
     void setColumnImage(EColumn col, int image);
 public:
     void OnNewTransaction(wxCommandEvent& event);
-    void OnNewTransferTransaction(wxCommandEvent& event);
     void OnDeleteTransaction(wxCommandEvent& event);
+    void OnRestoreTransaction(wxCommandEvent& event);
     void OnDeleteViewedTransaction(wxCommandEvent& event);
+    void OnRestoreViewedTransaction(wxCommandEvent& event);
     void OnEditTransaction(wxCommandEvent& event);
     void OnDuplicateTransaction(wxCommandEvent& event);
     void OnSetUserColour(wxCommandEvent& event);
@@ -141,31 +145,30 @@ private:
         MENU_ON_NEW_TRANSACTION,
         MENU_ON_DUPLICATE_TRANSACTION,
 
-        MENU_ON_SET_UDC0, //Default colour
-        MENU_ON_SET_UDC1, //User defined colour 1
-        MENU_ON_SET_UDC2, //User defined colour 2
-        MENU_ON_SET_UDC3, //User defined colour 3
-        MENU_ON_SET_UDC4, //User defined colour 4
-        MENU_ON_SET_UDC5, //User defined colour 5
-        MENU_ON_SET_UDC6, //User defined colour 6
-        MENU_ON_SET_UDC7, //User defined colour 7
+        MENU_ON_SET_UDC0, //Default color
+        MENU_ON_SET_UDC1, //User defined color 1
+        MENU_ON_SET_UDC2, //User defined color 2
+        MENU_ON_SET_UDC3, //User defined color 3
+        MENU_ON_SET_UDC4, //User defined color 4
+        MENU_ON_SET_UDC5, //User defined color 5
+        MENU_ON_SET_UDC6, //User defined color 6
+        MENU_ON_SET_UDC7, //User defined color 7
 
-        MENU_TREEPOPUP_NEW_WITHDRAWAL,
-        MENU_TREEPOPUP_NEW_DEPOSIT,
-        MENU_TREEPOPUP_NEW_TRANSFER,
         MENU_TREEPOPUP_EDIT2,
         MENU_TREEPOPUP_MOVE2,
         MENU_TREEPOPUP_DELETE2,
         MENU_TREEPOPUP_DELETE_VIEWED,
         MENU_TREEPOPUP_DELETE_FLAGGED,
         MENU_TREEPOPUP_DELETE_UNRECONCILED,
+        MENU_TREEPOPUP_RESTORE,
+        MENU_TREEPOPUP_RESTORE_VIEWED,
         ID_PANEL_CHECKING_STATIC_BITMAP_VIEW,
     };
 private:
     DECLARE_NO_COPY_CLASS(TransactionListCtrl)
     wxDECLARE_EVENT_TABLE();
 
-    mmCheckingPanel* m_cp;
+    mmCheckingPanel* m_cp = nullptr;
 
     wxSharedPtr<wxListItemAttr> m_attr1;  // style1
     wxSharedPtr<wxListItemAttr> m_attr2;  // style2
@@ -201,13 +204,15 @@ private:
     bool TransactionLocked(int AccountID, const wxString& transdate);
     void FindSelectedTransactions();
     bool CheckForClosedAccounts();
-    void setExtraTransactionData(bool single);
+    void setExtraTransactionData(const bool single);
+    void SortTransactions(int sortcol, bool ascend);
 private:
     /* The topmost visible item - this will be used to set
     where to display the list again after refresh */
     long m_topItemIndex;
     EColumn m_sortCol;
     wxString m_today;
+    bool m_firstSort;
 };
 
 //----------------------------------------------------------------------------
@@ -226,3 +231,9 @@ inline static bool SorterByUDFC02(const Model_Checking::Full_Data& i, const Mode
 inline static bool SorterByUDFC03(const Model_Checking::Full_Data& i, const Model_Checking::Full_Data& j) { return (i.UDFC03 < j.UDFC03); }
 inline static bool SorterByUDFC04(const Model_Checking::Full_Data& i, const Model_Checking::Full_Data& j) { return (i.UDFC04 < j.UDFC04); }
 inline static bool SorterByUDFC05(const Model_Checking::Full_Data& i, const Model_Checking::Full_Data& j) { return (i.UDFC05 < j.UDFC05); }
+
+inline static bool SorterByUDFC01_val(const Model_Checking::Full_Data& i, const Model_Checking::Full_Data& j) { return (i.UDFC01_val < j.UDFC01_val); }
+inline static bool SorterByUDFC02_val(const Model_Checking::Full_Data& i, const Model_Checking::Full_Data& j) { return (i.UDFC02_val < j.UDFC02_val); }
+inline static bool SorterByUDFC03_val(const Model_Checking::Full_Data& i, const Model_Checking::Full_Data& j) { return (i.UDFC03_val < j.UDFC03_val); }
+inline static bool SorterByUDFC04_val(const Model_Checking::Full_Data& i, const Model_Checking::Full_Data& j) { return (i.UDFC04_val < j.UDFC04_val); }
+inline static bool SorterByUDFC05_val(const Model_Checking::Full_Data& i, const Model_Checking::Full_Data& j) { return (i.UDFC05_val < j.UDFC05_val); }

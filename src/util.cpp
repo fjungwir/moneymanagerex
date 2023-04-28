@@ -1,7 +1,7 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
- Copyright (C) 2013-2021 Nikolay Akimov
- Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
+ Copyright (C) 2013-2022 Nikolay Akimov
+ Copyright (C) 2021-2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@
 #include <lua.hpp>
 #include <wx/fs_mem.h>
 #include <fmt/core.h>
+#include <cwchar>
 
 using namespace rapidjson;
 
@@ -65,45 +66,33 @@ wxString JSON_Formated(rapidjson::Document& j_doc)
 
 //----------------------------------------------------------------------------
 
-mmTreeItemData::mmTreeItemData(int id, bool isBudget, bool isReadOnly)
+mmTreeItemData::mmTreeItemData(int type, int id)
     : id_(id)
-    , isString_(false)
-    , isBudgetingNode_(isBudget)
-    , isReadOnly_(isReadOnly)
+    , type_(type)
     , report_(nullptr)
 {
-    if (isBudget)
-        stringData_ = (wxString::Format("item@Budget_%i", id));
-    else
-        stringData_ = (wxString::Format("%i", id));
+    stringData_ = (wxString::Format("%i", id));
 }
-mmTreeItemData::mmTreeItemData(const wxString& string, mmPrintableBase* report)
-    : id_(0)
-    , isString_(true)
-    , isBudgetingNode_(false)
-    , isReadOnly_(false)
-    , stringData_("report@" + string)
+mmTreeItemData::mmTreeItemData(const wxString& data, mmPrintableBase* report)
+    : id_(-1)
+    , type_(mmTreeItemData::REPORT)
+    , stringData_(data)
     , report_(report)
 {
     const wxString& n = wxString::Format("REPORT_%d", report_->getReportId());
     const wxString& settings = Model_Infotable::instance().GetStringInfo(n, "");
     report_->initReportSettings(settings);
 }
-
-mmTreeItemData::mmTreeItemData(mmPrintableBase* report)
-    : id_(0)
-    , isString_(true)
-    , isBudgetingNode_(false)
-    , isReadOnly_(false)
-    , stringData_("report@" + report->getReportTitle())
+mmTreeItemData::mmTreeItemData(mmPrintableBase* report, const wxString& data)
+    : id_(-1)
+    , type_(mmTreeItemData::GRM)
+    , stringData_(data)
     , report_(report)
 {}
-mmTreeItemData::mmTreeItemData(const wxString& string, bool isReadOnly)
-    : id_(0)
-    , isString_(true)
-    , isBudgetingNode_(false)
-    , isReadOnly_(isReadOnly)
-    , stringData_("item@" + string)
+mmTreeItemData::mmTreeItemData(int type, const wxString& data)
+    : id_(-1)
+    , type_(type)
+    , stringData_(data)
     , report_(nullptr)
 {}
 
@@ -112,6 +101,11 @@ mmTreeItemData::mmTreeItemData(const wxString& string, bool isReadOnly)
 int CaseInsensitiveCmp(const wxString &s1, const wxString &s2)
 {
     return s1.CmpNoCase(s2);
+}
+
+int CaseInsensitiveLocaleCmp(const wxString &s1, const wxString &s2)
+{
+    return std::wcscoll(s1.Lower().wc_str(),s2.Lower().wc_str());
 }
 
 void correctEmptyFileExt(const wxString& ext, wxString & fileName)
@@ -357,7 +351,11 @@ const wxString mmGetDateForDisplay(const wxString &iso_date, const wxString& dat
         const auto week = wxGetTranslation(g_short_days_of_week[d.GetWeekDay()]);
         date_str.Replace("%w", wxGetTranslation(week));
     }
-
+    if (iso_date.Length() == 19) {
+        date_str.Replace("%H", iso_date.Mid(11, 2));
+        date_str.Replace("%M", iso_date.Mid(14, 2));
+        date_str.Replace("%S", iso_date.Mid(17, 2));
+    }
     return dateLookup[iso_date] = date_str;
 }
 
@@ -382,31 +380,62 @@ bool mmParseDisplayStringToDate(wxDateTime& date, const wxString& str_date, cons
 
     if (pattern.Matches(str_date))
     {
-        if (mask_str.Contains("Mon")) {
-            int i = 1;
-            for (const auto& m : MONTHS_SHORT) {
-                if (date_str.Replace(m, wxString::Format("%02d", i)) != 0
-                    || date_str.Replace(wxGetTranslation(m), wxString::Format("%02d", i)) != 0)
-                {
-                    mask_str.Replace("%Mon", "%m");
-                    break;
-                }
-                i++;
-            }
+        if (mask_str.Contains("%w")) {
             mask_str.Replace("%w ", "");
-            wxRegEx pattern2(R"([^%dmyY])");
-            pattern2.ReplaceAll(&mask_str, " ");
-            regex = date_formats_regex().at(mask_str);
-
-            wxRegEx pattern3(R"([^0-9 ])");
-            pattern3.ReplaceAll(&date_str, " ");
-
+            regex = R"(^(\D*))";
+            pattern.Compile(regex);
+            pattern.ReplaceAll(&date_str, "");
         }
 
-        wxRegEx pattern2(regex);
-        if (pattern2.Matches(date_str))
+        if (mask_str.Contains("Mon")) {
+
+            static std::map<wxString, wxString> monCache;
+            if (monCache.empty())
+            {
+                int i = 1;
+                for (const auto& m : MONTHS_SHORT) {
+                    monCache[m] = wxString::Format("%02d", i);
+                    monCache[wxGetTranslation(m)] = wxString::Format("%02d", i);
+                    i++;
+                }
+            }
+
+            regex = R"([^\d\s\'\-]{3})";
+            pattern.Compile(regex);
+            wxString month;
+            if (pattern.Matches(date_str)) {
+                month = pattern.GetMatch(date_str);
+            }
+
+            bool is_month_ok = false;
+            for (const auto& i : monCache)
+            {
+                if (month.CmpNoCase(i.first) == 0) {
+                    date_str.Replace(month, i.second);
+                    mask_str.Replace("%Mon", "%m");
+                    is_month_ok = true;
+                    break;
+                }
+            }
+
+            if (!is_month_ok)
+                return false;
+
+            wxRegEx pattern2(R"([^%dmyY])");
+            pattern2.ReplaceAll(&mask_str, " ");
+            if (date_formats_regex().find(mask_str) != date_formats_regex().end())
+                regex = date_formats_regex().at(mask_str);
+            else
+                return false;
+
+            wxRegEx pattern3(R"([^0-9])");
+            pattern3.ReplaceAll(&date_str, " ");
+        }
+
+        pattern.Compile(regex);
+        if (pattern.Matches(date_str))
         {
-            date_str = pattern2.GetMatch(date_str);
+            date_str = pattern.GetMatch(date_str);
             date_str.Trim(false);
             const auto& date_formats = g_date_formats_map();
             const auto it2 = std::find_if(date_formats.begin(), date_formats.end(),
@@ -424,17 +453,18 @@ bool mmParseDisplayStringToDate(wxDateTime& date, const wxString& str_date, cons
     return false;
 }
 
-const wxDateTime mmParseISODate(const wxString& str)
+bool mmParseISODate(const wxString& in, wxDateTime& out)
 {
-    wxDateTime dt;
-    if (str.IsEmpty() || !dt.ParseDate(str))
-        dt = wxDateTime::Today();
-    int year = dt.GetYear();
+    if (in.IsEmpty() || !out.ParseDate(in)) {
+        out = wxDateTime::Today();
+        return false;
+    }
+    int year = out.GetYear();
     if (year < 50)
-        dt.Add(wxDateSpan::Years(2000));
+        out.Add(wxDateSpan::Years(2000));
     else if (year < 100)
-        dt.Add(wxDateSpan::Years(1900));
-    return dt;
+        out.Add(wxDateSpan::Years(1900));
+    return true;
 }
 
 const wxDateTime getUserDefinedFinancialYear(bool prevDayRequired)
@@ -475,18 +505,22 @@ const std::map<wxString, wxString> &date_formats_regex()
     const wxString yy = "(([ ][0-9])|([0-9]{1,2}))";
     const wxString yyyy = "(((19)|([2]([0]{1})))([0-9]{2}))";
     const wxString tail = "($|[^0-9])+";
+    const wxString head = "^";
 
     for (const auto entry : g_date_formats_map())
     {
         wxString regexp = entry.first;
+        regexp.Replace(".", R"([.])");
+        regexp.Replace("/", R"(\/)");
+        regexp.Replace(" ", R"(\s)");
         regexp.Replace("%Mon", mon);
         regexp.Replace("%w", week);
         regexp.Replace("%d", dd);
         regexp.Replace("%m", mm);
         regexp.Replace("%Y", yyyy);
         regexp.Replace("%y", yy);
-        regexp.Replace(".", R"(\.)");
         regexp.Append(tail);
+        regexp.Prepend(head);
         date_regex[entry.first] = regexp;
     }
 
@@ -513,16 +547,18 @@ const std::vector<std::pair<wxString, wxString> > g_date_formats_map()
     if (!df.empty())
         return df;
 
-    std::vector<wxString> formats = {
+    std::vector<wxString> date_formats = {
         "%d %Mon %Y",
         "%d %Mon %y",
         "%d-%Mon-%Y",
+        "%d-%Mon-%y",
         "%d %Mon'%y",
         "%d %m %y",
         "%d %m %Y",
         "%d,%m,%y",
         "%d.%m.%y",
         "%d.%m.%Y",
+        "%d.%m'%Y",
         "%d,%m,%Y",
         "%d/%m %Y",
         "%d/%m/%y",
@@ -551,10 +587,10 @@ const std::vector<std::pair<wxString, wxString> > g_date_formats_map()
     };
 
     const auto local_date_fmt = wxLocale::GetInfo(wxLOCALE_SHORT_DATE_FMT);
-    if (std::find(formats.begin(), formats.end(), local_date_fmt) == formats.end())
-        formats.push_back(local_date_fmt);
+    if (std::find(date_formats.begin(), date_formats.end(), local_date_fmt) == date_formats.end())
+        date_formats.push_back(local_date_fmt);
 
-    for (const auto& entry : formats)
+    for (const auto& entry : date_formats)
     {
         auto local_date_mask = entry;
         local_date_mask.Replace("%Y", "YYYY");
@@ -583,13 +619,39 @@ const std::map<int, std::pair<wxConvAuto, wxString> > g_encoding = {
     , { 9, { wxConvAuto(wxFONTENCODING_CP1257), "1257" } }
 };
 
+wxString cleanseNumberString(wxString str, bool decimal)
+{
+    // Strip any thousands separators and make sure decimal is "." (if present)
+    wxString content = str;
+    if (decimal)
+    {
+        wxRegEx pattern(R"([\., ](?=\d*[\., ]))");  // Leave the decimal seperator
+        pattern.ReplaceAll(&content, wxEmptyString);
+        content.Replace(",",".");
+    } else
+    {
+        wxRegEx pattern(R"([\., ])");
+        pattern.ReplaceAll(&content, wxEmptyString);           
+    }
+    return content;
+}
+
+double cleanseNumberStringToDouble(wxString str, bool decimal)
+{
+    double v;
+    if (!cleanseNumberString(str, decimal).ToCDouble(&v))
+        v = 0;
+    return v;
+}
+
+
 //
 const wxString mmPlatformType()
 {
-    return wxPlatformInfo::Get().GetOperatingSystemFamilyName().substr(0, 3);
+    return wxPlatformInfo::Get().GetOperatingSystemFamilyName().substr(0, 3).MakeLower();
 }
 
-void windowsFreezeThaw(wxWindow* w)
+void DoWindowsFreezeThaw(wxWindow* w)
 {
 #ifdef __WXGTK__
     return;
@@ -1222,20 +1284,19 @@ const wxString getProgramDescription(int type)
     build_date = wxGetTranslation(build_date.SubString(0, 2)) + build_date.Mid(3);
 
     wxString description;
-    description << wxString::Format(simple ? "Version: %s" : _("Version: %s"), mmex::getTitleProgramVersion()) << eol
-        << bull << (simple ? "Build:" : _("Build on")) << " " << build_date << " " BUILD_TIME << eol
-        << bull << (simple ? "db " : _("Database version: ")) << mmex::version::getDbLatestVersion()
+    description << bull << wxString::Format(simple ? "Version: %s" : _("Version: %s"), mmex::getTitleProgramVersion()) << eol
+        << bull << wxString::Format(simple ? "Built: %s %s" : _("Built on: %s %s"), build_date, BUILD_TIME) << eol
+        << bull << wxString::Format(simple ? "db %d" : _("Database version: %d"), mmex::version::getDbLatestVersion())
 #if WXSQLITE3_HAVE_CODEC
-        << bull << " (" << wxSQLite3Cipher::GetCipherName(wxSQLite3Cipher::GetGlobalCipherDefault()) << ")"
+        << " (" << wxSQLite3Cipher::GetCipherName(wxSQLite3Cipher::GetGlobalCipherDefault()) << ")"
 #endif
         << eol
 
 #ifdef GIT_COMMIT_HASH
-        << bull << (simple ? "git " : _("Git commit: ")) << GIT_COMMIT_HASH
-        << " (" << GIT_COMMIT_DATE << ")" << eol
+        << bull << wxString::Format(simple ? "git %s (%s)" : _("Git commit: %s (%s)"), GIT_COMMIT_HASH, GIT_COMMIT_DATE) << eol
 #endif
 #ifdef GIT_BRANCH
-        << bull << (simple ? "" : _("Git branch: ")) << GIT_BRANCH << eol
+        << bull << wxString::Format(simple ? "%s" : _("Git branch: %s"), GIT_BRANCH) << eol
 #endif
         << eol
 
@@ -1251,13 +1312,12 @@ const wxString getProgramDescription(int type)
         << " (SQLite " << wxSQLite3Database::GetVersion() << ")" << eol
         << bull + "RapidJSON " << RAPIDJSON_VERSION_STRING << eol
         << bull + LUA_RELEASE << eol
-        << bull + "lunasvg v2.3.1" << eol
         << bull + curl_version() << eol
         << bull + GETTEXT_VERSION << eol
         << bull + "apexcharts.js" << eol
         << eol
 
-        << (simple ? "Build using:" : _("Build using:")) << eol
+        << (simple ? "Built with:" : _("Built with:")) << eol
         << bull + CMAKE_VERSION << eol
         << bull + MAKE_VERSION << eol
 
@@ -1267,21 +1327,24 @@ const wxString getProgramDescription(int type)
 #endif
         << bull + (simple ? "MSVSC++" : "Microsoft Visual C++ ") + CXX_VERSION << eol
 #elif defined(__clang__)
-        << bull + "Clang " + __VERSION__ << "\n"
+        << bull + "Clang " + __VERSION__ << eol
 #elif (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
-        << bull + "GCC " + __VERSION__
+        << bull + "GCC " + __VERSION__ << eol
 #endif
+
 #ifdef CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION
-        << bull + CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION
+        << bull + CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION << eol
 #endif
-#ifdef LINUX_DISTRO_STRING
-        << bull + LINUX_DISTRO_STRING
-#endif
-        << eol << eol
+        << eol
         << (simple ? "OS:" : _("Running on:")) << eol
+
+#ifdef LINUX_DISTRO_STRING
+        << bull + LINUX_DISTRO_STRING << eol
+#endif
+
 #ifdef __LINUX__
         << bull + wxGetLinuxDistributionInfo().Description
-        << " \"" << wxGetLinuxDistributionInfo().CodeName << "\"\n"
+        << " \"" << wxGetLinuxDistributionInfo().CodeName << "\"" << eol
 #endif
         << bull + wxGetOsDescription() << eol
         << bull + wxPlatformInfo::Get().GetDesktopEnvironment()
@@ -1310,9 +1373,22 @@ const wxString getProgramDescription(int type)
         description.Replace("#", "&asymp;");
     }
 
-
-
     return description;
+}
+
+const wxRect GetDefaultMonitorRect()
+{
+    // iterate through each display until the primary is found, default to display 0
+    wxSharedPtr<wxDisplay> display;
+    for (unsigned int i = 0; i < wxDisplay::GetCount(); ++i) {
+        display.reset(new wxDisplay(i));
+        if (display->IsPrimary()) {
+            break;
+        }
+    }
+
+    // Get a 'sensible' location on the primary display in case we can't fit it into the window
+    return display->GetClientArea();
 }
 
 // ----------------------------------------
@@ -1342,7 +1418,7 @@ mmDates::mmDates()
     , m_error_count(0)
 {
     m_date_parsing_stat.clear();
-    m_month_ago = m_today.Subtract(wxDateSpan::Months(1));
+    m_month_ago = wxDate::Today().Subtract(wxDateSpan::Months(1));
 }
 
 
@@ -1386,9 +1462,14 @@ void mmDates::doHandleStatistics(const wxString &dateStr)
                 //Increase the date mask rating if parse date is recent (1 month ago) date
                 if (dtdt <= m_today && dtdt >= m_month_ago)
                     m_date_parsing_stat[mask] ++;
+
+                //Decrease the data mask rating if parsed date is in future
+                if (dtdt > m_today)
+                    m_date_parsing_stat[mask] -= 2;
             }
             else {
                 invalidMask.Add(mask);
+                m_date_parsing_stat.erase(mask);
             }
         }
 
@@ -1581,7 +1662,7 @@ int pow10(int y)
 wxString HTMLEncode(wxString input)
 {
     wxString output;
-    for(int pos = 0; pos < input.Len(); ++pos) 
+    for(size_t pos = 0; pos < input.Len(); ++pos)
     {
         wxUniChar c = input.GetChar(pos);
         if (c.IsAscii())
@@ -1598,4 +1679,79 @@ wxString HTMLEncode(wxString input)
             output.Append(c);
     }
     return output;
+}
+
+void mmSetSize(wxWindow* w)
+{
+    auto name = w->GetName();
+    wxSize my_size;
+
+    if (name == "Split Transaction Dialog") {
+        my_size = Model_Infotable::instance().GetSizeSetting("SPLITTRANSACTION_DIALOG_SIZE");
+        my_size.SetHeight(w->GetSize().GetHeight());  // Do not touch the height
+    }
+    else if (name == "Organize Categories") {
+        my_size = Model_Infotable::instance().GetSizeSetting("CATEGORIES_DIALOG_SIZE");
+    }
+    else if (name == "mmPayeeDialog") {
+        my_size = Model_Infotable::instance().GetSizeSetting("PAYEES_DIALOG_SIZE");
+    }
+    else if (name == "Currency Dialog") {
+        my_size = Model_Infotable::instance().GetSizeSetting("CURRENCY_DIALOG_SIZE");
+    }
+    else if (name == "Themes Dialog") {
+        my_size = Model_Infotable::instance().GetSizeSetting("THEMES_DIALOG_SIZE");
+    }
+    else if (name == "General Reports Manager") {
+        my_size = Model_Infotable::instance().GetSizeSetting("GRM_DIALOG_SIZE");
+    } 
+    else if (name == "mmEditPayeeDialog") {
+        my_size = Model_Infotable::instance().GetSizeSetting("EDITPAYEE_DIALOG_SIZE"); 
+    }
+    else if (name == "mmEditSplitOther") {
+        my_size = Model_Infotable::instance().GetSizeSetting("EDITSPLITOTHER_DIALOG_SIZE"); 
+    }
+    else if (name == "Transactions Dialog") {
+        my_size = Model_Infotable::instance().GetSizeSetting("TRANSACTION_DIALOG_SIZE");
+    }
+    else if (name == "Relocate Categories") {
+        my_size = Model_Infotable::instance().GetSizeSetting("RELOCATECATEG_DIALOG_SIZE");
+    }
+    else if (name == "Relocate Payees") {
+        my_size = Model_Infotable::instance().GetSizeSetting("RELOCATEPAYEE_DIALOG_SIZE");
+    }
+    else if (name == "Recurring Transaction Dialog") {
+        my_size = Model_Infotable::instance().GetSizeSetting("RECURRINGTRANS_DIALOG_SIZE");
+    }
+
+    wxSharedPtr<wxDisplay> display(new wxDisplay(w->GetParent()));
+    wxRect display_rect = display.get()->GetGeometry();
+    display_rect.SetX(0);
+    display_rect.SetY(0);
+
+    if (display_rect.Contains(my_size)) {
+        w->SetSize(my_size);
+    }
+    else {
+        w->Fit();
+    }
+}
+
+void mmFontSize(wxWindow* widget)
+{
+    int x = Option::instance().getFontSize();
+    for (int i = 0; i < x; i++)
+    {
+        widget->SetFont(widget->GetFont().Larger());
+    }
+}
+
+bool isValidURI(const wxString validate)
+{
+    wxString uri = validate.Lower().Trim();
+    wxRegEx pattern(R"(^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$)");
+    if (pattern.Matches(uri))
+        return true;
+
+    return false;
 }

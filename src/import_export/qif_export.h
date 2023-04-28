@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "defs.h"
 
-class wxDatePickerCtrl;
+class mmDatePickerCtrl;
 
 class mmQIFExportDialog : public wxDialog
 {
@@ -29,11 +29,11 @@ class mmQIFExportDialog : public wxDialog
     wxDECLARE_EVENT_TABLE();
 
 public:
-    enum type { QIF = 0, JSON, CSV };
+    enum type { CSV = 0, JSON, QIF };
     mmQIFExportDialog() {}
     //virtual ~mmQIFExportDialog() {}
 
-    mmQIFExportDialog(wxWindow* parent, int type);
+    mmQIFExportDialog(wxWindow* parent, int type, int account_id);
 
     bool Create(wxWindow* parent
         , const wxString& caption
@@ -45,6 +45,7 @@ public:
 private:
 
     int m_type;
+    int m_account_id;
     void mmExportQIF();
     void OnAccountsButton(wxCommandEvent& WXUNUSED(event));
     void OnCheckboxClick(wxCommandEvent& WXUNUSED(event));
@@ -65,8 +66,8 @@ private:
     wxButton* bSelectedAccounts_;
     wxCheckBox* dateFromCheckBox_;
     wxCheckBox* dateToCheckBox_;
-    wxDatePickerCtrl* fromDateCtrl_;
-    wxDatePickerCtrl* toDateCtrl_;
+    mmDatePickerCtrl* fromDateCtrl_;
+    mmDatePickerCtrl* toDateCtrl_;
     wxStaticText* choiceDateFormat_label_;
     wxComboBox* m_choiceDateFormat;
     wxCheckBox* toFileCheckBox_;

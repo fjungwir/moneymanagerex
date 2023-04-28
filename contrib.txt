@@ -1,6 +1,7 @@
 ﻿## Active Developers
 Nikolay          [Nikolay]
-Whalley          [whall3y]
+Whalley          [whalley]
+n-stein          [n-stein]
 Gabriele         [gabriele-v]
 Lisheng          [guanlisheng]
 James            [siena123]
@@ -115,6 +116,33 @@ Spanish
 ---------------------------------------
 ## Sponsors
 
+### 2023
+Renato
+Michael Ellis
+Constantin Georgescu
+Juan De Arriba
+Francesco Orabona
+Michael Copeland
+Andrea Contini
+Jean-Robert Simard
+Ernie Turner
+Jean-Michel Maritan
+Francisco Fos Ros
+John Ditchfield
+Marc Decock
+Tom Schulte
+Roger Gimbrere
+Francesco Orabona
+Jean Jacques Pons
+Giuseppe Maffione
+George Cucak
+Graham Young
+Jose Manuel Marrero León
+Morris Stout
+Benjamin Julien Caplet
+Duncan Livingstone
+Carlos Pérez-Adsuar Antón
+
 ### 2022
 Renato
 Sven Wiesner
@@ -132,6 +160,35 @@ Orlando Ernesto Lopez D
 Marcus Egg
 Edward Hill
 David Goodfellow
+Geoffrey Mulhall
+Michael Keeling
+Jose Manuel Marrero León
+Marco Giuseppe Stimolo
+Emmanouil Mastropetros
+Janis Dankowski
+Boris Varshavsky
+Adjutant Young
+Tom Vergotte
+Philip Hart
+Giuseppe Conti
+Pat Tiller McCoy
+Marlon Morales Arango
+Davide Tartari
+Jill Solomon
+Alberto Ghilardi
+Bartłomiej Korban
+John Weaving
+Rushikesh Jukar
+Ruben Fernandes
+Sabrina Blanc
+Martin Goike
+Michael Smith
+Antonio Navarro Sánchez
+Alain Barussaud
+Emanuele Pizzurno
+William McCracken
+Timur Yilmaz
+Jose Manuel Marrero León
 
 ### 2021
 Renato
@@ -383,7 +440,7 @@ Jeremy McEachron
 Michael Ellis
 Michel EVERS
 Santiago Durango
-william Doscher
+William Doscher
 Barry Petersen
 John Stewart
 Brian Marstella

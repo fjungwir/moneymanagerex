@@ -1,5 +1,6 @@
 /*******************************************************
  Copyright (C) 2013,2014 Guan Lisheng (guanlisheng@gmail.com)
+ Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -18,10 +19,10 @@
 
 #include "Model_Splittransaction.h"
 #include "Model_Category.h"
-#include "Model_Subcategory.h"
+#include "Model_Checking.h"
 
 Model_Splittransaction::Model_Splittransaction()
-: Model<DB_Table_SPLITTRANSACTIONS_V1>()
+    : Model<DB_Table_SPLITTRANSACTIONS_V1>()
 {
 }
 
@@ -74,10 +75,33 @@ std::map<int, Model_Splittransaction::Data_Set> Model_Splittransaction::get_all(
 
 int Model_Splittransaction::update(const Data_Set& rows, int transactionID)
 {
+    bool updateTimestamp = false;
+    std::map<int, int> row_id_map;
 
     Data_Set split = instance().find(TRANSID(transactionID));
+    if (split.size() != rows.size()) updateTimestamp = true;
+
     for (const auto& split_item : split)
     {
+        if (!updateTimestamp)
+        {
+            bool match = false;
+            for (decltype(rows.size()) i = 0; i < rows.size(); i++)
+            {
+                match = (rows[i].CATEGID == split_item.CATEGID
+                        && rows[i].SPLITTRANSAMOUNT == split_item.SPLITTRANSAMOUNT
+                        && rows[i].NOTES.IsSameAs(split_item.NOTES))
+                    && (row_id_map.find(i) == row_id_map.end());
+                if (match)
+                {
+                    row_id_map[i] = split_item.SPLITTRANSID;
+                    break;
+                }
+                    
+            }
+            updateTimestamp = updateTimestamp || !match;
+        }
+
         instance().remove(split_item.SPLITTRANSID);
     }
 
@@ -90,11 +114,15 @@ int Model_Splittransaction::update(const Data_Set& rows, int transactionID)
             split_item->TRANSID = transactionID;
             split_item->SPLITTRANSAMOUNT = item.SPLITTRANSAMOUNT;
             split_item->CATEGID = item.CATEGID;
-            split_item->SUBCATEGID = item.SUBCATEGID;
+            split_item->NOTES = item.NOTES;            
             split_items.push_back(*split_item);
         }
         instance().save(split_items);
     }
+
+    if (updateTimestamp)
+        Model_Checking::instance().updateTimestamp(transactionID);
+    
     return rows.size();
 }
 
@@ -102,8 +130,18 @@ const wxString Model_Splittransaction::get_tooltip(const std::vector<Split>& row
 {
     wxString split_tooltip = "";
     for (const auto& entry : rows)
-        split_tooltip += wxString::Format("%s = %s\n"
-        , Model_Category::full_name(entry.CATEGID, entry.SUBCATEGID)
-        , Model_Currency::toCurrency(entry.SPLITTRANSAMOUNT, currency));
+    {
+        split_tooltip += wxString::Format("%s = %s"
+                    , Model_Category::full_name(entry.CATEGID)
+                    , Model_Currency::toCurrency(entry.SPLITTRANSAMOUNT, currency));
+        if (!entry.NOTES.IsEmpty())
+        {
+            wxString value = entry.NOTES;
+            value.Replace("\n", " ");
+            split_tooltip += wxString::Format(" (%s)", value);
+        }
+        split_tooltip += "\n";
+    }
+    split_tooltip = split_tooltip.Left(split_tooltip.Len()-1);
     return split_tooltip;
 }

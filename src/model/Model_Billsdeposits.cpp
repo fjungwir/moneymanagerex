@@ -24,7 +24,7 @@
 #include "Model_Category.h"
 #include "Model_Payee.h"
 
-/* TODO: Move attachment management outside of attachmentdialog */
+ /* TODO: Move attachment management outside of attachmentdialog */
 #include "attachmentdialog.h"
 
 const std::vector<std::pair<Model_Billsdeposits::TYPE, wxString> > Model_Billsdeposits::TYPE_CHOICES =
@@ -44,11 +44,11 @@ const std::vector<std::pair<Model_Billsdeposits::STATUS_ENUM, wxString> > Model_
 };
 
 Model_Billsdeposits::Model_Billsdeposits()
-: Model<DB_Table_BILLSDEPOSITS_V1>()
-, m_autoExecuteManual (false)
-, m_autoExecuteSilent (false)
-, m_requireExecution (false)
-, m_allowExecution (false)
+    : Model<DB_Table_BILLSDEPOSITS_V1>()
+    , m_autoExecuteManual (false)
+    , m_autoExecuteSilent (false)
+    , m_requireExecution (false)
+    , m_allowExecution (false)
 
 {
 }
@@ -105,7 +105,7 @@ wxDate Model_Billsdeposits::NEXTOCCURRENCEDATE(const Data* r)
 {
     return Model::to_date(r->NEXTOCCURRENCEDATE);
 }
-    
+
 wxDate Model_Billsdeposits::NEXTOCCURRENCEDATE(const Data& r)
 {
     return Model::to_date(r.NEXTOCCURRENCEDATE);
@@ -117,7 +117,7 @@ Model_Billsdeposits::TYPE Model_Billsdeposits::type(const wxString& r)
     const auto it = cache.find(r);
     if (it != cache.end()) return it->second;
 
-    for (const auto& t : TYPE_CHOICES) 
+    for (const auto& t : TYPE_CHOICES)
     {
         if (r.CmpNoCase(t.second) == 0)
         {
@@ -145,7 +145,7 @@ Model_Billsdeposits::STATUS_ENUM Model_Billsdeposits::status(const wxString& r)
 
     for (const auto & s : STATUS_ENUM_CHOICES)
     {
-        if (r.CmpNoCase(s.second) == 0) 
+        if (r.CmpNoCase(s.second) == 0)
         {
             cache.insert(std::make_pair(r, s.first));
             return s.first;
@@ -219,19 +219,14 @@ void Model_Billsdeposits::decode_fields(const Data& q1)
     int repeats = q1.REPEATS;
     int numRepeats = q1.NUMOCCURRENCES;
 
-    if (repeats >= BD_REPEATS_MULTIPLEX_BASE)    // Auto Execute User Acknowlegement required
+    if (repeats >= 2 * BD_REPEATS_MULTIPLEX_BASE)    // Auto Execute Silent mode
+    {
+        m_autoExecuteSilent = true;
+    } else if (repeats >= BD_REPEATS_MULTIPLEX_BASE)    // Auto Execute User Acknowlegement required
     {
         m_autoExecuteManual = true;
-        repeats -= BD_REPEATS_MULTIPLEX_BASE;
     }
-
-    if (repeats >= BD_REPEATS_MULTIPLEX_BASE)    // Auto Execute Silent mode
-    {
-        m_autoExecuteManual = false;               // Can only be manual or auto. Not both
-        m_autoExecuteSilent = true;
-        repeats -= BD_REPEATS_MULTIPLEX_BASE;
-    }
-
+    repeats %= BD_REPEATS_MULTIPLEX_BASE;
     if ((repeats < Model_Billsdeposits::REPEAT_IN_X_DAYS) || (numRepeats > Model_Billsdeposits::REPEAT_NONE) || (repeats > Model_Billsdeposits::REPEAT_EVERY_X_MONTHS))
     {
         m_allowExecution = true;
@@ -297,12 +292,37 @@ bool Model_Billsdeposits::AllowTransaction(const Data& r, AccountBalance& bal)
         abort_transaction = true;
     }
 
-    if (abort_transaction && wxMessageBox(_(
-        "A recurring transaction will exceed your account limit.\n\n"
-        "Do you wish to continue?")
-        , _("MMEX Recurring Transaction Check"), wxYES_NO | wxICON_WARNING) == wxYES)
+    if (abort_transaction)
     {
-        abort_transaction = false;
+        wxString message = _("A recurring transaction will exceed your account limit.\n\n"
+            "Account: %s\n"
+            "Current Balance: %6.2f\n"
+            "Transaction amount: %6.2f\n"
+            "%s: %6.2f\n\n"
+            "Do you wish to continue ?"
+        );
+
+        wxString limitDescription;
+        double limitAmount{ 0.0L };
+
+        if (account->MINIMUMBALANCE > 0)
+        {
+            limitDescription = _("Minimum Balance");
+            limitAmount = account->MINIMUMBALANCE;
+        }
+
+        if (account->CREDITLIMIT > 0)
+        {
+            limitDescription = _("Credit Limit");
+            limitAmount = account->CREDITLIMIT;
+        }
+
+        message.Printf(message, account->ACCOUNTNAME, current_account_balance, r.TRANSAMOUNT, limitDescription, limitAmount);
+
+        if (wxMessageBox(message, _("MMEX Recurring Transaction Check"), wxYES_NO | wxICON_WARNING) == wxYES)
+        {
+            abort_transaction = false;
+        }
     }
 
     if (!abort_transaction)
@@ -318,12 +338,7 @@ void Model_Billsdeposits::completeBDInSeries(int bdID)
     Data* bill = get(bdID);
     if (bill)
     {
-        int repeats = bill->REPEATS;
-        // DeMultiplex the Auto Executable fields.
-        if (repeats >= BD_REPEATS_MULTIPLEX_BASE)    // Auto Execute User Acknowlegement required
-            repeats -= BD_REPEATS_MULTIPLEX_BASE;
-        if (repeats >= BD_REPEATS_MULTIPLEX_BASE)    // Auto Execute Silent mode
-            repeats -= BD_REPEATS_MULTIPLEX_BASE;
+        int repeats = bill->REPEATS % BD_REPEATS_MULTIPLEX_BASE; // DeMultiplex the Auto Executable fields.
         int numRepeats = bill->NUMOCCURRENCES;
         const wxDateTime& payment_date_current = TRANSDATE(bill);
         const wxDateTime& payment_date_update = nextOccurDate(repeats, numRepeats, payment_date_current);
@@ -359,95 +374,52 @@ void Model_Billsdeposits::completeBDInSeries(int bdID)
     }
 }
 
-const wxDateTime Model_Billsdeposits::nextOccurDate(int repeatsType, int numRepeats, const wxDateTime& nextOccurDate)
+const wxDateTime Model_Billsdeposits::nextOccurDate(int repeatsType, int numRepeats, wxDateTime nextOccurDate, bool reverse)
 {
-    wxDateTime dt = nextOccurDate;
-    if (repeatsType == REPEAT_WEEKLY)
-        dt = dt.Add(wxTimeSpan::Week());
-    else if (repeatsType == REPEAT_BI_WEEKLY)
-        dt = dt.Add(wxTimeSpan::Weeks(2));
-    else if (repeatsType == REPEAT_MONTHLY)
-        dt = dt.Add(wxDateSpan::Month());
-    else if (repeatsType == REPEAT_BI_MONTHLY)
-        dt = dt.Add(wxDateSpan::Months(2));
-    else if (repeatsType == REPEAT_FOUR_MONTHLY)
-        dt = dt.Add(wxDateSpan::Months(4));
-    else if (repeatsType == REPEAT_HALF_YEARLY)
-        dt = dt.Add(wxDateSpan::Months(6));
-    else if (repeatsType == REPEAT_YEARLY)
-        dt = dt.Add(wxDateSpan::Year());
-    else if (repeatsType == REPEAT_QUARTERLY)
-        dt = dt.Add(wxDateSpan::Months(3));
-    else if (repeatsType == REPEAT_FOUR_WEEKLY)
-        dt = dt.Add(wxDateSpan::Weeks(4));
-    else if (repeatsType == REPEAT_DAILY)
-        dt = dt.Add(wxDateSpan::Days(1));
-    else if (repeatsType == REPEAT_IN_X_DAYS) // repeat in numRepeats Days (Once only)
-        dt = dt.Add(wxDateSpan::Days(numRepeats));
-    else if (repeatsType == REPEAT_IN_X_MONTHS) // repeat in numRepeats Months (Once only)
-        dt = dt.Add(wxDateSpan::Months(numRepeats));
-    else if (repeatsType == REPEAT_EVERY_X_DAYS) // repeat every numRepeats Days
-        dt = dt.Add(wxDateSpan::Days(numRepeats));
-    else if (repeatsType == REPEAT_EVERY_X_MONTHS) // repeat every numRepeats Months
-        dt = dt.Add(wxDateSpan::Months(numRepeats));
-    else if (repeatsType == REPEAT_MONTHLY_LAST_DAY
-        || REPEAT_MONTHLY_LAST_BUSINESS_DAY == repeatsType)
-    {
-        dt = dt.Add(wxDateSpan::Month());
-        dt = dt.SetToLastMonthDay(dt.GetMonth(), dt.GetYear());
-        if (repeatsType == REPEAT_MONTHLY_LAST_BUSINESS_DAY) // last weekday of month
-        {
-            if (dt.GetWeekDay() == wxDateTime::Sun || dt.GetWeekDay() == wxDateTime::Sat)
-                dt.SetToPrevWeekDay(wxDateTime::Fri);
-        }
-    }
-    //wxLogDebug("init date: %s -> next date: %s", nextOccurDate.FormatISODate(), dt.FormatISODate());
-    return dt;
-}
+    int k = reverse ? -1 : 1;
 
-const wxDateTime Model_Billsdeposits::previousOccurDate(int repeatsType, int numRepeats, const wxDateTime& nextOccurDate)
-{
     wxDateTime dt = nextOccurDate;
     if (repeatsType == REPEAT_WEEKLY)
-        dt = dt.Subtract(wxTimeSpan::Week());
+        dt.Add(wxTimeSpan::Weeks(k));
     else if (repeatsType == REPEAT_BI_WEEKLY)
-        dt = dt.Subtract(wxTimeSpan::Weeks(2));
+        dt.Add(wxTimeSpan::Weeks(2 * k));
     else if (repeatsType == REPEAT_MONTHLY)
-        dt = dt.Subtract(wxDateSpan::Month());
+        dt.Add(wxDateSpan::Months(k));
     else if (repeatsType == REPEAT_BI_MONTHLY)
-        dt = dt.Subtract(wxDateSpan::Months(2));
+        dt.Add(wxDateSpan::Months(2 * k));
     else if (repeatsType == REPEAT_FOUR_MONTHLY)
-        dt = dt.Subtract(wxDateSpan::Months(4));
+        dt.Add(wxDateSpan::Months(4 * k));
     else if (repeatsType == REPEAT_HALF_YEARLY)
-        dt = dt.Subtract(wxDateSpan::Months(6));
+        dt.Add(wxDateSpan::Months(6 * k));
     else if (repeatsType == REPEAT_YEARLY)
-        dt = dt.Subtract(wxDateSpan::Year());
+        dt.Add(wxDateSpan::Years(k));
     else if (repeatsType == REPEAT_QUARTERLY)
-        dt = dt.Subtract(wxDateSpan::Months(3));
+        dt.Add(wxDateSpan::Months(3 * k));
     else if (repeatsType == REPEAT_FOUR_WEEKLY)
-        dt = dt.Subtract(wxDateSpan::Weeks(4));
+        dt.Add(wxDateSpan::Weeks(4 * k));
     else if (repeatsType == REPEAT_DAILY)
-        dt = dt.Subtract(wxDateSpan::Days(1));
+        dt.Add(wxDateSpan::Days(k));
     else if (repeatsType == REPEAT_IN_X_DAYS) // repeat in numRepeats Days (Once only)
-        dt = dt.Subtract(wxDateSpan::Days(numRepeats));
+        dt.Add(wxDateSpan::Days(numRepeats * k));
     else if (repeatsType == REPEAT_IN_X_MONTHS) // repeat in numRepeats Months (Once only)
-        dt = dt.Subtract(wxDateSpan::Months(numRepeats));
+        dt.Add(wxDateSpan::Months(numRepeats * k));
     else if (repeatsType == REPEAT_EVERY_X_DAYS) // repeat every numRepeats Days
-        dt = dt.Subtract(wxDateSpan::Days(numRepeats));
+        dt.Add(wxDateSpan::Days(numRepeats * k));
     else if (repeatsType == REPEAT_EVERY_X_MONTHS) // repeat every numRepeats Months
-        dt = dt.Subtract(wxDateSpan::Months(numRepeats));
+        dt.Add(wxDateSpan::Months(numRepeats * k));
     else if (repeatsType == REPEAT_MONTHLY_LAST_DAY
-        || REPEAT_MONTHLY_LAST_BUSINESS_DAY == repeatsType)
+        ||   repeatsType == REPEAT_MONTHLY_LAST_BUSINESS_DAY)
     {
-        dt = dt.Subtract(wxDateSpan::Month());
-        dt = dt.SetToLastMonthDay(dt.GetMonth(), dt.GetYear());
+        dt.Add(wxDateSpan::Months(k));
+
+        dt.SetToLastMonthDay(dt.GetMonth(), dt.GetYear());
         if (repeatsType == REPEAT_MONTHLY_LAST_BUSINESS_DAY) // last weekday of month
         {
             if (dt.GetWeekDay() == wxDateTime::Sun || dt.GetWeekDay() == wxDateTime::Sat)
                 dt.SetToPrevWeekDay(wxDateTime::Fri);
         }
     }
-    //wxLogDebug("init date: %s -> next date: %s", nextOccurDate.FormatISODate(), dt.FormatISODate());
+    wxLogDebug("init date: %s -> next date: %s", nextOccurDate.FormatISODate(), dt.FormatISODate());
     return dt;
 }
 
@@ -461,10 +433,10 @@ Model_Billsdeposits::Full_Data::Full_Data(const Data& r) : Data(r)
     {
         for (const auto& entry : m_bill_splits)
             CATEGNAME += (CATEGNAME.empty() ? " * " : ", ")
-            + Model_Category::full_name(entry.CATEGID, entry.SUBCATEGID);
+            + Model_Category::full_name(entry.CATEGID);
     }
     else
-        CATEGNAME = Model_Category::full_name(r.CATEGID, r.SUBCATEGID);
+        CATEGNAME = Model_Category::full_name(r.CATEGID);
 
     ACCOUNTNAME = Model_Account::get_account_name(r.ACCOUNTID);
 
@@ -473,4 +445,13 @@ Model_Billsdeposits::Full_Data::Full_Data(const Data& r) : Data(r)
     {
         PAYEENAME = Model_Account::get_account_name(r.TOACCOUNTID);
     }
+}
+
+wxString Model_Billsdeposits::Full_Data::real_payee_name() const
+{
+    if (TYPE::TRANSFER == type(this->TRANSCODE))
+    {
+        return ("> " + this->PAYEENAME);
+    }
+    return this->PAYEENAME;
 }

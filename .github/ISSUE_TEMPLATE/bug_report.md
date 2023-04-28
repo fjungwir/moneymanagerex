@@ -8,8 +8,11 @@ assignees: ''
 ---
 
 MMEX version:
- - [x] 1.5.x
- - [ ] 1.6.x
+ - [ ] 1.6.0
+ - [ ] 1.6.1
+ - [x] 1.6.2
+ - [ ] 1.6.3 Beta
+ - [ ] Other (please specify)
 
 Note: bug reporters are expected to have verified the bug still exists
 either in the last stable version of MMEX or on updated development code
@@ -33,12 +36,6 @@ Is the bug reproducible?
  - [ ] Happened only once
 
 Reproduction steps:
-
-1. 
-2. 
-3. 
-
-…
 
 Expected result:
 

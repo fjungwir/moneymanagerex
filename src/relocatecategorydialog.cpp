@@ -1,6 +1,8 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
  Copyright (C) 2011 Stefano Giorgio
+ Copyright (C) 2016, 2020, 2022 Nikolay Akimov
+ Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -22,36 +24,36 @@
 #include "categdialog.h"
 #include "constants.h"
 #include "webapp.h"
+#include "util.h"
 #include "model/allmodel.h"
 
 wxIMPLEMENT_DYNAMIC_CLASS(relocateCategoryDialog, wxDialog);
 
 wxBEGIN_EVENT_TABLE(relocateCategoryDialog, wxDialog)
-    EVT_BUTTON(wxID_CLEAR, relocateCategoryDialog::OnSelectSource)
-    EVT_BUTTON(wxID_NEW, relocateCategoryDialog::OnSelectDest)
+    EVT_CHAR_HOOK(relocateCategoryDialog::OnComboKey)
+    EVT_CHILD_FOCUS(relocateCategoryDialog::OnFocusChange)
+    EVT_COMBOBOX(wxID_ANY, relocateCategoryDialog::OnTextUpdated)
     EVT_BUTTON(wxID_OK, relocateCategoryDialog::OnOk)
+    EVT_BUTTON(wxID_CANCEL, relocateCategoryDialog::OnCancel)
 wxEND_EVENT_TABLE()
 
-relocateCategoryDialog::relocateCategoryDialog( )
+relocateCategoryDialog::relocateCategoryDialog()
 {}
+
+relocateCategoryDialog::~relocateCategoryDialog()
+{
+    Model_Infotable::instance().Set("RELOCATECATEG_DIALOG_SIZE", GetSize());
+}
 
 relocateCategoryDialog::relocateCategoryDialog(wxWindow* parent
     , int sourceCatID, int sourceSubCatID)
-    : m_buttonSource(nullptr)
-    , m_info(nullptr)
-    , m_buttonDest(nullptr)
+    : m_info(nullptr)
+    , m_sourceCatID(sourceCatID)
+    , m_sourceSubCatID(sourceSubCatID)
+    , m_changedRecords(0)
 {
-
-    m_sourceCatID    = sourceCatID;
-    m_sourceSubCatID = sourceSubCatID;
-
-    m_destCatID      = -1;
-    m_destSubCatID   = -1;
-    m_changedRecords =  0;
-
-    long style = wxCAPTION | wxSYSTEM_MENU | wxCLOSE_BOX;
-    Create(parent, wxID_ANY, _("Relocate Category Dialog"), wxDefaultPosition, wxDefaultSize, style);
-    SetMinSize(wxSize(500, 300));
+    this->SetFont(parent->GetFont());
+    Create(parent);
 }
 
 bool relocateCategoryDialog::Create(wxWindow* parent
@@ -59,19 +61,21 @@ bool relocateCategoryDialog::Create(wxWindow* parent
     , const wxString& caption
     , const wxPoint& pos
     , const wxSize& size
-    , long style)
+    , long style
+    , const wxString& name)
 {
+    style |= wxRESIZE_BORDER;
     SetExtraStyle(GetExtraStyle()|wxWS_EX_BLOCK_EVENTS);
-    wxDialog::Create(parent, id, caption, pos, size, style);
+    wxDialog::Create(parent, id, caption, pos, size, style, name);
 
     CreateControls();
     IsOkOk();
-    GetSizer()->Fit(this);
-    GetSizer()->SetSizeHints(this);
 
     SetIcon(mmex::getProgramIcon());
 
+    SetSizeHints(500, 350, -1, 350);
     Centre();
+    mmSetSize(this);
     return TRUE;
 }
 
@@ -86,32 +90,39 @@ void relocateCategoryDialog::CreateControls()
         , _("Relocate source category to the destination category"));
     wxStaticLine* lineTop = new wxStaticLine(this, wxID_STATIC);
 
-    m_buttonSource = new wxButton(this, wxID_CLEAR, _("Select Source Category"));
-    m_buttonSource->SetMinSize(wxSize(200, -1));
+    cbSourceCategory_ = new mmComboBoxCategory(this, wxID_LAST);
+    cbSourceCategory_->SetMinSize(wxSize(200, -1));
     Model_Category::Data* category = Model_Category::instance().get(m_sourceCatID);
     if (category)
-        m_buttonSource->SetLabelText(Model_Category::full_name(m_sourceCatID, m_sourceSubCatID));
+        cbSourceCategory_->SetValue(Model_Category::full_name(m_sourceCatID));
 
-    m_buttonDest = new wxButton(this, wxID_NEW, _("Select Destination Category"));
-    m_buttonDest->SetMinSize(wxSize(200, -1));
+    cbDestCategory_ = new mmComboBoxCategory(this, wxID_NEW, wxDefaultSize, -1, true);
+    cbDestCategory_->SetMinSize(wxSize(200, -1));
+
+    cbDeleteSourceCategory_ = new wxCheckBox(this, wxID_ANY
+        , _("Delete source category after relocation (if it has no sub-categories)"));
+
     wxStaticLine* lineBottom = new wxStaticLine(this, wxID_STATIC);
 
     wxBoxSizer* topSizer = new wxBoxSizer(wxVERTICAL);
     this->SetSizer(topSizer);
     wxBoxSizer* boxSizer = new wxBoxSizer(wxVERTICAL);
     wxFlexGridSizer* request_sizer = new wxFlexGridSizer(0, 2, 0, 0);
+    request_sizer->AddGrowableCol(0, 1);
+    request_sizer->AddGrowableCol(1, 1);
 
-    topSizer->Add(boxSizer, g_flagsV);
+    topSizer->Add(boxSizer, flagsExpand);
 
     boxSizer->Add(headerText, g_flagsV);
     boxSizer->Add(lineTop, g_flagsExpand);
 
     request_sizer->Add(new wxStaticText(this, wxID_STATIC, _("Relocate:")), flagsH);
     request_sizer->Add(new wxStaticText(this, wxID_STATIC, _("to:")), flagsH);
-    request_sizer->Add(m_buttonSource, flagsH);
-    request_sizer->Add(m_buttonDest, flagsH);
-    boxSizer->Add(request_sizer);
+    request_sizer->Add(cbSourceCategory_, flagsExpand);
+    request_sizer->Add(cbDestCategory_, flagsExpand);
 
+    boxSizer->Add(request_sizer, flagsExpand);
+    boxSizer->Add(cbDeleteSourceCategory_, flagsExpand);
     boxSizer->Add(lineBottom, flagsExpand);
 
     m_info = new wxStaticText(this, wxID_STATIC, "");
@@ -120,100 +131,67 @@ void relocateCategoryDialog::CreateControls()
     wxStaticLine* lineBottom2 = new wxStaticLine(this, wxID_STATIC);
     boxSizer->Add(lineBottom2, flagsExpand);
 
-    wxButton* okButton = new wxButton(this, wxID_OK, _("&OK "));
-    wxButton* cancelButton = new wxButton(this, wxID_CANCEL, wxGetTranslation(g_CancelLabel));
+    wxButton* okButton = new wxButton(this, wxID_OK, _("Relocate"));
+    wxButton* cancelButton = new wxButton(this, wxID_CANCEL, _("Close"));
     cancelButton-> SetFocus();
     wxBoxSizer* buttonBoxSizer = new wxBoxSizer(wxHORIZONTAL);
     buttonBoxSizer->Add(okButton, flagsH);
     buttonBoxSizer->Add(cancelButton, flagsH);
     boxSizer->Add(buttonBoxSizer, flagsV);
-
-    this->Fit();
 }
 
-void relocateCategoryDialog::OnSelectSource(wxCommandEvent& WXUNUSED(event))
+void relocateCategoryDialog::OnCancel(wxCommandEvent& WXUNUSED(event))
 {
-    mmCategDialog sourceCat(this, true, m_sourceCatID, m_sourceSubCatID);
-
-    if (sourceCat.ShowModal() == wxID_OK)
-    {
-        m_sourceCatID    = sourceCat.getCategId();
-        m_sourceSubCatID = sourceCat.getSubCategId();
-        Model_Category::Data* category = Model_Category::instance().get(m_sourceCatID);
-        Model_Subcategory::Data* sub_category = Model_Subcategory::instance().get(m_sourceSubCatID);
-
-        m_buttonSource->SetLabelText(Model_Category::full_name(category, sub_category));
-        IsOkOk();
-    }
-}
-
-void relocateCategoryDialog::OnSelectDest(wxCommandEvent& WXUNUSED(event))
-{
-    mmCategDialog destCat(this, true, m_destCatID, m_destSubCatID);
-
-    if (destCat.ShowModal() == wxID_OK)
-    {
-        m_destCatID    = destCat.getCategId();
-        m_destSubCatID = destCat.getSubCategId();
-        m_buttonDest->SetLabelText(Model_Category::full_name(m_destCatID, m_destSubCatID));
-        IsOkOk();
-    }
-}
-
-int relocateCategoryDialog::updatedCategoriesCount() const
-{
-    return m_changedRecords;
+    EndModal(m_changedRecords > 0 ? wxID_OK : wxID_CANCEL);
 }
 
 void relocateCategoryDialog::OnOk(wxCommandEvent& WXUNUSED(event))
 {
+    int m_destCatID = cbDestCategory_->mmGetCategoryId();
 
-    if (wxMessageBox(_("Please Confirm:"), _("Category Relocation Confirmation"), wxOK | wxCANCEL) == wxOK)
+    const auto& source_category_name = cbSourceCategory_->GetValue();
+    const auto& destination_category_name = cbDestCategory_->GetValue();
+    const wxString& info = wxString::Format(_("From %s to %s")
+        , source_category_name
+        , destination_category_name);
+
+    if (wxMessageBox(_("Please Confirm:") + "\n" + info
+        , _("Category Relocation Confirmation"), wxOK | wxCANCEL | wxICON_INFORMATION) == wxOK)
     {
         auto transactions = Model_Checking::instance()
-            .find(Model_Checking::CATEGID(m_sourceCatID)
-                , Model_Checking::SUBCATEGID(m_sourceSubCatID));
+            .find(Model_Checking::CATEGID(m_sourceCatID));
         auto checking_split = Model_Splittransaction::instance()
-            .find(Model_Splittransaction::CATEGID(m_sourceCatID)
-                , Model_Splittransaction::SUBCATEGID(m_sourceSubCatID));
+            .find(Model_Splittransaction::CATEGID(m_sourceCatID));
         auto billsdeposits = Model_Billsdeposits::instance()
-            .find(Model_Billsdeposits::CATEGID(m_sourceCatID)
-                , Model_Billsdeposits::SUBCATEGID(m_sourceSubCatID));
+            .find(Model_Billsdeposits::CATEGID(m_sourceCatID));
         auto budget = Model_Budget::instance()
-            .find(Model_Budget::CATEGID(m_sourceCatID)
-                , Model_Budget::SUBCATEGID(m_sourceSubCatID));
+            .find(Model_Budget::CATEGID(m_sourceCatID));
         auto budget_split = Model_Budgetsplittransaction::instance()
-            .find(Model_Budgetsplittransaction::CATEGID(m_sourceCatID)
-                , Model_Budgetsplittransaction::SUBCATEGID(m_sourceSubCatID));
+            .find(Model_Budgetsplittransaction::CATEGID(m_sourceCatID));
         auto payees = Model_Payee::instance()
-            .find(Model_Payee::CATEGID(m_sourceCatID)
-                , Model_Payee::SUBCATEGID(m_sourceSubCatID));
+            .find(Model_Payee::CATEGID(m_sourceCatID));
 
         for (auto &entry : transactions)
         {
             entry.CATEGID = m_destCatID;
-            entry.SUBCATEGID = m_destSubCatID;
         }
         m_changedRecords += Model_Checking::instance().save(transactions);
 
         for (auto &entry : billsdeposits)
         {
             entry.CATEGID = m_destCatID;
-            entry.SUBCATEGID = m_destSubCatID;
         }
         m_changedRecords += Model_Billsdeposits::instance().save(billsdeposits);
 
         for (auto &entry : checking_split)
         {
             entry.CATEGID = m_destCatID;
-            entry.SUBCATEGID = m_destSubCatID;
         }
         m_changedRecords += Model_Splittransaction::instance().save(checking_split);
 
         for (auto &entry : payees)
         {
             entry.CATEGID = m_destCatID;
-            entry.SUBCATEGID = m_destSubCatID;
         }
         m_changedRecords += Model_Payee::instance().save(payees);
         mmWebApp::MMEX_WebApp_UpdatePayee();
@@ -221,7 +199,6 @@ void relocateCategoryDialog::OnOk(wxCommandEvent& WXUNUSED(event))
         for (auto &entry : budget_split)
         {
             entry.CATEGID = m_destCatID;
-            entry.SUBCATEGID = m_destSubCatID;
         }
         m_changedRecords += Model_Budgetsplittransaction::instance().save(budget_split);
 
@@ -231,34 +208,44 @@ void relocateCategoryDialog::OnOk(wxCommandEvent& WXUNUSED(event))
             m_changedRecords++;
         }
 
-        EndModal(wxID_OK);
+        if (cbDeleteSourceCategory_->IsChecked())
+        {
+            if (m_sourceSubCatID == -1)
+            {
+                if (Model_Category::sub_category(Model_Category::instance().get(m_sourceCatID)).empty())
+                    Model_Category::instance().remove(m_sourceCatID);
+            }
+
+            cbSourceCategory_->mmDoReInitialize();
+            cbDestCategory_->mmDoReInitialize();
+            mmWebApp::MMEX_WebApp_UpdateCategory();
+        }
+
+        IsOkOk();
     }
 }
 
 void relocateCategoryDialog::IsOkOk()
 {
+    m_sourceCatID = cbSourceCategory_->mmGetCategoryId();
+    int m_destCatID = cbDestCategory_->mmGetCategoryId();
+
     auto transactions = Model_Checking::instance()
-        .find(Model_Checking::CATEGID(m_sourceCatID)
-            , Model_Checking::SUBCATEGID(m_sourceSubCatID));
+        .find(Model_Checking::CATEGID(m_sourceCatID));
     auto checking_split = Model_Splittransaction::instance()
-        .find(Model_Splittransaction::CATEGID(m_sourceCatID)
-            , Model_Splittransaction::SUBCATEGID(m_sourceSubCatID));
+        .find(Model_Splittransaction::CATEGID(m_sourceCatID));
     auto billsdeposits = Model_Billsdeposits::instance()
-        .find(Model_Billsdeposits::CATEGID(m_sourceCatID)
-            , Model_Billsdeposits::SUBCATEGID(m_sourceSubCatID));
+        .find(Model_Billsdeposits::CATEGID(m_sourceCatID));
     auto budget = Model_Budget::instance()
-        .find(Model_Budget::CATEGID(m_sourceCatID)
-            , Model_Budget::SUBCATEGID(m_sourceSubCatID));
+        .find(Model_Budget::CATEGID(m_sourceCatID));
     auto budget_split = Model_Budgetsplittransaction::instance()
-        .find(Model_Budgetsplittransaction::CATEGID(m_sourceCatID)
-            , Model_Budgetsplittransaction::SUBCATEGID(m_sourceSubCatID));
+        .find(Model_Budgetsplittransaction::CATEGID(m_sourceCatID));
     auto payees = Model_Payee::instance()
-        .find(Model_Payee::CATEGID(m_sourceCatID)
-            , Model_Payee::SUBCATEGID(m_sourceSubCatID));
+        .find(Model_Payee::CATEGID(m_sourceCatID));
 
     int trxs_size = (m_sourceCatID < 0 && m_sourceSubCatID < 0) ? 0 : int(transactions.size());
     int checks_size = int(checking_split.size());
-    int bills_size = int(billsdeposits.size());
+    int bills_size = (m_sourceCatID < 0 && m_sourceSubCatID < 0) ? 0 : int(billsdeposits.size());
     int budget_split_size = int(budget_split.size());
     int payees_size = (m_sourceCatID < 0 && m_sourceSubCatID < 0) ? 0 : int(payees.size());
     int budget_size = int(budget.size());
@@ -278,10 +265,69 @@ void relocateCategoryDialog::IsOkOk()
     bool e = true;
     if (total == 0)
         e = false;
-    else if (m_sourceCatID == m_destCatID && m_sourceSubCatID == m_destSubCatID)
+    else if (m_sourceCatID == m_destCatID)
         e = false;
     else if (m_destCatID < 0 || m_sourceCatID < 0)
         e = false;
     wxButton* ok = wxStaticCast(FindWindow(wxID_OK), wxButton);
     ok->Enable(e);
+}
+
+void relocateCategoryDialog::OnComboKey(wxKeyEvent& event)
+{
+    if (event.GetKeyCode() == WXK_RETURN)
+    {
+        auto id = event.GetId();
+        switch (id)
+        {
+        case wxID_LAST:
+        {
+            auto category = cbSourceCategory_->GetValue();
+            if (category.empty())
+            {
+                mmCategDialog dlg(this, true, -1);
+                dlg.ShowModal();
+                if (dlg.getRefreshRequested())
+                    cbSourceCategory_->mmDoReInitialize();
+                category = Model_Category::full_name(dlg.getCategId());
+                cbSourceCategory_->ChangeValue(category);
+                return;
+            }
+        }
+
+        break;
+        case wxID_NEW:
+        {
+            auto category = cbDestCategory_->GetValue();
+            if (category.empty())
+            {
+                mmCategDialog dlg(this, true, -1);
+                dlg.ShowModal();
+                if (dlg.getRefreshRequested())
+                    cbDestCategory_->mmDoReInitialize();
+                category = Model_Category::full_name(dlg.getCategId());
+                cbDestCategory_->ChangeValue(category);
+                return;
+            }
+        }
+        break;
+        default:
+            break;
+        }
+    }
+
+    event.Skip();
+}
+
+void relocateCategoryDialog::OnFocusChange(wxChildFocusEvent& event)
+{
+    cbDestCategory_->ChangeValue(cbDestCategory_->GetValue());
+    cbSourceCategory_->ChangeValue(cbSourceCategory_->GetValue());
+    IsOkOk();
+    event.Skip();
+}
+
+void relocateCategoryDialog::OnTextUpdated(wxCommandEvent& event)
+{
+    IsOkOk();
 }

@@ -1,5 +1,6 @@
 /*******************************************************
 Copyright (C) 2014 Nikolay Akimov
+Copyright (C) 2022  Mark Whalley (mark@ipx.co.uk)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,13 +28,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <wx/richtooltip.h>
 #include "webapp.h"
 
-class mmComboBox : public wxTextCtrl
+class mmComboBoxText : public wxTextCtrl
 {
 public:
     using wxTextCtrl::Connect;
 
-    mmComboBox() {}
-    mmComboBox(wxWindow *parent, wxWindowID id
+    mmComboBoxText() {}
+    mmComboBoxText(wxWindow *parent, wxWindowID id
         , const wxString &value
         , bool payee
         , const wxPoint &pos = wxDefaultPosition
@@ -79,6 +80,7 @@ public:
             else {
                 p = Model_Payee::instance().create();
                 p->PAYEENAME = this->GetValue();
+                p->ACTIVE = 1;
                 Model_Payee::instance().save(p);
                 mmWebApp::MMEX_WebApp_UpdatePayee();
             }

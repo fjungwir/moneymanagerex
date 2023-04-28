@@ -1,6 +1,6 @@
 /*******************************************************
 Copyright (C) 2009 VaDiM
-Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
+Copyright (C) 2021-2022 Mark Whalley (mark@ipx.co.uk)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ extern const wxSizerFlags g_flagsExpand;
 extern const wxSizerFlags g_flagsExpandBorder1;
 
 extern const wxString g_CancelLabel;
+extern const wxString g_OkLabel;
 extern const wxString g_CloseLabel;
 
 namespace mmex
@@ -119,9 +120,13 @@ extern const wxString INIDB_USE_ORG_DATE_DUPLICATE;
 extern const wxString INIDB_SEND_USAGE_STATS;
 extern const wxString INIDB_CHECK_NEWS;
 
+extern const wxString INIDB_HIDE_SHARE_ACCOUNTS;
+extern const wxString INIDB_HIDE_DELETED_TRANSACTIONS;
 extern const wxString INIDB_BUDGET_FINANCIAL_YEARS;
 extern const wxString INIDB_BUDGET_INCLUDE_TRANSFERS;
 extern const wxString INIDB_BUDGET_SUMMARY_WITHOUT_CATEG;
+extern const wxString INIDB_BUDGET_OVERRIDE;
+extern const wxString INIDB_BUDGET_DEDUCT_MONTH_FROM_YEAR;
 extern const wxString INIDB_IGNORE_FUTURE_TRANSACTIONS;
 extern const wxString INIDB_SHOW_TOOLTIPS;
 extern const wxString INIDB_SHOW_MONEYTIPS;
@@ -145,8 +150,14 @@ enum id
     mmID_BUDGET,
     mmID_REPORTS,
     mmID_CHECKING,
+    mmID_CATEGORY,
+    mmID_PAYEE,
+    mmID_SPLIT,
     mmID_ALLTRANSACTIONS,
+    mmID_DELETEDTRANSACTIONS,
     mmID_BROWSER,
+    mmID_REMOVE,
+    mmID_COLOR,
     MENU_REPORT_BUG,
     MENU_BILLSDEPOSITS,
     MENU_STOCKS,
@@ -159,7 +170,7 @@ enum id
     MENU_VIEW_SHOW_TOOLTIPS,
     MENU_VIEW_SHOW_MONEYTIPS,
     MENU_VIEW_TOGGLE_FULLSCREEN,
-    ID_MMEX_MAX,
+    mmID_MAX,
 
 };
 

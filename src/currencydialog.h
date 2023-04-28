@@ -1,6 +1,7 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
  Copyright (C) 2015 Gabriele-V
+ Copyright (C) 2022 Mark WHalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -44,7 +45,8 @@ public:
 
 private:
     bool Create(wxWindow* parent, wxWindowID id = wxID_ANY,
-        const wxString& caption = "Currency Manager",
+        const wxString& caption = _("Currency Manager"),
+        const wxString& name = "Currency Manager",
         const wxPoint& pos = wxDefaultPosition,
         const wxSize& size = wxDefaultSize,
         long style = wxCAPTION | wxSYSTEM_MENU | wxCLOSE_BOX | wxRESIZE_BORDER);
@@ -54,21 +56,23 @@ private:
 
     void OnOk(wxCommandEvent& event);
     void OnCancel(wxCommandEvent& event);
-    void OnTextChanged(wxCommandEvent& event);
+    void OnDataChanged(wxCommandEvent& event);
     void OnTextEntered(wxCommandEvent& event);
 
-    Model_Currency::Data* m_currency;
-    int m_scale;
+    Model_Currency::Data* m_currency  = nullptr;
+    int m_scale = 9;
+    bool m_locale_used = false;
 
-    mmTextCtrl* m_currencyName;
-    wxStaticText* sampleText_;
-    mmTextCtrl* m_currencySymbol;
-    mmTextCtrl* baseConvRate_;
-    wxTextCtrl* pfxTx_;
-    wxTextCtrl* sfxTx_;
-    wxTextCtrl* decTx_;
-    wxTextCtrl* grpTx_;
-    wxTextCtrl* scaleTx_;
+    wxTextCtrl* mctrl_name = nullptr;
+    wxTextCtrl* mctrl_code = nullptr;
+    wxTextCtrl* mctrl_symbol = nullptr;
+    wxRadioButton* mctrl_prefix = nullptr;
+    wxRadioButton* mctrl_suffix = nullptr;
+    wxChoice* mctrl_decimalSep = nullptr;
+    wxChoice* mctrl_groupSep = nullptr;
+    wxTextCtrl* mctrl_scale = nullptr;
+    mmTextCtrl* mctrl_baseConvRate = nullptr;
+    wxStaticText* mctrl_sampleText = nullptr;
 
 };
 

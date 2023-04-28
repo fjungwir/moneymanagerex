@@ -44,7 +44,6 @@ public:
 private:
     void Create();
 
-    void OnCurrency(wxCommandEvent& event);
     void OnDateFormatChanged(wxCommandEvent& event);
     void OnLocaleChanged(wxCommandEvent& event);
     void OnChangeGUILanguage(wxCommandEvent &event);
@@ -56,6 +55,7 @@ private:
 private:
     mmGUIApp* m_app;
     wxStaticBoxSizer* m_currencyStaticBoxSizer;
+    mmComboBoxCurrency* baseCurrencyComboBox_;
 
     wxChoice* m_date_format_choice;
     wxChoice* m_month_selection;
@@ -69,7 +69,7 @@ private:
 
     wxCheckBox* m_use_org_date_copy_paste;
     wxCheckBox* m_use_org_date_duplicate;
-    wxCheckBox* m_use_sound;
+    wxChoice* m_use_sound;
 
     enum
     {

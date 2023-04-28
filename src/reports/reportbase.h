@@ -1,6 +1,6 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
- Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
+ Copyright (C) 2021-2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -45,10 +45,12 @@ public:
     int getDateSelection() const;
     int getAccountSelection() const;
     int getChartSelection() const;
+    int getForwardMonths() const;   
     const wxString getAccountNames() const;
     void chart(int selection);
     void setAccounts(int selection, const wxString& name);
     void setSelection(int sel);
+    void setForwardMonths(int sel);
     void setReportSettings();
     void setReportParameters(int id);
     const wxString getReportSettings() const;
@@ -63,11 +65,13 @@ public:
         NONE = 0
         , SINGLE_DATE = 1
         , DATE_RANGE = 2
-        , MONTHES = 4
-        , BUDGET_DATES = 8
-        , ONLY_YEARS = 16
-        , ACCOUNTS_LIST = 32
-        , CHART = 64
+        , TIME = 4
+        , MONTHES = 8
+        , BUDGET_DATES = 16
+        , ONLY_YEARS = 32
+        , ACCOUNTS_LIST = 64
+        , CHART = 128
+        , FORWARD_MONTHS = 256
     };
 
     enum Reports {
@@ -85,6 +89,7 @@ public:
         BudgetCategorySummary,
         MonthlyCashFlow,
         DailyCashFlow,
+        TransactionsCashFlow,
         StocksReportPerformance,
         StocksReportSummary,
         ForecastReport,
@@ -96,9 +101,11 @@ public:
 protected:
     int m_chart_selection;
     int m_date_selection;
+    int m_forward_months;
     wxString m_title;
     const mmDateRange* m_date_range;
-    const wxArrayString* accountArray_;
+    wxSharedPtr<wxArrayString> accountArray_;
+    wxSharedPtr<wxArrayString> selectedAccountArray_;
     bool m_only_active;
 
 private:
@@ -111,6 +118,8 @@ private:
 
 inline void mmPrintableBase::setSelection(int sel) { m_date_selection = sel; }
 inline int mmPrintableBase::getDateSelection() const { return this->m_date_selection; }
+inline void mmPrintableBase::setForwardMonths(int sel) { m_forward_months = sel; }
+inline int mmPrintableBase::getForwardMonths() const { return this->m_forward_months; }
 inline int mmPrintableBase::getAccountSelection() const { return this->m_account_selection; }
 inline int mmPrintableBase::getChartSelection() const { return this->m_chart_selection; }
 inline void mmPrintableBase::chart(int selection) { m_chart_selection = selection; }
@@ -130,17 +139,6 @@ public:
 
 private:
     const Model_Report::Data* m_report;
-};
-
-class mmPrintableBaseSpecificAccounts : public mmPrintableBase
-{
-public:
-    explicit mmPrintableBaseSpecificAccounts(const wxString& report_name, int sort_column = 0);
-    virtual ~mmPrintableBaseSpecificAccounts();
-
-protected:
-    const wxArrayString* accountArray_;
-    void getSpecificAccounts();
 };
 
 #include "html_template.h"

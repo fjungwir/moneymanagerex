@@ -1,8 +1,9 @@
 ﻿// -*- C++ -*-
 //=============================================================================
 /**
- *      Copyright: (c) 2013 - 2020 Guan Lisheng (guanlisheng@gmail.com)
+ *      Copyright: (c) 2013 - 2023 Guan Lisheng (guanlisheng@gmail.com)
  *      Copyright: (c) 2017 - 2018 Stefano Giorgio (stef145g)
+ *      Copyright: (c) 2022 Mark Whalley (mark@ipx.co.uk)
  *
  *      @file
  *
@@ -11,7 +12,7 @@
  *      @brief
  *
  *      Revision History:
- *          AUTO GENERATED at 2020-05-04 17:41:56.665000.
+ *          AUTO GENERATED at 2023-01-12 21:06:50.482915.
  *          DO NOT EDIT!
  */
 //=============================================================================
@@ -63,7 +64,7 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
     /** Removes all records stored in memory (cache) for the table*/ 
     void destroy_cache()
     {
-        std::for_each(cache_.begin(), cache_.end(), std::mem_fun(&Data::destroy));
+        std::for_each(cache_.begin(), cache_.end(), std::mem_fn(&Data::destroy));
         cache_.clear();
         index_by_id_.clear(); // no memory release since it just stores pointer and the according objects are in cache
     }
@@ -75,7 +76,7 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
         {
             try
             {
-                db->ExecuteUpdate("CREATE TABLE BUDGETSPLITTRANSACTIONS_V1(SPLITTRANSID integer primary key, TRANSID integer NOT NULL, CATEGID integer, SUBCATEGID integer, SPLITTRANSAMOUNT numeric)");
+                db->ExecuteUpdate("CREATE TABLE BUDGETSPLITTRANSACTIONS_V1(SPLITTRANSID integer primary key, TRANSID integer NOT NULL, CATEGID integer, SPLITTRANSAMOUNT numeric, NOTES TEXT)");
                 this->ensure_data(db);
             }
             catch(const wxSQLite3Exception &e) 
@@ -129,16 +130,16 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
         explicit CATEGID(const int &v, OP op = EQUAL): DB_Column<int>(v, op) {}
     };
     
-    struct SUBCATEGID : public DB_Column<int>
-    { 
-        static wxString name() { return "SUBCATEGID"; } 
-        explicit SUBCATEGID(const int &v, OP op = EQUAL): DB_Column<int>(v, op) {}
-    };
-    
     struct SPLITTRANSAMOUNT : public DB_Column<double>
     { 
         static wxString name() { return "SPLITTRANSAMOUNT"; } 
         explicit SPLITTRANSAMOUNT(const double &v, OP op = EQUAL): DB_Column<double>(v, op) {}
+    };
+    
+    struct NOTES : public DB_Column<wxString>
+    { 
+        static wxString name() { return "NOTES"; } 
+        explicit NOTES(const wxString &v, OP op = EQUAL): DB_Column<wxString>(v, op) {}
     };
     
     typedef SPLITTRANSID PRIMARY;
@@ -147,8 +148,8 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
         COL_SPLITTRANSID = 0
         , COL_TRANSID = 1
         , COL_CATEGID = 2
-        , COL_SUBCATEGID = 3
-        , COL_SPLITTRANSAMOUNT = 4
+        , COL_SPLITTRANSAMOUNT = 3
+        , COL_NOTES = 4
     };
 
     /** Returns the column name as a string*/
@@ -159,8 +160,8 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
             case COL_SPLITTRANSID: return "SPLITTRANSID";
             case COL_TRANSID: return "TRANSID";
             case COL_CATEGID: return "CATEGID";
-            case COL_SUBCATEGID: return "SUBCATEGID";
             case COL_SPLITTRANSAMOUNT: return "SPLITTRANSAMOUNT";
+            case COL_NOTES: return "NOTES";
             default: break;
         }
         
@@ -173,8 +174,8 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
         if ("SPLITTRANSID" == name) return COL_SPLITTRANSID;
         else if ("TRANSID" == name) return COL_TRANSID;
         else if ("CATEGID" == name) return COL_CATEGID;
-        else if ("SUBCATEGID" == name) return COL_SUBCATEGID;
         else if ("SPLITTRANSAMOUNT" == name) return COL_SPLITTRANSAMOUNT;
+        else if ("NOTES" == name) return COL_NOTES;
 
         return COLUMN(-1);
     }
@@ -189,8 +190,8 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
         int SPLITTRANSID;//  primary key
         int TRANSID;
         int CATEGID;
-        int SUBCATEGID;
         double SPLITTRANSAMOUNT;
+        wxString NOTES;
 
         int id() const
         {
@@ -212,6 +213,16 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
             return this->id() < r->id();
         }
 
+        bool equals(const Data* r) const
+        {
+            if(SPLITTRANSID != r->SPLITTRANSID) return false;
+            if(TRANSID != r->TRANSID) return false;
+            if(CATEGID != r->CATEGID) return false;
+            if(SPLITTRANSAMOUNT != r->SPLITTRANSAMOUNT) return false;
+            if(!NOTES.IsSameAs(r->NOTES)) return false;
+            return true;
+        }
+        
         explicit Data(Self* table = 0) 
         {
             table_ = table;
@@ -219,7 +230,6 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
             SPLITTRANSID = -1;
             TRANSID = -1;
             CATEGID = -1;
-            SUBCATEGID = -1;
             SPLITTRANSAMOUNT = 0.0;
         }
 
@@ -230,8 +240,8 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
             SPLITTRANSID = q.GetInt(0); // SPLITTRANSID
             TRANSID = q.GetInt(1); // TRANSID
             CATEGID = q.GetInt(2); // CATEGID
-            SUBCATEGID = q.GetInt(3); // SUBCATEGID
-            SPLITTRANSAMOUNT = q.GetDouble(4); // SPLITTRANSAMOUNT
+            SPLITTRANSAMOUNT = q.GetDouble(3); // SPLITTRANSAMOUNT
+            NOTES = q.GetString(4); // NOTES
         }
 
         Data& operator=(const Data& other)
@@ -241,8 +251,8 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
             SPLITTRANSID = other.SPLITTRANSID;
             TRANSID = other.TRANSID;
             CATEGID = other.CATEGID;
-            SUBCATEGID = other.SUBCATEGID;
             SPLITTRANSAMOUNT = other.SPLITTRANSAMOUNT;
+            NOTES = other.NOTES;
             return *this;
         }
 
@@ -267,14 +277,14 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
             return this->CATEGID == in.v_;
         }
 
-        bool match(const Self::SUBCATEGID &in) const
-        {
-            return this->SUBCATEGID == in.v_;
-        }
-
         bool match(const Self::SPLITTRANSAMOUNT &in) const
         {
             return this->SPLITTRANSAMOUNT == in.v_;
+        }
+
+        bool match(const Self::NOTES &in) const
+        {
+            return this->NOTES.CmpNoCase(in.v_) == 0;
         }
 
         // Return the data record as a json string
@@ -299,10 +309,10 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
             json_writer.Int(this->TRANSID);
             json_writer.Key("CATEGID");
             json_writer.Int(this->CATEGID);
-            json_writer.Key("SUBCATEGID");
-            json_writer.Int(this->SUBCATEGID);
             json_writer.Key("SPLITTRANSAMOUNT");
             json_writer.Double(this->SPLITTRANSAMOUNT);
+            json_writer.Key("NOTES");
+            json_writer.String(this->NOTES.utf8_str());
         }
 
         row_t to_row_t() const
@@ -311,8 +321,8 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
             row(L"SPLITTRANSID") = SPLITTRANSID;
             row(L"TRANSID") = TRANSID;
             row(L"CATEGID") = CATEGID;
-            row(L"SUBCATEGID") = SUBCATEGID;
             row(L"SPLITTRANSAMOUNT") = SPLITTRANSAMOUNT;
+            row(L"NOTES") = NOTES;
             return row;
         }
 
@@ -321,8 +331,8 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
             t(L"SPLITTRANSID") = SPLITTRANSID;
             t(L"TRANSID") = TRANSID;
             t(L"CATEGID") = CATEGID;
-            t(L"SUBCATEGID") = SUBCATEGID;
             t(L"SPLITTRANSAMOUNT") = SPLITTRANSAMOUNT;
+            t(L"NOTES") = NOTES;
         }
 
         /** Save the record instance in memory to the database. */
@@ -368,7 +378,7 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
 
     DB_Table_BUDGETSPLITTRANSACTIONS_V1() : fake_(new Data())
     {
-        query_ = "SELECT SPLITTRANSID, TRANSID, CATEGID, SUBCATEGID, SPLITTRANSAMOUNT FROM BUDGETSPLITTRANSACTIONS_V1 ";
+        query_ = "SELECT SPLITTRANSID, TRANSID, CATEGID, SPLITTRANSAMOUNT, NOTES FROM BUDGETSPLITTRANSACTIONS_V1 ";
     }
 
     /** Create a new Data record and add to memory table (cache)*/
@@ -398,11 +408,11 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
         wxString sql = wxEmptyString;
         if (entity->id() <= 0) //  new & insert
         {
-            sql = "INSERT INTO BUDGETSPLITTRANSACTIONS_V1(TRANSID, CATEGID, SUBCATEGID, SPLITTRANSAMOUNT) VALUES(?, ?, ?, ?)";
+            sql = "INSERT INTO BUDGETSPLITTRANSACTIONS_V1(TRANSID, CATEGID, SPLITTRANSAMOUNT, NOTES) VALUES(?, ?, ?, ?)";
         }
         else
         {
-            sql = "UPDATE BUDGETSPLITTRANSACTIONS_V1 SET TRANSID = ?, CATEGID = ?, SUBCATEGID = ?, SPLITTRANSAMOUNT = ? WHERE SPLITTRANSID = ?";
+            sql = "UPDATE BUDGETSPLITTRANSACTIONS_V1 SET TRANSID = ?, CATEGID = ?, SPLITTRANSAMOUNT = ?, NOTES = ? WHERE SPLITTRANSID = ?";
         }
 
         try
@@ -411,8 +421,8 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
 
             stmt.Bind(1, entity->TRANSID);
             stmt.Bind(2, entity->CATEGID);
-            stmt.Bind(3, entity->SUBCATEGID);
-            stmt.Bind(4, entity->SPLITTRANSAMOUNT);
+            stmt.Bind(3, entity->SPLITTRANSAMOUNT);
+            stmt.Bind(4, entity->NOTES);
             if (entity->id() > 0)
                 stmt.Bind(5, entity->SPLITTRANSID);
 
@@ -544,6 +554,44 @@ struct DB_Table_BUDGETSPLITTRANSACTIONS_V1 : public DB_Table
                 entity = new Self::Data(q, this);
                 cache_.push_back(entity);
                 index_by_id_.insert(std::make_pair(id, entity));
+            }
+            stmt.Finalize();
+        }
+        catch(const wxSQLite3Exception &e) 
+        { 
+            wxLogError("%s: Exception %s", this->name().utf8_str(), e.GetMessage().utf8_str());
+        }
+        
+        if (!entity) 
+        {
+            entity = this->fake_;
+            // wxLogError("%s: %d not found", this->name().utf8_str(), id);
+        }
+ 
+        return entity;
+    }
+    /**
+    * Search the database for the data record, bypassing the cache.
+    */
+    Self::Data* get_record(int id, wxSQLite3Database* db)
+    {
+        if (id <= 0) 
+        {
+            ++ skip_;
+            return 0;
+        }
+
+        Self::Data* entity = 0;
+        wxString where = wxString::Format(" WHERE %s = ?", PRIMARY::name().utf8_str());
+        try
+        {
+            wxSQLite3Statement stmt = db->PrepareStatement(this->query() + where);
+            stmt.Bind(1, id);
+
+            wxSQLite3ResultSet q = stmt.ExecuteQuery();
+            if(q.NextRow())
+            {
+                entity = new Self::Data(q, this);
             }
             stmt.Finalize();
         }

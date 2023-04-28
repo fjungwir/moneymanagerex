@@ -1,5 +1,6 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
+ Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -54,7 +55,6 @@ static const wxCmdLineEntryDesc g_cmdLineDesc[] =
 //----------------------------------------------------------------------------
 
 mmGUIApp::mmGUIApp() : m_frame(nullptr)
-, m_setting_db(nullptr)
 , m_optParam1(wxEmptyString)
 , m_optParam2(wxEmptyString)
 , m_optParamSilent(false)
@@ -77,7 +77,7 @@ bool mmGUIApp::setGUILanguage(wxLanguage lang)
     if (lang == this->m_lang && lang != wxLANGUAGE_UNKNOWN) {
         return false;
     }
-    wxTranslations *trans = new wxTranslations;
+    wxTranslations* trans = new wxTranslations;
     trans->SetLanguage(lang);
     trans->AddStdCatalog();
     if (trans->AddCatalog("mmex", wxLANGUAGE_ENGLISH_US) || lang == wxLANGUAGE_ENGLISH_US || lang == wxLANGUAGE_DEFAULT)
@@ -90,7 +90,8 @@ bool mmGUIApp::setGUILanguage(wxLanguage lang)
     else
     {
         wxArrayString lang_files = trans->GetAvailableTranslations("mmex");
-        lang_files.Add("en_US");
+        if (lang_files.Index("en_US") == wxNOT_FOUND)
+            lang_files.Add("en_US");
         wxArrayString lang_names;
         for (const auto & file : lang_files)
         {
@@ -117,22 +118,19 @@ bool mmGUIApp::setGUILanguage(wxLanguage lang)
 #else
             best = trans->GetBestTranslation("mmex");
 #endif
-            if (best.IsEmpty()) {
-                best = wxLocale::GetLanguageName(wxLocale::GetSystemLanguage());
-                msg = wxString::Format(_("Cannot load a translation for the default language of your system (%s)."),
-                    best);
-            }
+            msg = wxString::Format("Cannot load a translation for the language: %s", best);
+            lang = wxLANGUAGE_UNKNOWN;
         }
-
-        msg += "\n\n";
         if (lang == wxLANGUAGE_UNKNOWN) {
-            msg += wxString::Format(_("Please use the Switch Application Language option in View menu to select one of the following available languages:\n\n%s"), languages_list);
+            msg += "\n\n";
+            msg += wxString::Format("Please use the Switch Application Language option in "
+                "View menu to select one of the following available languages:\n\n%s", languages_list);
             m_lang = wxLANGUAGE_DEFAULT;
             Option::instance().setLanguage(m_lang);
         }
 
-        mmErrorDialogs::MessageWarning(NULL, msg, _("Language change"));
         wxDELETE(trans);
+        mmErrorDialogs::MessageWarning(NULL, msg, "Language change");
         return false;
     }
 }
@@ -318,6 +316,15 @@ bool OnInitImpl(mmGUIApp* app)
     wxRegKey Key(wxRegKey::HKCU, R"(Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_BROWSER_EMULATION)");
     if (!(Key.Create(true) && Key.SetValue(wxFileName(wxStandardPaths::Get().GetExecutablePath()).GetFullName(), 11001)))
         wxASSERT(false);
+
+    wxRegKey theme_key(wxRegKey::HKCU, R"(Software\Microsoft\Windows\CurrentVersion\Themes\Personalize)");
+    if (theme_key.Exists() && theme_key.HasValue("AppsUseLightTheme"))
+    {
+        long AppsUseLightTheme;
+        theme_key.QueryValue("AppsUseLightTheme", &AppsUseLightTheme);
+        wxLogDebug("App Use Light Theme: %s", AppsUseLightTheme ? "True" : "False");
+    }
+
 #endif
 
     /* Initialize CURL */
@@ -329,18 +336,7 @@ bool OnInitImpl(mmGUIApp* app)
     /* set preffered GUI language */
     app->setGUILanguage(Option::instance().getLanguageID());
 
-    // iterate through each display until the primary is found, default to display 0
-    wxSharedPtr<wxDisplay> display(new wxDisplay(static_cast<unsigned int>(0)));
-    for (unsigned int i = 0; i < wxDisplay::GetCount(); ++i) {
-        if (display->IsPrimary()) {
-            break;
-        }
-
-        display = new wxDisplay(i);
-    }
-
-    // Get a 'sensible' location on the primary display in case we can't fit it into the window
-    wxRect rect = display->GetClientArea();
+    wxRect rect = GetDefaultMonitorRect();
     int defValX = rect.GetX() + 50;
     int defValY = rect.GetY() + 50;
     int defValW = rect.GetWidth() / 4 * 3;
@@ -356,13 +352,12 @@ bool OnInitImpl(mmGUIApp* app)
     // -- 'fit' means either an exact fit or at least 20% of application is on a visible window)
     bool itFits = false;
     for (unsigned int i = 0; i < wxDisplay::GetCount(); i++) {
-        display = new wxDisplay(i);
+        wxSharedPtr<wxDisplay> display(new wxDisplay(i));
 
         wxRect displayRect = display->GetGeometry();
         wxRect savedPosition(valX, valY, valW, valH);
 
         // Check for exact fit.
-
         if (displayRect.Contains(savedPosition))
         {
             itFits = true;
@@ -457,7 +452,8 @@ int mmGUIApp::OnExit()
     Model_Usage::instance().save(usage);
 
     if (m_setting_db) {
-        delete m_setting_db;
+        m_setting_db->Close();
+        m_setting_db->ShutdownSQLite();
     }
 
     /* CURL Cleanup */
@@ -470,11 +466,30 @@ int mmGUIApp::OnExit()
 }
 
 #if defined (__WXMAC__)
-// Handle a closure for OSX dock correctly - just close the window.
+// Handle a closure for OSX dock correctly
 
+bool findModal(wxWindow *w)
+{
+    wxWindowList& children = w->GetChildren();
+    for (wxWindowList::Node *node=children.GetFirst(); node; node = node->GetNext())
+    {
+        wxWindow *current = (wxWindow *)node->GetData();
+        wxLogDebug("  Name [%s]", current->GetName());
+        if (current->IsKindOf(CLASSINFO(wxDialog)))
+            return true;
+        else
+            if (findModal(current))
+                return true;
+    }   
+    return false;
+}
 bool mmGUIApp::OSXOnShouldTerminate()
 {
     wxLogDebug("Called: OSXOnShouldTerminate");
-    this->GetTopWindow()->Close();
+
+    // Don't allow closure if dialogs are open
+    bool modalExists = findModal(GetTopWindow());
+    if (!modalExists)
+        this->GetTopWindow()->Close();
 }
 #endif

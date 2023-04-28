@@ -1,5 +1,7 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
+ Copyright (C) 2013 - 2016, 2020 -2022 Nikolay Akimov
+ Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -21,7 +23,10 @@
 
 #include "defs.h"
 #include "model/Model_Checking.h"
+#include "mmSimpleDialogs.h"
+#include "mmTextCtrl.h"
 #include <wx/dataview.h>
+#include <wx/vscroll.h>
 
 class wxListCtrl;
 class wxStaticText;
@@ -33,74 +38,93 @@ class wxStaticText;
 #define wxFIXED_MINSIZE 0
 #endif
 
-class SplitTransactionDialog: public wxDialog
+class mmEditSplitOther : public wxDialog
 {
-    wxDECLARE_DYNAMIC_CLASS(SplitTransactionDialog);
+    wxDECLARE_DYNAMIC_CLASS(mmEditSplitOther);
     wxDECLARE_EVENT_TABLE();
 
 public:
-    /// Constructors
-    SplitTransactionDialog();
-    SplitTransactionDialog(wxWindow* parent
-        , std::vector<Split>& split
-        , int transType
-        , int accountID
-        , double totalAmount = 0.0
-        , const wxString& name = "SplitTransactionDialog"
-        );
-
-    /// Creation
-    bool Create(
-        wxWindow* parent,
-        wxWindowID id,
-        const wxString& caption,
-        const wxPoint& pos,
-        const wxSize& size,
-        long style
-        , const wxString& name
-        );
-    std::vector<Split> getResult() { return m_splits; }
-    bool isItemsChanged(){ return items_changed_; }
-    void SetDisplaySplitCategories();
+    mmEditSplitOther();
+    mmEditSplitOther(wxWindow* parent, Model_Currency::Data* currency, Split* split
+                        , const wxString &name = "mmEditSplitOther");
+    ~mmEditSplitOther();
 
 private:
-    /// Creates the controls and sizers
+    Split* m_split;
+    Model_Currency::Data* m_currency;
+    wxTextCtrl* m_Notes;
+
     void CreateControls();
+    void fillControls();
+    void OnCancel(wxCommandEvent& /*event*/);
+    void OnOk(wxCommandEvent& /*event*/);
 
-    void DataToControls();
-
-    /// wxEVT_COMMAND_BUTTON_CLICKED event handler for wxID_NEW
-    void OnButtonAddClick( wxCommandEvent& event );
-
-    /// wxEVT_COMMAND_BUTTON_CLICKED event handler for wxID_DELETE
-    void OnButtonRemoveClick( wxCommandEvent& event );
-
-    /// wxEVT_COMMAND_BUTTON_CLICKED event handler for wxID_EDIT
-    void OnButtonEditClick( wxCommandEvent& event );
-    void OnOk( wxCommandEvent& event );
-
-    void UpdateSplitTotal();
-
-    wxDataViewListCtrl* lcSplit_;
-    wxStaticText* transAmount_;
-
-    std::vector<Split> m_splits;
-    std::vector<Split> m_local_splits;
-    int transType_;
-    int accountID_;
-    double totalAmount_;
-    bool items_changed_;
-
-    wxButton* itemButtonNew_;
-    wxButton* itemButtonEdit_;
-    wxButton* itemButtonDelete_;
-    wxButton* itemButtonOK_;
-
-    void SetDisplayEditDeleteButtons();
-    void OnListDblClick(wxDataViewEvent& event);
-    void OnListItemSelected(wxDataViewEvent& event);
-    void EditEntry(int id);
-    int selectedIndex_;
 };
+
+class mmSplitTransactionDialog: public wxDialog
+{
+public:
+    ~mmSplitTransactionDialog();
+    mmSplitTransactionDialog();
+    mmSplitTransactionDialog(wxWindow* parent
+        , std::vector<Split>& split
+        , int accountID
+        , int transType
+        , double totalAmount = 0.0
+        , bool is_view_only = false
+        );
+    std::vector<Split> mmGetResult() const;
+
+private:
+    bool Create(
+        wxWindow* parent
+        , wxWindowID id = wxID_ANY
+        , const wxString& caption = _("Split Transaction")
+        , const wxPoint& pos = wxDefaultPosition
+        , const wxSize& size = wxDefaultSize
+        , long style = wxCAPTION | wxRESIZE_BORDER | wxSYSTEM_MENU | wxCLOSE_BOX
+        , const wxString& name = "Split Transaction Dialog"
+        );
+
+    void CreateControls();
+    void FillControls(int focusRow = -1);
+    void createNewRow(bool enabled);
+    void activateNewRow();
+    void UpdateSplitTotal();
+    void UpdateExtraInfo(int row);
+
+    void OnOk(wxCommandEvent& event);
+    void OnAddRow(wxCommandEvent& event);
+    void OnRemoveRow(wxCommandEvent& event);
+    void OnOtherButton(wxCommandEvent& event);
+    void OnTextEntered(wxCommandEvent& event);
+    void OnFocusChange(wxChildFocusEvent& event);
+    void OnComboKey(wxKeyEvent& event);
+    bool mmDoCheckRow(int row);
+
+    struct SplitWidget
+    {
+        mmComboBoxCategory* category;
+        mmTextCtrl* amount;
+        wxButton* other;
+    };
+
+    std::vector<SplitWidget> m_splits_widgets;
+    std::vector<Split> m_orig_splits, m_splits;
+    double totalAmount_;
+    int transType_;
+    int row_num_;
+    Model_Currency::Data* m_currency;
+    bool is_view_only_;
+
+    wxButton* itemButtonOK_;
+    wxScrolledWindow* slider_;
+    wxStaticText* transAmount_;
+    wxFlexGridSizer* flexGridSizer_;
+
+    wxDECLARE_EVENT_TABLE();
+};
+
+inline std::vector<Split> mmSplitTransactionDialog::mmGetResult() const { return m_orig_splits; }
 
 #endif

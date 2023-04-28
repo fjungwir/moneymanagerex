@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
 # ---------------------------------------------------------------------------
 # MMEX uses semantic versioning Ref: http://semver.org
@@ -17,9 +17,9 @@
 # ./resources/mmex.rc
 # ---------------------------------------------------------------------------
 
-set(MMEX_VERSION 1.5.15)
+set(MMEX_VERSION 1.6.4)
 SET(MMEX_VERSION_ALPHA -1)
-SET(MMEX_VERSION_BETA 1)
+SET(MMEX_VERSION_BETA 5)
 SET(MMEX_VERSION_RC -1)
 
 # ---------------------------------------------------------------------------
@@ -111,6 +111,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         execute_process(COMMAND lsb_release -rs
             OUTPUT_VARIABLE LINUX_DISTRO_REL
             OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+        execute_process(COMMAND lsb_release -ds
+            OUTPUT_VARIABLE LINUX_DISTRO_DESCRIPTION
+            OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+        string(REPLACE "\"" "" LINUX_DISTRO_DESCRIPTION "${LINUX_DISTRO_DESCRIPTION}")
+        string(REPLACE " " "." LINUX_DISTRO_DESCRIPTION "${LINUX_DISTRO_DESCRIPTION}")
     else()
         if(EXISTS /etc/slackware-version)
             file(STRINGS /etc/slackware-version LINUX_DISTRO LIMIT_COUNT 1)
@@ -130,7 +135,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     if(NOT LINUX_DISTRO OR NOT LINUX_DISTRO_REL)
         message(SEND_ERROR "Could not find a GNU/Linux distribution info")
     endif()
-    set(LINUX_DISTRO_STRING "${LINUX_DISTRO} ${LINUX_DISTRO_REL}")
+    set(LINUX_DISTRO_STRING "${LINUX_DISTRO}.${LINUX_DISTRO_REL}")
     if(LINUX_DISTRO_CODENAME STREQUAL "n/a")
         if(LINUX_DISTRO STREQUAL "Debian")
             execute_process(COMMAND lsb_release -ds
@@ -146,7 +151,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         endif()
     endif()
     if(LINUX_DISTRO_CODENAME)
-        set(LINUX_DISTRO_STRING "${LINUX_DISTRO_STRING} '${LINUX_DISTRO_CODENAME}'")
+        set(LINUX_DISTRO_STRING "${LINUX_DISTRO_STRING}.${LINUX_DISTRO_CODENAME}")
     endif()
 endif()
 
@@ -288,8 +293,8 @@ set(MMEX_RES_DIR_REPORTS "${MMEX_RES_DIR}/reports")
 
 
 # --------- wxWidgets dependency ---------
-if(CMAKE_VERSION VERSION_LESS 3.16)
-    # FindwxWidgets.cmake module will be fixed in CMake 3.16
+if(CMAKE_VERSION VERSION_LESS 3.25)
+    # FindwxWidgets.cmake module will be fixed in CMake 3.25 to support later versions of wxWidgets
     list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/util")
 endif()
 set(wxWidgets_USE_REL_AND_DBG ON)
@@ -607,8 +612,10 @@ install(FILES
     resources/sorttable.js
     resources/jquery.min.js
     resources/home_page.htt
-    resources/kaching.wav
+    resources/drop.wav
+    resources/cash.wav
     resources/mmex.png
+    resources/mmex.svg
     DESTINATION "${MMEX_RES_DIR}")
 
 #Themes & GRM
@@ -639,7 +646,7 @@ endif()
 
 # libcurl for Windows, if specified and exists then copy to bin
 if(CMAKE_PREFIX_PATH)
-    file(TO_CMAKE_PATH "${CMAKE_PREFIX_PATH}/build/lib/Release/libcurl.dll" CURL_LIBPATH)
+    file(TO_CMAKE_PATH "${CMAKE_PREFIX_PATH}/bin/libcurl.dll" CURL_LIBPATH)
     if(EXISTS "${CURL_LIBPATH}")
         install(FILES 
             "${CURL_LIBPATH}"
@@ -667,7 +674,7 @@ set(CPACK_DEBIAN_PACKAGE_HOMEPAGE http://www.moneymanagerex.org/)
 set(CPACK_DEBIAN_PACKAGE_REPLACES moneymanagerex)
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_DEBIAN_PACKAGE_RELEASE 1)
-set(CPACK_DEBIAN_PACKAGE_DEPENDS wx${wxWidgets_VERSION_MAJOR}.${wxWidgets_VERSION_MINOR}-i18n)
+# set(CPACK_DEBIAN_PACKAGE_DEPENDS wx${wxWidgets_VERSION_MAJOR}.${wxWidgets_VERSION_MINOR}-i18n)
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 set(CPACK_RPM_FILE_NAME RPM-DEFAULT)
 set(CPACK_RPM_PACKAGE_LICENSE GPL-2+)
@@ -689,19 +696,17 @@ set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
 if(LINUX)
     if(LINUX_DISTRO STREQUAL "Ubuntu" OR LINUX_DISTRO STREQUAL "Debian" OR LINUX_DISTRO STREQUAL "LinuxMint" OR LINUX_DISTRO STREQUAL "Raspbian")
         set(CPACK_GENERATOR DEB)
-        set(CPACK_DEBIAN_PACKAGE_RELEASE "${CPACK_DEBIAN_PACKAGE_RELEASE}~${LINUX_DISTRO_CODENAME}")
+        set(CPACK_DEBIAN_PACKAGE_RELEASE "${LINUX_DISTRO_STRING}")
     elseif(LINUX_DISTRO STREQUAL "Fedora")
         set(CPACK_GENERATOR RPM)
-        set(CPACK_RPM_PACKAGE_RELEASE_DIST ".fc${LINUX_DISTRO_REL}")
+        set(CPACK_RPM_PACKAGE_RELEASE "${LINUX_DISTRO_STRING}")
     elseif(LINUX_DISTRO STREQUAL "CentOS")
         set(CPACK_GENERATOR RPM)
         string(REGEX REPLACE "\\..*" "" CPACK_RPM_PACKAGE_RELEASE_DIST ${LINUX_DISTRO_REL})
-        set(CPACK_RPM_PACKAGE_RELEASE_DIST ".el${CPACK_RPM_PACKAGE_RELEASE_DIST}.centos")
+        set(CPACK_RPM_PACKAGE_RELEASE "${LINUX_DISTRO_STRING}")
     elseif(LINUX_DISTRO MATCHES "openSUSE" OR (LINUX_DISTRO MATCHES "SUSE" AND LINUX_DISTRO_REL VERSION_GREATER 42))
         set(CPACK_GENERATOR RPM)
-        set(CPACK_RPM_PACKAGE_REQUIRES wxWidgets-lang)
-        set(CPACK_RPM_PACKAGE_RELEASE_DIST ".opensuse${LINUX_DISTRO_REL}")
-        set(CPACK_RPM_PACKAGE_RELEASE 1)
+        set(CPACK_RPM_PACKAGE_RELEASE "${LINUX_DISTRO_DESCRIPTION}")
     elseif(LINUX_DISTRO STREQUAL "Slackware")
         set(CPACK_GENERATOR TXZ)
         if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -788,7 +793,7 @@ else()
                     OUTPUT_VARIABLE CPACK_RPM_PACKAGE_ARCHITECTURE
                     OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
             endif()
-            set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_RPM_PACKAGE_RELEASE}${CPACK_RPM_PACKAGE_RELEASE_DIST}-${CPACK_RPM_PACKAGE_ARCHITECTURE}")
+            set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_RPM_PACKAGE_RELEASE}-${CPACK_RPM_PACKAGE_ARCHITECTURE}")
         endif()
     endif()
 
@@ -850,6 +855,7 @@ message(STATUS "--========--")
 message(STATUS "${CMAKE_HOST_SYSTEM_NAME} ${CMAKE_HOST_SYSTEM_VERSION}")
 if(LINUX_DISTRO_STRING)
     message(STATUS "${LINUX_DISTRO_STRING}")
+    message(STATUS "${LINUX_DISTRO_DESCRIPTION}")
 endif()
 message(STATUS "CMake ${CMAKE_VERSION}")
 message(STATUS "${CMAKE_MAKE_VERSION}")

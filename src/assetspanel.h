@@ -80,7 +80,7 @@ class mmAssetsPanel : public mmPanelBase
     wxDECLARE_EVENT_TABLE();
 
 public:
-    enum EIcons //m_imageList
+    enum EIcons
     {
         ICON_PROPERTY,
         ICON_CAR,
@@ -94,7 +94,7 @@ public:
     };
 
     mmAssetsPanel(mmGUIFrame* frame, wxWindow *parent, wxWindowID winid, const wxString& name="mmAssetsPanel");
-    mmGUIFrame* m_frame;
+    mmGUIFrame* m_frame = nullptr;
 
     void updateExtraAssetData(int selIndex);
     int initVirtualListControl(int trx_id = -1, int col = 0, bool asc = true);
@@ -118,8 +118,6 @@ private:
     mmAssetsListCtrl* m_listCtrlAssets;
     wxButton* m_bitmapTransFilter;
     wxStaticText* header_text_;
-
-    wxScopedPtr<wxImageList> m_imageList;
 
     bool Create(wxWindow *parent
         , wxWindowID winid

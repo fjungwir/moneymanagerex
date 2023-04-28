@@ -26,7 +26,7 @@ static const wxString TIPS [] =
     wxTRANSLATE("Tip: The .mmb file is not encrypted. That means anyone else having the proper know how can actually open the file and read the contents. So make sure that if you are storing any sensitive financial information it is properly guarded."),
     wxTRANSLATE("Tip: To mark a transaction as reconciled, just select the transaction and hit the 'r' or 'R' key. To mark a transaction as unreconciled, just select the transaction and hit the 'u' or 'U' key."),
     wxTRANSLATE("Tip: To mark a transaction as requiring followup, just select the transaction and hit the 'f' or 'F' key."),
-    wxTRANSLATE("Tip: MMEX supports printing of all reports that can be viewed. The print options are available under the menu, File->Print."),
+    wxTRANSLATE("Tip: MMEX supports printing of all reports that can be viewed. The print options are available under the menu, File → Print."),
     wxTRANSLATE("Tip: You can modify some runtime behavior of MMEX by changing the options in the Options Dialog. "),
     wxTRANSLATE("Tip: To print a statement with transactions from any arbitrary set of criteria, use the transaction filter to select the transactions you want and then do a print from the menu."),
     wxTRANSLATE("Tip: Set exchange rate for currencies in case if you have accounts with different currencies."),
@@ -47,17 +47,17 @@ static const wxString STOCKTIPS[] = {
     wxTRANSLATE("Using MMEX it is possible to track stocks/mutual funds investments."),
     wxTRANSLATE("To create new stocks entry the Symbol, Number of shares and Purchase prise should be entered."),
     wxTRANSLATE("Sample of UK (HSBC HLDG) share: HSBA.L"),
-    wxTRANSLATE("If the Stock Name field is empty it will be filed when prices updated") //depricated
-    /*
-    Before you start investing, have a fully-funded emergency fund.
-    Before you start investing, know your cash flow (have a budget).
-    Before you start investing, pay off consumer debt - especially credit cards.
-    Before you start investing, make net worth your primary tracking metric.
-    Before you start investing, clarify your goals and priorities.
-    Before you start investing, make sure you understand investing basics.
-    Common mistake of investors: only buying companies you know.
-    Common mistake of investors: buying companies you like.
-    Common mistake of investors: buying buzzworthy companies.
-    Common mistake of investors: forgetting to rebalance.
-    */
+    wxTRANSLATE("Before you start investing, have a fully-funded emergency fund."),
+    
+    wxTRANSLATE("Before you start investing, have a fully-funded emergency fund."),
+    wxTRANSLATE("Before you start investing, know your cash flow (have a budget)."),
+    wxTRANSLATE("Before you start investing, pay off consumer debt - especially credit cards."),
+    wxTRANSLATE("Before you start investing, make net worth your primary tracking metric."),
+    wxTRANSLATE("Before you start investing, clarify your goals and priorities."),
+    wxTRANSLATE("Before you start investing, make sure you understand investing basics."),
+    wxTRANSLATE("Common mistake of investors: only buying companies you know."),
+    wxTRANSLATE("Common mistake of investors: buying companies you like."),
+    wxTRANSLATE("Common mistake of investors: buying buzzworthy companies."),
+    wxTRANSLATE("Common mistake of investors: forgetting to rebalance."),
+
 };

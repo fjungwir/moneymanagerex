@@ -1,6 +1,6 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
- Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
+ Copyright (C) 2021-2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -72,6 +72,12 @@ public:
     void DatabaseUpdated(bool value);
     bool DatabaseUpdated();
 
+    void HideShareAccounts(bool value);
+    bool HideShareAccounts();
+
+    void HideDeletedTransactions(bool value);
+    bool HideDeletedTransactions();
+
     void BudgetFinancialYears(bool value);
     bool BudgetFinancialYears();
 
@@ -81,11 +87,21 @@ public:
     void BudgetReportWithSummaries(bool value);
     bool BudgetReportWithSummaries();
 
+    void BudgetOverride(bool value);
+    bool BudgetOverride();
+
+    // Deduct monthly budget from yearly budget
+    void BudgetDeductMonthly(bool value);
+    bool BudgetDeductMonthly();
+
     void TransPayeeSelection(int value);
     int TransPayeeSelection();
 
-    void TransCategorySelection(int value);
-    int TransCategorySelection() const;
+    void TransCategorySelectionNonTransfer(int value);
+    int TransCategorySelectionNonTransfer() const;
+
+    void TransCategorySelectionTransfer(int value);
+    int TransCategorySelectionTransfer() const;
 
     void set_bulk_transactions(bool value);
     bool get_bulk_transactions() const;
@@ -96,7 +112,7 @@ public:
     void TransDateDefault(int value);
     int TransDateDefault();
 
-    void SendUsageStatistics(bool value);
+    void SendUsageStatistics(const bool value);
     bool SendUsageStatistics();
 
     void CheckNewsOnStartup(bool value);
@@ -120,7 +136,10 @@ public:
     int getHtmlFontSize();
 
     void setThemeMode(int value);
-    int getThemeMode();
+    int getThemeMode() const;
+
+    void setFontSize(int value);
+    int getFontSize() const;
 
     void setIconSize(int value);
     void setToolbarIconSize(int value);
@@ -151,41 +170,47 @@ public:
 
 private:
     wxString m_dateFormat;
-    wxLanguage m_language;
+    wxLanguage m_language = wxLANGUAGE_UNKNOWN;
     wxString m_userNameString;
     wxString m_localeNameString;
     wxString m_financialYearStartDayString;
     wxString m_financialYearStartMonthString;
-    int m_baseCurrency;
-    bool m_currencyHistoryEnabled;
-    bool m_bulk_enter;
+    int m_baseCurrency = -1;
+    bool m_currencyHistoryEnabled = false;
+    bool m_bulk_enter = false;
 
-    bool m_databaseUpdated;
-    bool m_budgetFinancialYears;            //INIDB_BUDGET_FINANCIAL_YEARS
-    bool m_budgetIncludeTransfers;          //INIDB_BUDGET_INCLUDE_TRANSFERS
-    bool m_budgetReportWithSummaries;       //INIDB_BUDGET_SUMMARY_WITHOUT_CATEG
-    bool m_ignoreFutureTransactions;        //INIDB_IGNORE_FUTURE_TRANSACTIONS
-    bool m_showToolTips;                    //INIDB_SHOW_TOOLTIPS
-    bool m_showMoneyTips;                   //INIDB_SHOW_MONEYTIPS
+    bool m_databaseUpdated = false;
+    bool m_hideShareAccounts = true;                //INIDB_HIDE_SHARE_ACCOUNTS
+    bool m_hideDeletedTransactions = false;         //INIDB_HIDE_DELETED_TRANSACTIONS
+    bool m_budgetFinancialYears = false;            //INIDB_BUDGET_FINANCIAL_YEARS
+    bool m_budgetIncludeTransfers = false;          //INIDB_BUDGET_INCLUDE_TRANSFERS
+    bool m_budgetReportWithSummaries = true;        //INIDB_BUDGET_SUMMARY_WITHOUT_CATEG
+    bool m_budgetOverride = false;                  //INIDB_BUDGET_OVERRIDE
+    bool m_budgetDeductMonthly = false;             //INIDB_BUDGET_DEDUCT_MONTH_FROM_YEAR
+    bool m_ignoreFutureTransactions = false;        //INIDB_IGNORE_FUTURE_TRANSACTIONS
+    bool m_showToolTips = true;                     //INIDB_SHOW_TOOLTIPS
+    bool m_showMoneyTips = true;                    //INIDB_SHOW_MONEYTIPS
 
-    int m_transPayeeSelection;
-    int m_transCategorySelection;
-    int m_transStatusReconciled;
-    int m_transDateDefault;
-    bool m_usageStatistics;
-    bool m_newsChecking;                    //INIDB_CHECK_NEWS
-    int m_sharePrecision;
+    int m_transPayeeSelection = Option::NONE;
+    int m_transCategorySelectionNonTransfer = Option::NONE;
+    int m_transCategorySelectionTransfer = Option::NONE;
+    int m_transStatusReconciled = Option::NONE;
+    int m_transDateDefault = 0;
+    bool m_usageStatistics = true;
+    bool m_newsChecking = true;                    //INIDB_CHECK_NEWS
+    int m_sharePrecision = 4;
 
-    int m_theme_mode;
-    int m_html_font_size;
-    int m_ico_size;
-    int m_toolbar_ico_size;
-    int m_navigation_ico_size;
+    int m_theme_mode = Option::AUTO;
+    int m_html_font_size = 100;
+    int m_ico_size = 16;
+    int m_font_size = 0;
+    int m_toolbar_ico_size = 32;
+    int m_navigation_ico_size = 24;
 
-    int m_budget_days_offset;
-    int m_reporting_firstday;
+    int m_budget_days_offset = 0;
+    int m_reporting_firstday = 1;
 
-    int m_homepage_incexp_range;
+    int m_homepage_incexp_range = 0;
 };
 
 inline int Option::getIconSize() { return m_ico_size; }
@@ -194,8 +219,11 @@ inline int Option::getToolbarIconSize() { return m_toolbar_ico_size; }
 inline const wxString Option::LocaleName() const { return m_localeNameString; }
 inline const wxString Option::UserName() const { return m_userNameString; }
 inline const wxString Option::FinancialYearStartDay() const { return m_financialYearStartDayString; }
-inline int Option::TransCategorySelection() const { return m_transCategorySelection; }
+inline int Option::TransCategorySelectionNonTransfer() const { return m_transCategorySelectionNonTransfer; }
+inline int Option::TransCategorySelectionTransfer() const { return m_transCategorySelectionTransfer; }
 inline bool Option::get_bulk_transactions() const { return m_bulk_enter; }
+inline int Option::getThemeMode() const { return m_theme_mode; }
+inline int Option::getFontSize() const { return m_font_size; }
 
 inline const wxString Option::getDateFormat() const
 {

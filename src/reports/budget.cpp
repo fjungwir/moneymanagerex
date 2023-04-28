@@ -1,6 +1,7 @@
 /*************************************************************************
  Copyright (C) 2012 Stefano Giorgio
  Copyright (C) 2017 James Higley
+ Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -54,9 +55,10 @@ void mmReportBudget::SetBudgetMonth(wxString budgetYear, wxDateTime& startDate, 
     if (pattern_month.Matches(budgetYear))
     {
         wxString monthStr = pattern_month.GetMatch(budgetYear, 2);
-        wxDateTime::Month month = static_cast<wxDateTime::Month>(wxAtoi(monthStr) - 1);
-        startDate.SetMonth(month);
-        SetDateToEndOfMonth(month, endDate);
+        int month = wxAtoi(monthStr) - 1;
+        startDate.Add(wxDateSpan::Months(month));
+        endDate = startDate;
+        endDate.Add(wxDateSpan::Months(1).Subtract(wxDateSpan::Day()));
     }
 }
 
@@ -69,9 +71,9 @@ void mmReportBudget::GetFinancialYearValues(int& day, wxDateTime::Month& month) 
         day = 28;
     }
     else if ( ((day > 30) && (month == wxDateTime::Sep)) ||
-              ((day > 30) && (month == wxDateTime::Apr)) ||
-              ((day > 30) && (month == wxDateTime::Jun)) ||
-              ((day > 30) && (month == wxDateTime::Nov)) )
+        ((day > 30) && (month == wxDateTime::Apr)) ||
+        ((day > 30) && (month == wxDateTime::Jun)) ||
+        ((day > 30) && (month == wxDateTime::Nov)) )
     {
         day = 30;
     }

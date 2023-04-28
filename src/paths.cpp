@@ -137,6 +137,7 @@ wxString mmex::getPathDoc(EDocFile f, bool url)
       "help%sgrm.html",
       "help%sstocks_and_shares.html",
       "help%sbudget.html",
+      "help%sindex.html#section17"
     };
     wxString path = files[f];
     wxString section;
@@ -147,7 +148,7 @@ wxString mmex::getPathDoc(EDocFile f, bool url)
     }
 
     wxString lang_code = Option::instance().getLanguageCode();
-    if (lang_code.empty()) {
+    if (lang_code.empty() || lang_code == "en_US") {
         lang_code = "en_GB";
     }
     path = wxString::Format(path, wxFileName::GetPathSeparator() + lang_code + wxFileName::GetPathSeparator());
@@ -158,13 +159,17 @@ wxString mmex::getPathDoc(EDocFile f, bool url)
 
     if (!helpFullPath.FileExists()) // Load the help file for the given language
     {
+        section.clear();
         path = files[f];
         path.Replace("%s", wxFileName::GetPathSeparator());
         wxFileName help(GetDocDir());
         path.Prepend(help.GetPathWithSep());
     }
-    if (url)
+
+    if (url) {
         path.Prepend("file://");
+    }
+
     if (!section.empty()) {
         path.Append("#" + section);
     }
@@ -183,8 +188,10 @@ const wxString mmex::getPathResource(EResFile f)
 
     wxFileName fname = GetResourceDir();
     std::vector<std::pair<int, wxString> > files = {
-        {TRANS_SOUND, "kaching.wav"},
+        {TRANS_SOUND1, "drop.wav"},
+        {TRANS_SOUND2, "cash.wav"},
         {HOME_PAGE_TEMPLATE, "home_page.htt"},
+        {MMEX_LOGO, "mmex.svg"},
         {THEMESDIR, "themes"},
         {REPORTS, "reports"}
     };
