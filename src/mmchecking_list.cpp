@@ -483,13 +483,13 @@ void TransactionListCtrl::OnMouseRightClick(wxMouseEvent& event)
     menu.AppendSeparator();
     // wxMenu* subGlobalOpMenuDelete = new wxMenu();
     // subGlobalOpMenuDelete->Append(MENU_TREEPOPUP_DELETE2, !m_cp->isTrash_ ? wxPLURAL("&Delete selected transaction...", "&Delete selected transactions...", selected)
-    //     : wxPLURAL("&Permanently delete selected transaction...", "&Permanently delete selected transactions...", selected));
+    //   : wxPLURAL("&Permanently delete selected transaction...", "&Permanently delete selected transactions...", selected));
     // if (is_nothing_selected) subGlobalOpMenuDelete->Enable(MENU_TREEPOPUP_DELETE2, false);
     // subGlobalOpMenuDelete->AppendSeparator();
     // subGlobalOpMenuDelete->Append(MENU_TREEPOPUP_DELETE_VIEWED, !m_cp->isTrash_ ? _("Delete all transactions in current view...") : _("Permanently delete all transactions in current view..."));
     // if (!m_cp->isTrash_) {
-    //     subGlobalOpMenuDelete->Append(MENU_TREEPOPUP_DELETE_FLAGGED, _("Delete Viewed \"Follow Up\" Transactions..."));
-    //     subGlobalOpMenuDelete->Append(MENU_TREEPOPUP_DELETE_UNRECONCILED, _("Delete Viewed \"Unreconciled\" Transactions..."));
+    //    subGlobalOpMenuDelete->Append(MENU_TREEPOPUP_DELETE_FLAGGED, _("Delete Viewed \"Follow Up\" Transactions..."));
+    //    subGlobalOpMenuDelete->Append(MENU_TREEPOPUP_DELETE_UNRECONCILED, _("Delete Viewed \"Unreconciled\" Transactions..."));
     // }
     // menu.Append(MENU_TREEPOPUP_DELETE2, _("&Delete "), subGlobalOpMenuDelete);
 
@@ -929,12 +929,12 @@ void TransactionListCtrl::OnListKeyDown(wxListEvent& event)
         }
     }
     else {
-        if (key == WXK_DELETE || key == WXK_NUMPAD_DELETE)
-        {
-            wxCommandEvent evt(wxEVT_COMMAND_MENU_SELECTED, MENU_TREEPOPUP_DELETE2);
-            OnDeleteTransaction(evt);
-        }
-        else if (key == wxKeyCode('R'))
+        // if (key == WXK_DELETE || key == WXK_NUMPAD_DELETE)
+        // {
+        //    wxCommandEvent evt(wxEVT_COMMAND_MENU_SELECTED, MENU_TREEPOPUP_DELETE2);
+        //    OnDeleteTransaction(evt);
+        // }
+        /* else */ if (key == wxKeyCode('R'))
         {
             wxCommandEvent evt(wxEVT_COMMAND_MENU_SELECTED, MENU_TREEPOPUP_RESTORE);
             OnRestoreTransaction(evt);

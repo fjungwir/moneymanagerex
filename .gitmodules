@@ -33,4 +33,4 @@
 	url = https://github.com/moneymanagerex/general-reports
 [submodule "3rd/lunasvg"]
 	path = 3rd/lunasvg
-	url = ttps://github.com/sammycage/lunasvg.git
+	url = https://github.com/sammycage/lunasvg.git

@@ -424,7 +424,6 @@ void mmCheckingPanel::CreateControls()
     wxBoxSizer* itemButtonsSizer = new wxBoxSizer(wxHORIZONTAL);
     itemBoxSizer4->Add(itemButtonsSizer, g_flagsBorder1V);
 
-
     // It isn't allowed that we can delete a booking
     // m_btnDelete = new wxButton(itemPanel12, wxID_REMOVE, _("&Delete "));
     // mmToolTip(m_btnDelete, _("Delete selected transaction"));
@@ -439,8 +438,8 @@ void mmCheckingPanel::CreateControls()
         itemButtonsSizer->Add(m_btnEdit, 0, wxRIGHT, 5);
         m_btnEdit->Enable(false);
 
-        itemButtonsSizer->Add(m_btnDelete, 0, wxRIGHT, 5);
-        m_btnDelete->Enable(false);
+        // itemButtonsSizer->Add(m_btnDelete, 0, wxRIGHT, 5);
+        // m_btnDelete->Enable(false);
 
         m_btnDuplicate = new wxButton(itemPanel12, wxID_DUPLICATE, _("D&uplicate "));
         mmToolTip(m_btnDuplicate, _("Duplicate selected transaction"));
