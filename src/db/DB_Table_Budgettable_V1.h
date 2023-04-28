@@ -12,7 +12,7 @@
  *      @brief
  *
  *      Revision History:
- *          AUTO GENERATED at 2022-07-20 15:29:27.776453.
+ *          AUTO GENERATED at 2022-12-18 13:00:45.607197.
  *          DO NOT EDIT!
  */
 //=============================================================================
@@ -64,7 +64,7 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
     /** Removes all records stored in memory (cache) for the table*/ 
     void destroy_cache()
     {
-        std::for_each(cache_.begin(), cache_.end(), std::mem_fun(&Data::destroy));
+        std::for_each(cache_.begin(), cache_.end(), std::mem_fn(&Data::destroy));
         cache_.clear();
         index_by_id_.clear(); // no memory release since it just stores pointer and the according objects are in cache
     }
@@ -76,7 +76,7 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
         {
             try
             {
-                db->ExecuteUpdate("CREATE TABLE BUDGETTABLE_V1(BUDGETENTRYID integer primary key, BUDGETYEARID integer, CATEGID integer, SUBCATEGID integer, PERIOD TEXT NOT NULL /* None, Weekly, Bi-Weekly, Monthly, Monthly, Bi-Monthly, Quarterly, Half-Yearly, Yearly, Daily*/, AMOUNT numeric NOT NULL)");
+                db->ExecuteUpdate("CREATE TABLE BUDGETTABLE_V1(BUDGETENTRYID integer primary key, BUDGETYEARID integer, CATEGID integer, PERIOD TEXT NOT NULL /* None, Weekly, Bi-Weekly, Monthly, Monthly, Bi-Monthly, Quarterly, Half-Yearly, Yearly, Daily*/, AMOUNT numeric NOT NULL, NOTES TEXT, ACTIVE integer)");
                 this->ensure_data(db);
             }
             catch(const wxSQLite3Exception &e) 
@@ -130,12 +130,6 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
         explicit CATEGID(const int &v, OP op = EQUAL): DB_Column<int>(v, op) {}
     };
     
-    struct SUBCATEGID : public DB_Column<int>
-    { 
-        static wxString name() { return "SUBCATEGID"; } 
-        explicit SUBCATEGID(const int &v, OP op = EQUAL): DB_Column<int>(v, op) {}
-    };
-    
     struct PERIOD : public DB_Column<wxString>
     { 
         static wxString name() { return "PERIOD"; } 
@@ -148,15 +142,28 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
         explicit AMOUNT(const double &v, OP op = EQUAL): DB_Column<double>(v, op) {}
     };
     
+    struct NOTES : public DB_Column<wxString>
+    { 
+        static wxString name() { return "NOTES"; } 
+        explicit NOTES(const wxString &v, OP op = EQUAL): DB_Column<wxString>(v, op) {}
+    };
+    
+    struct ACTIVE : public DB_Column<int>
+    { 
+        static wxString name() { return "ACTIVE"; } 
+        explicit ACTIVE(const int &v, OP op = EQUAL): DB_Column<int>(v, op) {}
+    };
+    
     typedef BUDGETENTRYID PRIMARY;
     enum COLUMN
     {
         COL_BUDGETENTRYID = 0
         , COL_BUDGETYEARID = 1
         , COL_CATEGID = 2
-        , COL_SUBCATEGID = 3
-        , COL_PERIOD = 4
-        , COL_AMOUNT = 5
+        , COL_PERIOD = 3
+        , COL_AMOUNT = 4
+        , COL_NOTES = 5
+        , COL_ACTIVE = 6
     };
 
     /** Returns the column name as a string*/
@@ -167,9 +174,10 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
             case COL_BUDGETENTRYID: return "BUDGETENTRYID";
             case COL_BUDGETYEARID: return "BUDGETYEARID";
             case COL_CATEGID: return "CATEGID";
-            case COL_SUBCATEGID: return "SUBCATEGID";
             case COL_PERIOD: return "PERIOD";
             case COL_AMOUNT: return "AMOUNT";
+            case COL_NOTES: return "NOTES";
+            case COL_ACTIVE: return "ACTIVE";
             default: break;
         }
         
@@ -182,9 +190,10 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
         if ("BUDGETENTRYID" == name) return COL_BUDGETENTRYID;
         else if ("BUDGETYEARID" == name) return COL_BUDGETYEARID;
         else if ("CATEGID" == name) return COL_CATEGID;
-        else if ("SUBCATEGID" == name) return COL_SUBCATEGID;
         else if ("PERIOD" == name) return COL_PERIOD;
         else if ("AMOUNT" == name) return COL_AMOUNT;
+        else if ("NOTES" == name) return COL_NOTES;
+        else if ("ACTIVE" == name) return COL_ACTIVE;
 
         return COLUMN(-1);
     }
@@ -199,9 +208,10 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
         int BUDGETENTRYID;//  primary key
         int BUDGETYEARID;
         int CATEGID;
-        int SUBCATEGID;
         wxString PERIOD;
         double AMOUNT;
+        wxString NOTES;
+        int ACTIVE;
 
         int id() const
         {
@@ -230,8 +240,8 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
             BUDGETENTRYID = -1;
             BUDGETYEARID = -1;
             CATEGID = -1;
-            SUBCATEGID = -1;
             AMOUNT = 0.0;
+            ACTIVE = -1;
         }
 
         explicit Data(wxSQLite3ResultSet& q, Self* table = 0)
@@ -241,9 +251,10 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
             BUDGETENTRYID = q.GetInt(0); // BUDGETENTRYID
             BUDGETYEARID = q.GetInt(1); // BUDGETYEARID
             CATEGID = q.GetInt(2); // CATEGID
-            SUBCATEGID = q.GetInt(3); // SUBCATEGID
-            PERIOD = q.GetString(4); // PERIOD
-            AMOUNT = q.GetDouble(5); // AMOUNT
+            PERIOD = q.GetString(3); // PERIOD
+            AMOUNT = q.GetDouble(4); // AMOUNT
+            NOTES = q.GetString(5); // NOTES
+            ACTIVE = q.GetInt(6); // ACTIVE
         }
 
         Data& operator=(const Data& other)
@@ -253,9 +264,10 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
             BUDGETENTRYID = other.BUDGETENTRYID;
             BUDGETYEARID = other.BUDGETYEARID;
             CATEGID = other.CATEGID;
-            SUBCATEGID = other.SUBCATEGID;
             PERIOD = other.PERIOD;
             AMOUNT = other.AMOUNT;
+            NOTES = other.NOTES;
+            ACTIVE = other.ACTIVE;
             return *this;
         }
 
@@ -280,11 +292,6 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
             return this->CATEGID == in.v_;
         }
 
-        bool match(const Self::SUBCATEGID &in) const
-        {
-            return this->SUBCATEGID == in.v_;
-        }
-
         bool match(const Self::PERIOD &in) const
         {
             return this->PERIOD.CmpNoCase(in.v_) == 0;
@@ -293,6 +300,16 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
         bool match(const Self::AMOUNT &in) const
         {
             return this->AMOUNT == in.v_;
+        }
+
+        bool match(const Self::NOTES &in) const
+        {
+            return this->NOTES.CmpNoCase(in.v_) == 0;
+        }
+
+        bool match(const Self::ACTIVE &in) const
+        {
+            return this->ACTIVE == in.v_;
         }
 
         // Return the data record as a json string
@@ -317,12 +334,14 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
             json_writer.Int(this->BUDGETYEARID);
             json_writer.Key("CATEGID");
             json_writer.Int(this->CATEGID);
-            json_writer.Key("SUBCATEGID");
-            json_writer.Int(this->SUBCATEGID);
             json_writer.Key("PERIOD");
             json_writer.String(this->PERIOD.utf8_str());
             json_writer.Key("AMOUNT");
             json_writer.Double(this->AMOUNT);
+            json_writer.Key("NOTES");
+            json_writer.String(this->NOTES.utf8_str());
+            json_writer.Key("ACTIVE");
+            json_writer.Int(this->ACTIVE);
         }
 
         row_t to_row_t() const
@@ -331,9 +350,10 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
             row(L"BUDGETENTRYID") = BUDGETENTRYID;
             row(L"BUDGETYEARID") = BUDGETYEARID;
             row(L"CATEGID") = CATEGID;
-            row(L"SUBCATEGID") = SUBCATEGID;
             row(L"PERIOD") = PERIOD;
             row(L"AMOUNT") = AMOUNT;
+            row(L"NOTES") = NOTES;
+            row(L"ACTIVE") = ACTIVE;
             return row;
         }
 
@@ -342,9 +362,10 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
             t(L"BUDGETENTRYID") = BUDGETENTRYID;
             t(L"BUDGETYEARID") = BUDGETYEARID;
             t(L"CATEGID") = CATEGID;
-            t(L"SUBCATEGID") = SUBCATEGID;
             t(L"PERIOD") = PERIOD;
             t(L"AMOUNT") = AMOUNT;
+            t(L"NOTES") = NOTES;
+            t(L"ACTIVE") = ACTIVE;
         }
 
         /** Save the record instance in memory to the database. */
@@ -380,7 +401,7 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
 
     enum
     {
-        NUM_COLUMNS = 6
+        NUM_COLUMNS = 7
     };
 
     size_t num_columns() const { return NUM_COLUMNS; }
@@ -390,7 +411,7 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
 
     DB_Table_BUDGETTABLE_V1() : fake_(new Data())
     {
-        query_ = "SELECT BUDGETENTRYID, BUDGETYEARID, CATEGID, SUBCATEGID, PERIOD, AMOUNT FROM BUDGETTABLE_V1 ";
+        query_ = "SELECT BUDGETENTRYID, BUDGETYEARID, CATEGID, PERIOD, AMOUNT, NOTES, ACTIVE FROM BUDGETTABLE_V1 ";
     }
 
     /** Create a new Data record and add to memory table (cache)*/
@@ -420,11 +441,11 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
         wxString sql = wxEmptyString;
         if (entity->id() <= 0) //  new & insert
         {
-            sql = "INSERT INTO BUDGETTABLE_V1(BUDGETYEARID, CATEGID, SUBCATEGID, PERIOD, AMOUNT) VALUES(?, ?, ?, ?, ?)";
+            sql = "INSERT INTO BUDGETTABLE_V1(BUDGETYEARID, CATEGID, PERIOD, AMOUNT, NOTES, ACTIVE) VALUES(?, ?, ?, ?, ?, ?)";
         }
         else
         {
-            sql = "UPDATE BUDGETTABLE_V1 SET BUDGETYEARID = ?, CATEGID = ?, SUBCATEGID = ?, PERIOD = ?, AMOUNT = ? WHERE BUDGETENTRYID = ?";
+            sql = "UPDATE BUDGETTABLE_V1 SET BUDGETYEARID = ?, CATEGID = ?, PERIOD = ?, AMOUNT = ?, NOTES = ?, ACTIVE = ? WHERE BUDGETENTRYID = ?";
         }
 
         try
@@ -433,11 +454,12 @@ struct DB_Table_BUDGETTABLE_V1 : public DB_Table
 
             stmt.Bind(1, entity->BUDGETYEARID);
             stmt.Bind(2, entity->CATEGID);
-            stmt.Bind(3, entity->SUBCATEGID);
-            stmt.Bind(4, entity->PERIOD);
-            stmt.Bind(5, entity->AMOUNT);
+            stmt.Bind(3, entity->PERIOD);
+            stmt.Bind(4, entity->AMOUNT);
+            stmt.Bind(5, entity->NOTES);
+            stmt.Bind(6, entity->ACTIVE);
             if (entity->id() > 0)
-                stmt.Bind(6, entity->BUDGETENTRYID);
+                stmt.Bind(7, entity->BUDGETENTRYID);
 
             stmt.ExecuteUpdate();
             stmt.Finalize();

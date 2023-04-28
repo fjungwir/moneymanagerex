@@ -12,7 +12,7 @@
  *      @brief
  *
  *      Revision History:
- *          AUTO GENERATED at 2022-07-20 15:29:27.776453.
+ *          AUTO GENERATED at 2022-12-18 13:00:45.607197.
  *          DO NOT EDIT!
  */
 //=============================================================================
@@ -64,7 +64,7 @@ struct DB_Table_PAYEE_V1 : public DB_Table
     /** Removes all records stored in memory (cache) for the table*/ 
     void destroy_cache()
     {
-        std::for_each(cache_.begin(), cache_.end(), std::mem_fun(&Data::destroy));
+        std::for_each(cache_.begin(), cache_.end(), std::mem_fn(&Data::destroy));
         cache_.clear();
         index_by_id_.clear(); // no memory release since it just stores pointer and the according objects are in cache
     }
@@ -76,7 +76,7 @@ struct DB_Table_PAYEE_V1 : public DB_Table
         {
             try
             {
-                db->ExecuteUpdate("CREATE TABLE PAYEE_V1(PAYEEID integer primary key, PAYEENAME TEXT COLLATE NOCASE NOT NULL UNIQUE, CATEGID integer, SUBCATEGID integer)");
+                db->ExecuteUpdate("CREATE TABLE PAYEE_V1(PAYEEID integer primary key, PAYEENAME TEXT COLLATE NOCASE NOT NULL UNIQUE, CATEGID integer, NUMBER TEXT, WEBSITE TEXT, NOTES TEXT, ACTIVE integer)");
                 this->ensure_data(db);
             }
             catch(const wxSQLite3Exception &e) 
@@ -130,10 +130,28 @@ struct DB_Table_PAYEE_V1 : public DB_Table
         explicit CATEGID(const int &v, OP op = EQUAL): DB_Column<int>(v, op) {}
     };
     
-    struct SUBCATEGID : public DB_Column<int>
+    struct NUMBER : public DB_Column<wxString>
     { 
-        static wxString name() { return "SUBCATEGID"; } 
-        explicit SUBCATEGID(const int &v, OP op = EQUAL): DB_Column<int>(v, op) {}
+        static wxString name() { return "NUMBER"; } 
+        explicit NUMBER(const wxString &v, OP op = EQUAL): DB_Column<wxString>(v, op) {}
+    };
+    
+    struct WEBSITE : public DB_Column<wxString>
+    { 
+        static wxString name() { return "WEBSITE"; } 
+        explicit WEBSITE(const wxString &v, OP op = EQUAL): DB_Column<wxString>(v, op) {}
+    };
+    
+    struct NOTES : public DB_Column<wxString>
+    { 
+        static wxString name() { return "NOTES"; } 
+        explicit NOTES(const wxString &v, OP op = EQUAL): DB_Column<wxString>(v, op) {}
+    };
+    
+    struct ACTIVE : public DB_Column<int>
+    { 
+        static wxString name() { return "ACTIVE"; } 
+        explicit ACTIVE(const int &v, OP op = EQUAL): DB_Column<int>(v, op) {}
     };
     
     typedef PAYEEID PRIMARY;
@@ -142,7 +160,10 @@ struct DB_Table_PAYEE_V1 : public DB_Table
         COL_PAYEEID = 0
         , COL_PAYEENAME = 1
         , COL_CATEGID = 2
-        , COL_SUBCATEGID = 3
+        , COL_NUMBER = 3
+        , COL_WEBSITE = 4
+        , COL_NOTES = 5
+        , COL_ACTIVE = 6
     };
 
     /** Returns the column name as a string*/
@@ -153,7 +174,10 @@ struct DB_Table_PAYEE_V1 : public DB_Table
             case COL_PAYEEID: return "PAYEEID";
             case COL_PAYEENAME: return "PAYEENAME";
             case COL_CATEGID: return "CATEGID";
-            case COL_SUBCATEGID: return "SUBCATEGID";
+            case COL_NUMBER: return "NUMBER";
+            case COL_WEBSITE: return "WEBSITE";
+            case COL_NOTES: return "NOTES";
+            case COL_ACTIVE: return "ACTIVE";
             default: break;
         }
         
@@ -166,7 +190,10 @@ struct DB_Table_PAYEE_V1 : public DB_Table
         if ("PAYEEID" == name) return COL_PAYEEID;
         else if ("PAYEENAME" == name) return COL_PAYEENAME;
         else if ("CATEGID" == name) return COL_CATEGID;
-        else if ("SUBCATEGID" == name) return COL_SUBCATEGID;
+        else if ("NUMBER" == name) return COL_NUMBER;
+        else if ("WEBSITE" == name) return COL_WEBSITE;
+        else if ("NOTES" == name) return COL_NOTES;
+        else if ("ACTIVE" == name) return COL_ACTIVE;
 
         return COLUMN(-1);
     }
@@ -181,7 +208,10 @@ struct DB_Table_PAYEE_V1 : public DB_Table
         int PAYEEID;//  primary key
         wxString PAYEENAME;
         int CATEGID;
-        int SUBCATEGID;
+        wxString NUMBER;
+        wxString WEBSITE;
+        wxString NOTES;
+        int ACTIVE;
 
         int id() const
         {
@@ -209,7 +239,7 @@ struct DB_Table_PAYEE_V1 : public DB_Table
         
             PAYEEID = -1;
             CATEGID = -1;
-            SUBCATEGID = -1;
+            ACTIVE = -1;
         }
 
         explicit Data(wxSQLite3ResultSet& q, Self* table = 0)
@@ -219,7 +249,10 @@ struct DB_Table_PAYEE_V1 : public DB_Table
             PAYEEID = q.GetInt(0); // PAYEEID
             PAYEENAME = q.GetString(1); // PAYEENAME
             CATEGID = q.GetInt(2); // CATEGID
-            SUBCATEGID = q.GetInt(3); // SUBCATEGID
+            NUMBER = q.GetString(3); // NUMBER
+            WEBSITE = q.GetString(4); // WEBSITE
+            NOTES = q.GetString(5); // NOTES
+            ACTIVE = q.GetInt(6); // ACTIVE
         }
 
         Data& operator=(const Data& other)
@@ -229,7 +262,10 @@ struct DB_Table_PAYEE_V1 : public DB_Table
             PAYEEID = other.PAYEEID;
             PAYEENAME = other.PAYEENAME;
             CATEGID = other.CATEGID;
-            SUBCATEGID = other.SUBCATEGID;
+            NUMBER = other.NUMBER;
+            WEBSITE = other.WEBSITE;
+            NOTES = other.NOTES;
+            ACTIVE = other.ACTIVE;
             return *this;
         }
 
@@ -254,9 +290,24 @@ struct DB_Table_PAYEE_V1 : public DB_Table
             return this->CATEGID == in.v_;
         }
 
-        bool match(const Self::SUBCATEGID &in) const
+        bool match(const Self::NUMBER &in) const
         {
-            return this->SUBCATEGID == in.v_;
+            return this->NUMBER.CmpNoCase(in.v_) == 0;
+        }
+
+        bool match(const Self::WEBSITE &in) const
+        {
+            return this->WEBSITE.CmpNoCase(in.v_) == 0;
+        }
+
+        bool match(const Self::NOTES &in) const
+        {
+            return this->NOTES.CmpNoCase(in.v_) == 0;
+        }
+
+        bool match(const Self::ACTIVE &in) const
+        {
+            return this->ACTIVE == in.v_;
         }
 
         // Return the data record as a json string
@@ -281,8 +332,14 @@ struct DB_Table_PAYEE_V1 : public DB_Table
             json_writer.String(this->PAYEENAME.utf8_str());
             json_writer.Key("CATEGID");
             json_writer.Int(this->CATEGID);
-            json_writer.Key("SUBCATEGID");
-            json_writer.Int(this->SUBCATEGID);
+            json_writer.Key("NUMBER");
+            json_writer.String(this->NUMBER.utf8_str());
+            json_writer.Key("WEBSITE");
+            json_writer.String(this->WEBSITE.utf8_str());
+            json_writer.Key("NOTES");
+            json_writer.String(this->NOTES.utf8_str());
+            json_writer.Key("ACTIVE");
+            json_writer.Int(this->ACTIVE);
         }
 
         row_t to_row_t() const
@@ -291,7 +348,10 @@ struct DB_Table_PAYEE_V1 : public DB_Table
             row(L"PAYEEID") = PAYEEID;
             row(L"PAYEENAME") = PAYEENAME;
             row(L"CATEGID") = CATEGID;
-            row(L"SUBCATEGID") = SUBCATEGID;
+            row(L"NUMBER") = NUMBER;
+            row(L"WEBSITE") = WEBSITE;
+            row(L"NOTES") = NOTES;
+            row(L"ACTIVE") = ACTIVE;
             return row;
         }
 
@@ -300,7 +360,10 @@ struct DB_Table_PAYEE_V1 : public DB_Table
             t(L"PAYEEID") = PAYEEID;
             t(L"PAYEENAME") = PAYEENAME;
             t(L"CATEGID") = CATEGID;
-            t(L"SUBCATEGID") = SUBCATEGID;
+            t(L"NUMBER") = NUMBER;
+            t(L"WEBSITE") = WEBSITE;
+            t(L"NOTES") = NOTES;
+            t(L"ACTIVE") = ACTIVE;
         }
 
         /** Save the record instance in memory to the database. */
@@ -336,7 +399,7 @@ struct DB_Table_PAYEE_V1 : public DB_Table
 
     enum
     {
-        NUM_COLUMNS = 4
+        NUM_COLUMNS = 7
     };
 
     size_t num_columns() const { return NUM_COLUMNS; }
@@ -346,7 +409,7 @@ struct DB_Table_PAYEE_V1 : public DB_Table
 
     DB_Table_PAYEE_V1() : fake_(new Data())
     {
-        query_ = "SELECT PAYEEID, PAYEENAME, CATEGID, SUBCATEGID FROM PAYEE_V1 ";
+        query_ = "SELECT PAYEEID, PAYEENAME, CATEGID, NUMBER, WEBSITE, NOTES, ACTIVE FROM PAYEE_V1 ";
     }
 
     /** Create a new Data record and add to memory table (cache)*/
@@ -376,11 +439,11 @@ struct DB_Table_PAYEE_V1 : public DB_Table
         wxString sql = wxEmptyString;
         if (entity->id() <= 0) //  new & insert
         {
-            sql = "INSERT INTO PAYEE_V1(PAYEENAME, CATEGID, SUBCATEGID) VALUES(?, ?, ?)";
+            sql = "INSERT INTO PAYEE_V1(PAYEENAME, CATEGID, NUMBER, WEBSITE, NOTES, ACTIVE) VALUES(?, ?, ?, ?, ?, ?)";
         }
         else
         {
-            sql = "UPDATE PAYEE_V1 SET PAYEENAME = ?, CATEGID = ?, SUBCATEGID = ? WHERE PAYEEID = ?";
+            sql = "UPDATE PAYEE_V1 SET PAYEENAME = ?, CATEGID = ?, NUMBER = ?, WEBSITE = ?, NOTES = ?, ACTIVE = ? WHERE PAYEEID = ?";
         }
 
         try
@@ -389,9 +452,12 @@ struct DB_Table_PAYEE_V1 : public DB_Table
 
             stmt.Bind(1, entity->PAYEENAME);
             stmt.Bind(2, entity->CATEGID);
-            stmt.Bind(3, entity->SUBCATEGID);
+            stmt.Bind(3, entity->NUMBER);
+            stmt.Bind(4, entity->WEBSITE);
+            stmt.Bind(5, entity->NOTES);
+            stmt.Bind(6, entity->ACTIVE);
             if (entity->id() > 0)
-                stmt.Bind(4, entity->PAYEEID);
+                stmt.Bind(7, entity->PAYEEID);
 
             stmt.ExecuteUpdate();
             stmt.Finalize();

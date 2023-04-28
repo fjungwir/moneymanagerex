@@ -1,5 +1,6 @@
 /*******************************************************
  Copyright (C) 2013 - 2016, 2020, 2022 Nikolay Akimov
+ Copyright (C) 2022  Mark Whalley (mark@ipx.co.uk)
 
   This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -137,8 +138,8 @@ void mmAssetDialog::dataToControls()
     m_notes->SetValue(m_asset->NOTES);
     m_dpc->SetValue(Model_Asset::STARTDATE(m_asset));
     m_value->SetValue(std::abs(m_asset->VALUE));
-
-    if (!Model_Translink::TranslinkList(Model_Attachment::ASSET, m_asset->ASSETID).empty())
+    Model_Translink::Data_Set translink = Model_Translink::TranslinkList(Model_Attachment::ASSET, m_asset->ASSETID);
+    if (!translink.empty())
     {
         m_value->Enable(false);
     }
@@ -150,7 +151,7 @@ void mmAssetDialog::dataToControls()
     m_assetType->SetSelection(Model_Asset::type(m_asset));
 
     // Set up the transaction if this is the first entry.
-    if (Model_Translink::TranslinkList(Model_Attachment::ASSET, m_asset->ASSETID).empty())
+    if (translink.empty())
     {
         m_transaction_panel->SetTransactionValue(m_asset->VALUE);
     }
@@ -161,6 +162,13 @@ void mmAssetDialog::dataToControls()
         m_assetType->Enable(false);
         m_dpc->Enable(false);
         m_value->Enable(false);
+    }
+
+    if (m_checking_entry && !m_checking_entry->DELETEDTIME.IsEmpty()) {
+        m_valueChange->Enable(false);
+        m_valueChangeRate->Enable(false);
+        m_notes->Enable(false);
+        bAttachments_->Enable(false);
     }
 }
 
@@ -247,7 +255,7 @@ void mmAssetDialog::CreateControls()
     itemFlexGridSizer6->Add(new wxStaticText( asset_details_panel, wxID_STATIC, _("Notes")), g_flagsH);
 
     bAttachments_ = new wxBitmapButton(asset_details_panel, wxID_FILE
-        , mmBitmap(png::CLIP, mmBitmapButtonSize), wxDefaultPosition
+        , mmBitmapBundle(png::CLIP, mmBitmapButtonSize), wxDefaultPosition
         , wxSize(m_valueChange->GetSize().GetY(), m_valueChange->GetSize().GetY()));
     itemFlexGridSizer6->Add(bAttachments_, wxSizerFlags(g_flagsV).Align(wxALIGN_RIGHT));
     mmToolTip(bAttachments_, _("Organize attachments of this asset"));
@@ -368,6 +376,9 @@ void mmAssetDialog::OnOk(wxCommandEvent& /*event*/)
     m_asset->STARTDATE        = m_dpc->GetValue().FormatISODate();
     m_asset->NOTES            = m_notes->GetValue().Trim();
     m_asset->ASSETNAME        = name;
+    m_asset->ASSETSTATUS      = Model_Asset::OPEN_STR;
+    m_asset->VALUECHANGEMODE  = Model_Asset::PERCENTAGE_STR;  
+    m_asset->CURRENCYID       = -1; 
     m_asset->VALUE            = value;
     m_asset->VALUECHANGE      = Model_Asset::all_rate()[valueChangeType];
     m_asset->VALUECHANGERATE  = valueChangeRate;
@@ -384,6 +395,9 @@ void mmAssetDialog::OnOk(wxCommandEvent& /*event*/)
     if (m_transaction_panel->ValidCheckingAccountEntry())
     {
         int checking_id = m_transaction_panel->SaveChecking();
+        if (checking_id < 0)
+            return;
+
         if (!m_transfer_entry)
         {
             Model_Translink::SetAssetTranslink(new_asset_id
@@ -404,6 +418,7 @@ void mmAssetDialog::OnOk(wxCommandEvent& /*event*/)
             , _("New Asset"), wxYES_NO | wxICON_INFORMATION) == wxYES)
         {
             CreateAssetAccount();
+            m_gui_frame->RefreshNavigationTree();
         }
     }
 
@@ -428,6 +443,7 @@ void mmAssetDialog::CreateAssetAccount()
     asset_account->FAVORITEACCT = "TRUE";
     asset_account->STATUS = Model_Account::all_status()[Model_Account::OPEN];
     asset_account->INITIALBAL = 0;
+    asset_account->INITIALDATE = wxDate::Today().FormatISODate();
     asset_account->CURRENCYID = Model_Currency::GetBaseCurrency()->CURRENCYID;
     Model_Account::instance().save(asset_account);
 

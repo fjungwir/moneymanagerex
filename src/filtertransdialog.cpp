@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "model/allmodel.h"
 
 #include <wx/valnum.h>
+#include <wx/regex.h>
 
 constexpr auto DATE_MAX = 253402214400   /* Dec 31, 9999 */;
 
@@ -250,9 +251,12 @@ void mmFilterTransactionsDialog::mmDoDataToControls(const wxString& json)
     rangeChoice_->SetStringSelection(wxGetTranslation(s_range));
     datesCheckBox_->SetValue(rangeChoice_->GetSelection() != wxNOT_FOUND && !s_range.empty());
     rangeChoice_->Enable(datesCheckBox_->IsChecked());
-    wxCommandEvent evt(wxID_ANY, ID_DATE_RANGE);
-    evt.SetInt(rangeChoice_->GetSelection());
-    OnChoice(evt);
+    if (datesCheckBox_->IsChecked())
+    {
+        wxCommandEvent evt(wxID_ANY, ID_DATE_RANGE);
+        evt.SetInt(rangeChoice_->GetSelection());
+        OnChoice(evt);
+    }
 
     //Payee
     Value& j_payee = GetValueByPointerWithDefault(j_doc, "/PAYEE", "");
@@ -269,11 +273,13 @@ void mmFilterTransactionsDialog::mmDoDataToControls(const wxString& json)
     if (delimiter != ":" && s_category.Contains(":"))
     {
         wxStringTokenizer categ_token(s_category, ":", wxTOKEN_RET_EMPTY_ALL);
+        wxRegEx regex;
         const auto& categ_name = categ_token.GetNextToken();
         Model_Category::Data_Set categs = Model_Category::instance().all();
         for (const auto& categ : categs) {
             if (categ.CATEGNAME == categ_name) {
-                s_category.Replace(categ_name + ":", categ_name + delimiter);
+                regex.Compile(categ_name + " ?: ?");
+                regex.Replace(&s_category, categ_name + delimiter);
                 break;
             }
         }
@@ -376,7 +382,7 @@ void mmFilterTransactionsDialog::mmDoDataToControls(const wxString& json)
         const auto entry = wxString::Format("CUSTOM%i", i.FIELDID);
         if (j_doc.HasMember(entry.c_str())) {
             const auto value = j_doc[const_cast<char*>(static_cast<const char*>(entry.mb_str()))].GetString();
-            m_custom_fields->SetStringValue(i.FIELDID, value);
+            m_custom_fields->SetStringValue(i.FIELDID, value, true);
             is_custom_found = true;
         }
         else
@@ -630,7 +636,8 @@ void mmFilterTransactionsDialog::mmDoCreateControls()
         _("Tips: You can use wildcard characters - question mark (?), asterisk (*) - in your search criteria.") + "\n" +
         _("Use the question mark (?) to find any single character - for example, s?t finds 'sat' and 'set'.") + "\n" +
         _("Use the asterisk (*) to find any number of characters - for example, s*d finds 'sad' and 'started'.") + "\n" +
-        _("Use the asterisk (*) in the begin to find any string in the middle of the sentence.")
+        _("Use the asterisk (*) in the begin to find any string in the middle of the sentence.") + "\n" +
+        _("Use regex: to match using regular expressions.")
     );
 
     // Colour
@@ -701,13 +708,13 @@ void mmFilterTransactionsDialog::mmDoCreateControls()
         , wxCommandEventHandler(mmFilterTransactionsDialog::OnSettingsSelected), nullptr, this);
 
     settings_box_sizer->AddSpacer(5);
-    m_btnSaveAs = new wxBitmapButton(this, wxID_SAVEAS, mmBitmap(png::SAVE, mmBitmapButtonSize));
+    m_btnSaveAs = new wxBitmapButton(this, wxID_SAVEAS, mmBitmapBundle(png::SAVE, mmBitmapButtonSize));
     settings_box_sizer->Add(m_btnSaveAs, g_flagsH);
     mmToolTip(m_btnSaveAs, _("Save active values into current Preset selection"));
     m_btnSaveAs->Connect(wxID_SAVEAS, wxEVT_COMMAND_BUTTON_CLICKED
         , wxCommandEventHandler(mmFilterTransactionsDialog::OnSaveSettings), nullptr, this);
 
-    m_itemButtonClear = new wxBitmapButton(this, wxID_CLEAR, mmBitmap(png::CLEAR, mmBitmapButtonSize));
+    m_itemButtonClear = new wxBitmapButton(this, wxID_CLEAR, mmBitmapBundle(png::CLEAR, mmBitmapButtonSize));
     mmToolTip(m_itemButtonClear, _("Delete current Preset selection"));
     settings_box_sizer->Add(m_itemButtonClear, g_flagsH);
 
@@ -728,7 +735,7 @@ void mmFilterTransactionsDialog::mmDoCreateControls()
     button_cancel->SetFocus();
 
     wxBitmapButton* button_hide = new wxBitmapButton(button_panel
-        , ID_BTN_CUSTOMFIELDS, mmBitmap(png::RIGHTARROW, mmBitmapButtonSize));
+        , ID_BTN_CUSTOMFIELDS, mmBitmapBundle(png::RIGHTARROW, mmBitmapButtonSize));
     mmToolTip(button_hide, _("Show/Hide custom fields window"));
     if (m_custom_fields->GetCustomFieldsCount() == 0) {
         button_hide->Hide();
@@ -797,7 +804,7 @@ void mmFilterTransactionsDialog::setTransferTypeCheckBoxes()
         cbTypeTransferTo_->SetLabel(_("Transfer"));
         Layout();
         bSelectedAccounts_->Disable();
-    }    
+    }
 }
 
 void mmFilterTransactionsDialog::OnCheckboxClick(wxCommandEvent& event)
@@ -806,9 +813,14 @@ void mmFilterTransactionsDialog::OnCheckboxClick(wxCommandEvent& event)
     switch (id)
     {
     case ID_PERIOD_CB:
+    {
         if (dateRangeCheckBox_->IsChecked())
             dateRangeCheckBox_->SetValue(false);
+        wxCommandEvent evt(wxID_ANY, ID_DATE_RANGE);
+        evt.SetInt(rangeChoice_->GetSelection());
+        OnChoice(evt);
         break;
+    }
     case ID_DATE_RANGE_CB:
         if (datesCheckBox_->IsChecked())
             datesCheckBox_->SetValue(false);
@@ -823,7 +835,7 @@ void mmFilterTransactionsDialog::OnCheckboxClick(wxCommandEvent& event)
     cbPayee_->Enable(payeeCheckBox_->IsChecked());
     categoryComboBox_->Enable(categoryCheckBox_->IsChecked());
     categorySubCatCheckBox_->Enable(categoryCheckBox_->IsChecked()
-            && (categoryComboBox_->mmGetCategoryId() != -1) && (categoryComboBox_->mmGetSubcategoryId() == -1));
+        && (categoryComboBox_->mmGetCategoryId() != -1));
     if (!categorySubCatCheckBox_->IsEnabled()) categorySubCatCheckBox_->SetValue(false);
     choiceStatus_->Enable(statusCheckBox_->IsChecked());
     cbTypeWithdrawal_->Enable(typeCheckBox_->IsChecked());
@@ -1103,7 +1115,7 @@ bool mmFilterTransactionsDialog::mmIsTypeMaches(const wxString& typeState, int a
 {
     bool result = false;
     if (typeState == Model_Checking::all_type()[Model_Checking::TRANSFER]
-        && cbTypeTransferTo_->GetValue() 
+        && cbTypeTransferTo_->GetValue()
         && (!mmIsAccountChecked() || (m_selected_accounts_id.Index(accountid) != wxNOT_FOUND)))
     {
         result = true;
@@ -1195,16 +1207,31 @@ bool mmFilterTransactionsDialog::mmIsPayeeMatches(const DATA &tran)
 }
 
 template<class MODEL, class DATA>
+bool mmFilterTransactionsDialog::mmIsNoteMatches(const DATA& tran)
+{
+    const wxString value = mmGetNotes();
+    if (!value.empty()) {
+        if (value.StartsWith("regex:")) {
+            wxRegEx pattern("^(" + value.Right(value.length() - 6).ToStdString() + ")$", wxRE_ICASE | wxRE_EXTENDED);
+            if (pattern.IsValid() && pattern.Matches(tran.NOTES)) return true;
+            else return false;
+        }
+        else return tran.NOTES.Lower().Matches(value.Lower());
+    }
+    else return tran.NOTES.empty();
+}
+
+template<class MODEL, class DATA>
 bool mmFilterTransactionsDialog::mmIsCategoryMatches(const DATA& tran, const std::map<int, typename MODEL::Split_Data_Set> & splits)
 {
     wxArrayString trx_categories;
     const auto& it = splits.find(tran.id());
     if (it == splits.end()) {
-        trx_categories.Add(Model_Category::full_name(tran.CATEGID, tran.SUBCATEGID));
+        trx_categories.Add(Model_Category::full_name(tran.CATEGID));
     }
     else {
         for (const auto& split : it->second) {
-            trx_categories.Add(Model_Category::full_name(split.CATEGID, split.SUBCATEGID));
+            trx_categories.Add(Model_Category::full_name(split.CATEGID));
         }
     }
 
@@ -1244,9 +1271,7 @@ bool mmFilterTransactionsDialog::mmIsRecordMatches(const Model_Checking::Data &t
     else if (mmIsNumberChecked() && (mmGetNumber().empty() ? !tran.TRANSACTIONNUMBER.empty()
         : tran.TRANSACTIONNUMBER.empty() || !tran.TRANSACTIONNUMBER.Lower().Matches(mmGetNumber().Lower())))
         ok = false;
-    else if (mmIsNotesChecked() && (mmGetNotes().empty() ? !tran.NOTES.empty()
-        : tran.NOTES.empty() || !tran.NOTES.Lower().Matches(mmGetNotes().Lower())))
-        ok = false;
+    else if (mmIsNotesChecked() && !mmIsNoteMatches<Model_Checking>(tran)) ok = false;
     else if (mmIsColorChecked() && (m_color_value != tran.FOLLOWUPID))
         ok = false;
     else if (mmIsCustomFieldChecked() && !mmIsCustomFieldMatches(tran))
@@ -1257,8 +1282,8 @@ bool mmFilterTransactionsDialog::mmIsRecordMatches(const Model_Billsdeposits::Da
 {
     bool ok = true;
     if (mmIsAccountChecked()
-            && m_selected_accounts_id.Index(tran.ACCOUNTID) == wxNOT_FOUND
-            && m_selected_accounts_id.Index(tran.TOACCOUNTID) == wxNOT_FOUND)
+        && m_selected_accounts_id.Index(tran.ACCOUNTID) == wxNOT_FOUND
+        && m_selected_accounts_id.Index(tran.TOACCOUNTID) == wxNOT_FOUND)
         ok = false;
     else if ((mmIsDateRangeChecked() || mmIsRangeChecked()) && (tran.TRANSDATE < m_begin_date && tran.TRANSDATE > m_end_date))
         ok = false;
@@ -1272,10 +1297,7 @@ bool mmFilterTransactionsDialog::mmIsRecordMatches(const Model_Billsdeposits::Da
         ? !tran.TRANSACTIONNUMBER.empty()
         : tran.TRANSACTIONNUMBER.empty() || !tran.TRANSACTIONNUMBER.Lower().Matches(mmGetNumber().Lower())))
         ok = false;
-    else if (mmIsNotesChecked() && (mmGetNotes().empty()
-        ? !tran.NOTES.empty()
-        : tran.NOTES.empty() || !tran.NOTES.Lower().Matches(mmGetNotes().Lower())))
-        ok = false;
+    else if (mmIsNotesChecked() && !mmIsNoteMatches<Model_Billsdeposits>(tran)) ok = false;
     return ok;
 }
 
@@ -1442,7 +1464,7 @@ const wxString mmFilterTransactionsDialog::mmGetJsonSetings(bool i18n) const
     }
 
     //Payee
-   if (payeeCheckBox_->IsChecked())
+    if (payeeCheckBox_->IsChecked())
     {
         json_writer.Key((i18n ? _("Payee") : "PAYEE").utf8_str());
         json_writer.String(cbPayee_->GetValue().utf8_str());
@@ -1455,8 +1477,7 @@ const wxString mmFilterTransactionsDialog::mmGetJsonSetings(bool i18n) const
         if (categoryComboBox_->mmIsValid())
         {
             int categ = categoryComboBox_->mmGetCategoryId();
-            int subcateg = categoryComboBox_->mmGetSubcategoryId();
-            const auto& full_name = Model_Category::full_name(categ, subcateg, ":");
+            const auto& full_name = Model_Category::full_name(categ, ":");
             json_writer.String(full_name.utf8_str());
         } else {
             json_writer.String(categoryComboBox_->GetValue().utf8_str());
@@ -1464,8 +1485,8 @@ const wxString mmFilterTransactionsDialog::mmGetJsonSetings(bool i18n) const
     }
 
     // Sub Category inclusion
-    if (categoryCheckBox_->IsChecked() 
-        && (categoryComboBox_->mmGetCategoryId() != -1) && (categoryComboBox_->mmGetSubcategoryId() == -1))
+    if (categoryCheckBox_->IsChecked()
+        && (categoryComboBox_->mmGetCategoryId() != -1))
     {
         json_writer.Key((i18n ? _("Include all sub-categories") : "SUBCATEGORYINCLUDE").utf8_str());
         json_writer.Bool(categorySubCatCheckBox_->GetValue());
@@ -1590,9 +1611,9 @@ const wxString mmFilterTransactionsDialog::mmGetJsonSetings(bool i18n) const
 void mmFilterTransactionsDialog::OnCategoryChange(wxEvent& event)
 {
     categorySubCatCheckBox_->Enable(categoryCheckBox_->IsChecked()
-            && (categoryComboBox_->mmGetCategoryId() != -1) && (categoryComboBox_->mmGetSubcategoryId() == -1));
+        && (categoryComboBox_->mmGetCategoryId() != -1));
     if (!categorySubCatCheckBox_->IsEnabled()) categorySubCatCheckBox_->SetValue(false);
-    event.Skip();  
+    event.Skip();
 }
 
 void mmFilterTransactionsDialog::OnDateChanged(wxDateEvent& event)
@@ -1816,7 +1837,7 @@ void mmFilterTransactionsDialog::OnMoreFields(wxCommandEvent& WXUNUSED(event))
     wxBitmapButton* button = static_cast<wxBitmapButton*>(FindWindow(ID_BTN_CUSTOMFIELDS));
 
     if (button)
-        button->SetBitmap(mmBitmap(m_custom_fields->IsCustomPanelShown() ? png::RIGHTARROW : png::LEFTARROW, mmBitmapButtonSize));
+        button->SetBitmap(mmBitmapBundle(m_custom_fields->IsCustomPanelShown() ? png::RIGHTARROW : png::LEFTARROW, mmBitmapButtonSize));
 
     m_custom_fields->ShowHideCustomPanel();
 
@@ -1873,7 +1894,8 @@ void mmFilterTransactionsDialog::OnComboKey(wxKeyEvent& event)
             {
                 mmPayeeDialog dlg(this, true);
                 dlg.ShowModal();
-                cbPayee_->mmDoReInitialize();
+                if (dlg.getRefreshRequested())
+                    cbPayee_->mmDoReInitialize();
                 int payee_id = dlg.getPayeeId();
                 Model_Payee::Data* payee = Model_Payee::instance().get(payee_id);
                 if (payee) {
@@ -1889,10 +1911,11 @@ void mmFilterTransactionsDialog::OnComboKey(wxKeyEvent& event)
             auto category = categoryComboBox_->GetValue();
             if (category.empty())
             {
-                mmCategDialog dlg(this, true, -1, -1);
+                mmCategDialog dlg(this, true, -1);
                 dlg.ShowModal();
-                categoryComboBox_->mmDoReInitialize();
-                category = Model_Category::full_name(dlg.getCategId(), dlg.getSubCategId());
+                if (dlg.getRefreshRequested())
+                    categoryComboBox_->mmDoReInitialize();
+                category = Model_Category::full_name(dlg.getCategId());
                 categoryComboBox_->ChangeValue(category);
                 categoryComboBox_->SelectAll();
                 return;

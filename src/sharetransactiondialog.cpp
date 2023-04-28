@@ -169,6 +169,13 @@ void ShareTransactionDialog::DataToControls()
                 m_transaction_panel->TransactionDate(Model_Checking::TRANSDATE(checking_entry));
                 m_transaction_panel->SetTransactionValue(GetAmount(std::abs(m_share_entry->SHARENUMBER)
                     , m_share_entry->SHAREPRICE, m_share_entry->SHARECOMMISSION), true);
+                if (checking_entry && !checking_entry->DELETEDTIME.IsEmpty()) {
+                    m_share_num_ctrl->Enable(false);
+                    m_share_price_ctrl->Enable(false);
+                    m_share_commission_ctrl->Enable(false);
+                    m_share_lot_ctrl->Enable(false);
+                    web_button->Enable(false);
+                }
             }
         }
         else
@@ -275,12 +282,12 @@ void ShareTransactionDialog::CreateControls()
     itemFlexGridSizer6->Add(new wxStaticText(stock_details_panel, wxID_STATIC, _("Notes")), g_flagsH);
 
     //Attachments
-    m_attachments_btn = new wxBitmapButton(stock_details_panel, wxID_FILE, mmBitmap(png::CLIP, mmBitmapButtonSize));
+    m_attachments_btn = new wxBitmapButton(stock_details_panel, wxID_FILE, mmBitmapBundle(png::CLIP, mmBitmapButtonSize));
     mmToolTip(m_attachments_btn, _("Organize attachments of this stock"));
     //TODO m_attachments not used here
     m_attachments_btn->Hide();
 
-    wxBitmapButton* web_button = new wxBitmapButton(stock_details_panel, wxID_INDEX, mmBitmap(png::WEB, mmBitmapButtonSize));
+    web_button = new wxBitmapButton(stock_details_panel, wxID_INDEX, mmBitmapBundle(png::WEB, mmBitmapButtonSize));
     mmToolTip(web_button, _("Display the web page for the specified Stock symbol"));
 
     wxBoxSizer* icon_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -396,6 +403,8 @@ void ShareTransactionDialog::OnOk(wxCommandEvent& WXUNUSED(event))
         }
 
         int checking_id = m_transaction_panel->SaveChecking();
+        if (checking_id < 0)
+            return;
 
         /*
         // The PURCHASEDATE field in STOCK table holds the earliest purchase date of the stock.

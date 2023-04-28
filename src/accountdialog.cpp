@@ -1,5 +1,6 @@
 /*******************************************************
  Copyright (C) 2006 Madhan Kanagavel
+ Copyright (C) 2022  Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -67,22 +68,8 @@ mmNewAcctDialog::mmNewAcctDialog()
 
 mmNewAcctDialog::mmNewAcctDialog(Model_Account::Data* account, wxWindow* parent)
     : m_account(account)
-    , m_textAccountName(nullptr)
-    , m_notesCtrl(nullptr)
-    , m_initbalance_ctrl(nullptr)
-    , m_imageList(nullptr)
-    , m_bitmapButtons(nullptr)
-    , m_statement_lock_ctrl(nullptr)
-    , m_statement_date_ctrl(nullptr)
-    , m_minimum_balance_ctrl(nullptr)
-    , m_credit_limit_ctrl(nullptr)
-    , m_interest_rate_ctrl(nullptr)
-    , m_payment_due_date_ctrl(nullptr)
-    , m_minimum_payment_ctrl(nullptr)
-    , m_accessinfo_infocus(false)
 {
-    m_imageList = navtree_images_list();
-
+    m_images = navtree_images_list();
     m_currencyID = m_account->CURRENCYID;
     Model_Currency::Data* currency = Model_Currency::instance().get(m_currencyID);
     wxASSERT(currency);
@@ -94,10 +81,7 @@ mmNewAcctDialog::mmNewAcctDialog(Model_Account::Data* account, wxWindow* parent)
 }
 
 mmNewAcctDialog::~mmNewAcctDialog()
-{
-    if (m_imageList)
-        delete m_imageList;
-}
+{}
 
 bool mmNewAcctDialog::Create(wxWindow* parent
     , wxWindowID id
@@ -163,10 +147,15 @@ void mmNewAcctDialog::CreateControls()
     itemChoice6->SetSelection(0);
 
     grid_sizer->Add(new wxStaticText(this, wxID_STATIC, wxString::Format(_("Initial Balance: %s"), "")), g_flagsH);
-
     m_initbalance_ctrl = new mmTextCtrl(this, ID_DIALOG_NEWACCT_TEXTCTRL_INITBALANCE, "", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT | wxTE_PROCESS_ENTER, mmCalcValidator());
     grid_sizer->Add(m_initbalance_ctrl, g_flagsExpand);
     mmToolTip(m_initbalance_ctrl, _("Enter the initial balance in this account."));
+
+    grid_sizer->Add(new wxStaticText(this, wxID_STATIC, _("Opening Date:")), g_flagsH);
+
+    m_initdate_ctrl = new mmDatePickerCtrl(this, wxID_ANY, wxDefaultDateTime, wxDefaultPosition, wxDefaultSize, wxDP_DROPDOWN | wxDP_SHOWCENTURY);
+    mmToolTip(m_initdate_ctrl, _("The date when the account was opened"));
+    grid_sizer->Add(m_initdate_ctrl, g_flagsExpand);
 
     grid_sizer->Add(new wxStaticText(this, wxID_STATIC, _("Currency:")), g_flagsH);
 
@@ -298,7 +287,7 @@ void mmNewAcctDialog::CreateControls()
     m_bitmapButtons->Connect(wxID_STATIC, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(mmNewAcctDialog::OnImageButton), nullptr, this);
     itemBoxSizer28->Add(m_bitmapButtons, g_flagsH);
 
-    bAttachments_ = new wxBitmapButton(itemPanel27, wxID_FILE, mmBitmap(png::CLIP,mmBitmapButtonSize));
+    bAttachments_ = new wxBitmapButton(itemPanel27, wxID_FILE, mmBitmapBundle(png::CLIP));
     mmToolTip(bAttachments_, _("Organize attachments of this account"));
     itemBoxSizer28->Add(bAttachments_, g_flagsH);
 
@@ -349,8 +338,12 @@ void mmNewAcctDialog::fillControls()
     m_initbalance_ctrl->SetCurrency(Model_Account::currency(m_account));
     m_initbalance_ctrl->SetValue(initBal);
 
+    if (!m_account->INITIALDATE.empty()) {
+        m_initdate_ctrl->SetValue(Model_Account::DateOf(m_account->INITIALDATE));
+    }
+
     int selectedImage = Option::instance().AccountImageId(m_account->ACCOUNTID, false, true);
-    m_bitmapButtons->SetBitmap(m_imageList->GetBitmap(selectedImage));
+    m_bitmapButtons->SetBitmap(m_images.at(selectedImage));
 
     m_accessInfo = m_account->ACCESSINFO;
 
@@ -359,8 +352,7 @@ void mmNewAcctDialog::fillControls()
     
     m_interest_rate_ctrl->SetValue(m_account->INTERESTRATE, 2);
 
-    if (!m_account->PAYMENTDUEDATE.empty())
-    {
+    if (!m_account->PAYMENTDUEDATE.empty()) {
         m_payment_due_date_ctrl->SetValue(Model_Account::DateOf(m_account->PAYMENTDUEDATE));
     }
     
@@ -369,8 +361,7 @@ void mmNewAcctDialog::fillControls()
 
     m_statement_lock_ctrl->SetValue(Model_Account::BoolOf(m_account->STATEMENTLOCKED));
 
-    if (!m_account->STATEMENTDATE.empty())
-    {
+    if (!m_account->STATEMENTDATE.empty()) {
         m_statement_date_ctrl->SetValue(Model_Account::DateOf(m_account->STATEMENTDATE));
     }
     m_minimum_balance_ctrl->SetCurrency(Model_Account::currency(m_account));
@@ -443,14 +434,14 @@ void mmNewAcctDialog::OnImageButton(wxCommandEvent& /*event*/)
 #ifdef __WXMSW__    // Avoid transparancy black background issue
     menuItem->SetBackgroundColour(wxColour(* wxWHITE));
 #endif
-    menuItem->SetBitmap(m_imageList->GetBitmap(Option::instance().AccountImageId(this->m_account->ACCOUNTID, true)));
+    menuItem->SetBitmap(m_images.at(Option::instance().AccountImageId(this->m_account->ACCOUNTID, true)));
     mainMenu->Append(menuItem);
 
     for (int i = img::LAST_NAVTREE_PNG; i < acc_img::MAX_ACC_ICON; ++i)
     {
         menuItem = new wxMenuItem(mainMenu.get(), wxID_HIGHEST + i
             , wxString::Format(_("Image #%i"), i - img::LAST_NAVTREE_PNG + 1));
-        menuItem->SetBitmap(m_imageList->GetBitmap(i));
+        menuItem->SetBitmap(m_images.at(i));
         mainMenu->Append(menuItem);
     }
 
@@ -467,7 +458,7 @@ void mmNewAcctDialog::OnCustonImage(wxCommandEvent& event)
     if (selectedImage != 0)
         image_id = selectedImage + img::LAST_NAVTREE_PNG - 1;
 
-    m_bitmapButtons->SetBitmap(m_imageList->GetBitmap(image_id));
+    m_bitmapButtons->SetBitmap(m_images.at(image_id));
 }
 
 void mmNewAcctDialog::OnChangeFocus(wxChildFocusEvent& event)
@@ -515,18 +506,43 @@ void mmNewAcctDialog::OnOk(wxCommandEvent& /*event*/)
         return mmErrorDialogs::MessageInvalid(this, _("Currency"));
 
     wxTextCtrl* textCtrlWebsite = static_cast<wxTextCtrl*>(FindWindow(ID_DIALOG_NEWACCT_TEXTCTRL_WEBSITE));
-    wxString uri = textCtrlWebsite->GetValue().Lower().Trim();
-    wxRegEx pattern(R"(^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$)");
-    if (!uri.empty() && !pattern.Matches(uri))
+    if (!textCtrlWebsite->GetValue().empty() && !isValidURI(textCtrlWebsite->GetValue()))
     {
         m_notebook->SetSelection(1);
-        return mmErrorDialogs::ToolTip4Object(textCtrlWebsite, _("Please insert a valid URL"), _("Invalid URL"));
+        return mmErrorDialogs::ToolTip4Object(textCtrlWebsite, _("Please enter a valid URL"), _("Invalid URL"));
     }
 
     if (!m_initbalance_ctrl->checkValue(m_account->INITIALBAL, false))
         return;
 
-    if (!this->m_account) this->m_account = Model_Account::instance().create();
+    wxString openingDate = m_initdate_ctrl->GetValue().FormatISODate();
+    if (openingDate > wxDate::Today().FormatISODate())
+        return mmErrorDialogs::ToolTip4Object(m_initdate_ctrl, _("Opening date cannot be in the future"), _("Invalid Date"));
+
+    if (this->m_account)
+    {
+        const Model_Checking::Data_Set all_trans_check1 = Model_Checking::instance().find(DB_Table_CHECKINGACCOUNT_V1::TRANSDATE(openingDate, LESS)
+                                                                            ,DB_Table_CHECKINGACCOUNT_V1::ACCOUNTID(m_account->ACCOUNTID, EQUAL));
+        const Model_Checking::Data_Set all_trans_check2 = Model_Checking::instance().find(DB_Table_CHECKINGACCOUNT_V1::TRANSDATE(openingDate, LESS)
+                                                                            ,DB_Table_CHECKINGACCOUNT_V1::TOACCOUNTID(m_account->ACCOUNTID, EQUAL));
+        if (!all_trans_check1.empty() || !all_trans_check2.empty())
+            return mmErrorDialogs::ToolTip4Object(m_initdate_ctrl, _("Transactions for this account already exist before this date"), _("Invalid Date"));
+        
+        const Model_Stock::Data_Set all_trans_stock = Model_Stock::instance().find(DB_Table_STOCK_V1::PURCHASEDATE(openingDate, LESS)
+                                                   ,DB_Table_STOCK_V1::HELDAT(m_account->ACCOUNTID, EQUAL));
+        if (!all_trans_stock.empty())
+            return mmErrorDialogs::ToolTip4Object(m_initdate_ctrl, _("Stock purchases for this account already exist before this date"), _("Invalid Date"));
+        
+        const Model_Billsdeposits::Data_Set all_trans_bd1 = Model_Billsdeposits::instance().find(DB_Table_BILLSDEPOSITS_V1::TRANSDATE(openingDate, LESS)
+                                                   ,DB_Table_BILLSDEPOSITS_V1::ACCOUNTID(m_account->ACCOUNTID, EQUAL));
+        const Model_Billsdeposits::Data_Set all_trans_bd2 = Model_Billsdeposits::instance().find(DB_Table_BILLSDEPOSITS_V1::TRANSDATE(openingDate, LESS)
+                                                   ,DB_Table_BILLSDEPOSITS_V1::TOACCOUNTID(m_account->ACCOUNTID, EQUAL));
+        if (!all_trans_bd1.empty() || !all_trans_bd2.empty())
+            return mmErrorDialogs::ToolTip4Object(m_initdate_ctrl, _("Recurring transactions for this account are scheduled before this date"), _("Invalid Date"));
+    } else
+        this->m_account = Model_Account::instance().create();
+
+    m_account->INITIALDATE = openingDate;
 
     wxTextCtrl* textCtrlAcctNumber = static_cast<wxTextCtrl*>(FindWindow(ID_ACCTNUMBER));
     wxTextCtrl* textCtrlHeldAt = static_cast<wxTextCtrl*>(FindWindow(ID_DIALOG_NEWACCT_TEXTCTRL_HELDAT));

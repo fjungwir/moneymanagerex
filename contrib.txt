@@ -1,6 +1,6 @@
 ﻿## Active Developers
 Nikolay          [Nikolay]
-Whalley          [whall3y]
+Whalley          [whalley]
 Gabriele         [gabriele-v]
 Lisheng          [guanlisheng]
 James            [siena123]
@@ -147,6 +147,18 @@ Pat Tiller McCoy
 Marlon Morales Arango
 Davide Tartari
 Jill Solomon
+Alberto Ghilardi
+Bartłomiej Korban
+John Weaving
+Rushikesh Jukar
+Ruben Fernandes
+Sabrina Blanc
+Martin Goike
+Michael Smith
+Antonio Navarro Sánchez
+Alain Barussaud
+Emanuele Pizzurno
+William McCracken
 
 ### 2021
 Renato
@@ -398,7 +410,7 @@ Jeremy McEachron
 Michael Ellis
 Michel EVERS
 Santiago Durango
-william Doscher
+William Doscher
 Barry Petersen
 John Stewart
 Brian Marstella

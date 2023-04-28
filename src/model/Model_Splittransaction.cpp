@@ -1,5 +1,6 @@
 /*******************************************************
  Copyright (C) 2013,2014 Guan Lisheng (guanlisheng@gmail.com)
+ Copyright (C) 2022 Mark Whalley (mark@ipx.co.uk)
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -18,10 +19,9 @@
 
 #include "Model_Splittransaction.h"
 #include "Model_Category.h"
-#include "Model_Subcategory.h"
 
 Model_Splittransaction::Model_Splittransaction()
-: Model<DB_Table_SPLITTRANSACTIONS_V1>()
+    : Model<DB_Table_SPLITTRANSACTIONS_V1>()
 {
 }
 
@@ -90,7 +90,7 @@ int Model_Splittransaction::update(const Data_Set& rows, int transactionID)
             split_item->TRANSID = transactionID;
             split_item->SPLITTRANSAMOUNT = item.SPLITTRANSAMOUNT;
             split_item->CATEGID = item.CATEGID;
-            split_item->SUBCATEGID = item.SUBCATEGID;
+            split_item->NOTES = item.NOTES;            
             split_items.push_back(*split_item);
         }
         instance().save(split_items);
@@ -102,8 +102,18 @@ const wxString Model_Splittransaction::get_tooltip(const std::vector<Split>& row
 {
     wxString split_tooltip = "";
     for (const auto& entry : rows)
-        split_tooltip += wxString::Format("%s = %s\n"
-        , Model_Category::full_name(entry.CATEGID, entry.SUBCATEGID)
-        , Model_Currency::toCurrency(entry.SPLITTRANSAMOUNT, currency));
+    {
+        split_tooltip += wxString::Format("%s = %s"
+                    , Model_Category::full_name(entry.CATEGID)
+                    , Model_Currency::toCurrency(entry.SPLITTRANSAMOUNT, currency));
+        if (!entry.NOTES.IsEmpty())
+        {
+            wxString value = entry.NOTES;
+            value.Replace("\n", " ");
+            split_tooltip += wxString::Format(" (%s)", value);
+        }
+        split_tooltip += "\n";
+    }
+    split_tooltip = split_tooltip.Left(split_tooltip.Len()-1);
     return split_tooltip;
 }

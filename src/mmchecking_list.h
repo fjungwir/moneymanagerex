@@ -41,7 +41,6 @@ public:
     Model_Checking::Full_Data_Set m_trans;
     void markSelectedTransaction();
     void DeleteTransactionsByStatus(const wxString& status);
-    void DeleteViewedTransactions();
 public:
     enum EColumn
     {
@@ -58,19 +57,22 @@ public:
         COL_BALANCE,
         COL_CREDIT,
         COL_NOTES,
+        COL_DELETEDTIME,
         COL_UDFC01,
         COL_UDFC02,
         COL_UDFC03,
         COL_UDFC04,
         COL_UDFC05,
         COL_MAX, // number of columns
-        COL_DEF_SORT = COL_DATE // don't omit any columns before this
+        COL_DEF_SORT = COL_DATE, // don't omit any columns before this
+        COL_DEF_SORT2 = COL_ID 
     };
-    EColumn toEColumn(long col);
+    EColumn toEColumn(const unsigned long col);
 public:
-    EColumn g_sortcol; // index of column to sort
-    EColumn m_prevSortCol;
-    bool g_asc; // asc\desc sorting
+    EColumn g_sortcol; // index of primary column to sort by
+    EColumn prev_g_sortcol; // index of secondary column to sort by
+    bool g_asc; // asc\desc sorting for primary sort column
+    bool prev_g_asc; // asc\desc sorting for secondary sort column
 
     bool getSortOrder() const;
     EColumn getSortColumn() const { return m_sortCol; }
@@ -84,7 +86,9 @@ public:
     void OnNewTransaction(wxCommandEvent& event);
     void OnNewTransferTransaction(wxCommandEvent& event);
     void OnDeleteTransaction(wxCommandEvent& event);
+    void OnRestoreTransaction(wxCommandEvent& event);
     void OnDeleteViewedTransaction(wxCommandEvent& event);
+    void OnRestoreViewedTransaction(wxCommandEvent& event);
     void OnEditTransaction(wxCommandEvent& event);
     void OnDuplicateTransaction(wxCommandEvent& event);
     void OnSetUserColour(wxCommandEvent& event);
@@ -159,13 +163,15 @@ private:
         MENU_TREEPOPUP_DELETE_VIEWED,
         MENU_TREEPOPUP_DELETE_FLAGGED,
         MENU_TREEPOPUP_DELETE_UNRECONCILED,
+        MENU_TREEPOPUP_RESTORE,
+        MENU_TREEPOPUP_RESTORE_VIEWED,
         ID_PANEL_CHECKING_STATIC_BITMAP_VIEW,
     };
 private:
     DECLARE_NO_COPY_CLASS(TransactionListCtrl)
     wxDECLARE_EVENT_TABLE();
 
-    mmCheckingPanel* m_cp;
+    mmCheckingPanel* m_cp = nullptr;
 
     wxSharedPtr<wxListItemAttr> m_attr1;  // style1
     wxSharedPtr<wxListItemAttr> m_attr2;  // style2
@@ -201,7 +207,7 @@ private:
     bool TransactionLocked(int AccountID, const wxString& transdate);
     void FindSelectedTransactions();
     bool CheckForClosedAccounts();
-    void setExtraTransactionData(bool single);
+    void setExtraTransactionData(const bool single);
     void SortTransactions(int sortcol, bool ascend);
 private:
     /* The topmost visible item - this will be used to set

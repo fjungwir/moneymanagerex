@@ -24,8 +24,6 @@ Copyright (C) 2021 Mark Whalley (mark@ipx.co.uk)
 //----------------------------------------------------------------------------
 #include "mmpanelbase.h"
 #include "constants.h"
-#include "reports/mmDateRange.h"
-#include "model/Model_Checking.h"
 #include "model/Model_Account.h"
 #include <map>
 //----------------------------------------------------------------------------
@@ -39,7 +37,7 @@ class mmCheckingPanel : public mmPanelBase
 {
 public:
 
-    enum EIcons //m_imageList
+    enum EIcons
     {
         ICON_UNRECONCILED,
         ICON_RECONCILED,
@@ -117,16 +115,18 @@ private:
     wxDECLARE_EVENT_TABLE();
     friend class TransactionListCtrl; // needs access to m_core, initdb_, ...
 
-    wxButton* m_bitmapTransFilter;
-    wxButton* m_btnNew;
-    wxButton* m_btnEdit;
-    wxButton* m_btnDuplicate;
-    // wxButton* m_btnDelete;
-    wxButton* m_btnAttachment;
-    wxStaticText* m_header_text;
-    wxStaticText* m_header_balance;
-    wxStaticText* m_info_panel;
-    wxStaticText* m_info_panel_mini;
+    wxButton* m_bitmapTransFilter = nullptr;
+    wxButton* m_btnNew = nullptr;
+    wxButton* m_btnEdit = nullptr;
+    wxButton* m_btnDuplicate = nullptr;
+    // wxButton* m_btnDelete = nullptr;
+    wxButton* m_btnRestore = nullptr;
+    wxButton* m_btnAttachment = nullptr;
+    wxStaticText* m_header_text = nullptr;
+    wxStaticText* m_header_sortOrder = nullptr;
+    wxStaticText* m_header_balance = nullptr;
+    wxStaticText* m_info_panel = nullptr;
+    wxStaticText* m_info_panel_mini = nullptr;
 
     wxSharedPtr<mmFilterTransactionsDialog> m_trans_filter_dlg;
 
@@ -134,6 +134,7 @@ private:
     int m_currentView;
     int m_AccountID;
     bool isAllAccounts_; // TRUE = All accounts are displayed
+    bool isTrash_ = false; // TRUE = Deleted transactions are displayed
     wxString m_sortSaveTitle;   // Used for saving sort settings
     bool m_transFilterActive;
     wxString m_begin_date;
@@ -142,10 +143,11 @@ private:
     double m_account_balance;
     double m_reconciled_balance;
 
-    TransactionListCtrl* m_listCtrlAccount;
-    Model_Account::Data* m_account;
-    Model_Currency::Data* m_currency;   // the account currency if single account otherwise the base currency
-    wxScopedPtr<wxImageList> m_imageList;
+    TransactionListCtrl* m_listCtrlAccount = nullptr;
+    Model_Account::Data* m_account = nullptr;
+    Model_Currency::Data* m_currency = nullptr;   // the account currency if single account otherwise the base currency
+
+    wxVector<wxBitmapBundle> m_images;
 
     void initViewTransactionsHeader();
     void initFilterSettings();
@@ -167,6 +169,7 @@ private:
 
     void OnNewTransaction(wxCommandEvent& event);
     void OnDeleteTransaction(wxCommandEvent& event);
+    void OnRestoreTransaction(wxCommandEvent& event);
     void OnEditTransaction(wxCommandEvent& event);
     void OnDuplicateTransaction(wxCommandEvent& event);
     void OnMoveTransaction(wxCommandEvent& event);
